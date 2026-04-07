@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/class.schema.json",
+  "title": "Agent Class",
+  "description": "Agent classification tier with rank requirements",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400012,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "class",
+      "type": "schema",
+      "path": "L2.agency.reference.class"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "min_rank_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Minimum rank required for this class"
+    },
+    "clearance": {
+      "type": "string",
+      "enum": ["public", "internal", "confidential", "restricted", "classified"],
+      "default": "internal",
+      "description": "Access clearance level"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1,
+      "description": "Relative probability weight for random selection"
+    },
+    "tier_label": {
+      "type": "string",
+      "description": "Descriptive classification tier (e.g., Operational, Strategic)"
+    }
+  },
+  "required": ["id", "slug", "label"]
+}

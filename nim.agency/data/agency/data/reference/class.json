@@ -1,0 +1,70 @@
+{
+  "$schema": "../schema/reference/class.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "class_i",
+      "label": "Class I",
+      "tier_label": "Operational",
+      "description": "Standard clearance - routine operations",
+      "min_rank_id": 1,
+      "clearance": "internal",
+      "icon": "Ⅰ",
+      "color": "#888888",
+      "sort_order": 1,
+      "weight": 50
+    },
+    {
+      "id": 2,
+      "slug": "class_ii",
+      "label": "Class II",
+      "tier_label": "Strategic",
+      "description": "Elevated clearance - sensitive operations",
+      "min_rank_id": 2,
+      "clearance": "confidential",
+      "icon": "Ⅱ",
+      "color": "#4488ff",
+      "sort_order": 2,
+      "weight": 30
+    },
+    {
+      "id": 3,
+      "slug": "class_iii",
+      "label": "Class III",
+      "tier_label": "World",
+      "description": "High clearance - restricted operations",
+      "min_rank_id": 4,
+      "clearance": "restricted",
+      "icon": "Ⅲ",
+      "color": "#ff8844",
+      "sort_order": 3,
+      "weight": 12
+    },
+    {
+      "id": 4,
+      "slug": "class_iv",
+      "label": "Class IV",
+      "tier_label": "Command",
+      "description": "Maximum clearance - classified operations",
+      "min_rank_id": 6,
+      "clearance": "classified",
+      "icon": "Ⅳ",
+      "color": "#ff4444",
+      "sort_order": 4,
+      "weight": 5
+    },
+    {
+      "id": 5,
+      "slug": "syndicate",
+      "label": "Syndicate",
+      "tier_label": "Shadow",
+      "description": "Shadow operations - off-book activities",
+      "min_rank_id": 5,
+      "clearance": "classified",
+      "icon": "☠",
+      "color": "#440044",
+      "sort_order": 5,
+      "weight": 3
+    }
+  ]
+}
