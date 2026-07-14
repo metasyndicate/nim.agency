@@ -279,10 +279,12 @@ class DispatchLogger:
             log_path: Path to CSV log (default: ~/.nim/agency/dispatch.log)
             json_log_path: Path to JSON log (default: ~/.nim/agency/dispatch.json)
         """
-        base = Path.home() / ".nim" / "agency"
+        from ..config import get_config, log_dir
+        base = log_dir()
+        logging_cfg = get_config()["logging"]
 
-        self.log_path = log_path or (base / "dispatch.log")
-        self.json_log_path = json_log_path or (base / "dispatch.json")
+        self.log_path = log_path or (base / logging_cfg["dispatch_csv"])
+        self.json_log_path = json_log_path or (base / logging_cfg["dispatch_json"])
 
         self._ensure_log_files()
 

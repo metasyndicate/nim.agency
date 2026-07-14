@@ -310,6 +310,9 @@ class Dispatcher:
         if mission.any_failed():
             mission.status = MissionStatus.FAILED
             failed_count = sum(1 for t in mission.tasks if t.status == TaskStatus.FAILED)
+            # Assemble a report even on failure so partial results and
+            # per-task errors are never lost.
+            mission.final_report = self._assemble_report(mission)
             self.logger.log_mission_fail(
                 dispatch_id=dispatch_id,
                 mission_id=mission.id,

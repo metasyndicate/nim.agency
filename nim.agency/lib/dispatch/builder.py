@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+from ..config import get_config
 from ..data import DataStore, get_datastore
 
 from .mission import Mission, MissionConstraints, Task
@@ -132,7 +133,7 @@ def codebase_analysis_mission(
     builder.objective(f"Analyze the codebase at {target_dir} and provide a comprehensive technical summary")
     builder.working_dir(target_dir)
     builder.constraint_read_only()
-    builder.timeout(180)  # 3 minutes per task
+    builder.timeout(get_config()["dispatch"]["timeout_seconds"])
 
     # Add all agents to crew
     for agent in agents:
@@ -231,7 +232,7 @@ def security_audit_mission(
     builder.objective("Perform a security-focused review of the codebase")
     builder.working_dir(target_dir)
     builder.constraint_read_only()
-    builder.timeout(240)
+    builder.timeout(get_config()["dispatch"]["timeout_seconds"])
 
     for agent in agents:
         builder.add_crew_member(agent)

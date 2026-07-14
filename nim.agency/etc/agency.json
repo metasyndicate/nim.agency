@@ -1,0 +1,14 @@
+{
+  "_": "NIM Agency source-controlled defaults. Checked into source and treated as read-only at runtime. Operator overrides are provided via CLI flags, not by mutating this file in place.",
+  "dispatch": {
+    "provider": "claude-cli",
+    "max_concurrent": 2,
+    "timeout_seconds": 600,
+    "report_dir": "log"
+  },
+  "logging": {
+    "dir": "~/.nim/agency",
+    "dispatch_csv": "dispatch.log",
+    "dispatch_json": "dispatch.json"
+  }
+}

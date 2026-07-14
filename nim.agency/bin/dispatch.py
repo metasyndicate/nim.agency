@@ -17,6 +17,7 @@ from pathlib import Path
 # Add lib to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from lib.config import get_config, log_dir, report_dir
 from lib.data import DataStore, get_datastore
 from lib.dispatch import (
     Mission, MissionBuilder, Dispatcher, DispatchEvent,
@@ -83,13 +84,21 @@ class DispatchCLI:
 
         print(f"{timestamp} {prefix} {event.message}")
 
-    async def run_mission(self, mission: Mission) -> Mission:
+    async def run_mission(self, mission: Mission, report_path: Path) -> Mission:
         """Execute a mission with progress output."""
+        cfg = get_config()["logging"]
         print("\n" + "=" * 60)
         print(f"MISSION: {mission.title}")
         print(f"OBJECTIVE: {mission.objective}")
         print(f"CREW: {len(mission.crew_ids)} agents")
         print(f"TASKS: {len(mission.tasks)}")
+        print(f"TIMEOUT: {mission.constraints.timeout_seconds}s per task")
+        print("-" * 60)
+        print("OUTPUTS:")
+        print(f"  report:       {report_path}")
+        print(f"  mission json: {report_path.with_suffix('.json')}")
+        print(f"  dispatch log: {log_dir() / cfg['dispatch_csv']} (csv)")
+        print(f"                {log_dir() / cfg['dispatch_json']} (json)")
         print("=" * 60 + "\n")
 
         # List crew
@@ -109,17 +118,20 @@ class DispatchCLI:
         result = await self.dispatcher.execute(
             mission,
             on_event=self.print_event,
-            max_concurrent=2
+            max_concurrent=get_config()["dispatch"]["max_concurrent"]
         )
 
         return result
 
     def save_report(self, mission: Mission, output_path: Path):
-        """Save the mission report to a file."""
+        """Save the mission report and full mission record (prompts, results)."""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         if mission.final_report:
             with open(output_path, "w") as f:
                 f.write(mission.final_report)
-            print(f"\nReport saved to: {output_path}")
+            print(f"\nReport saved to:  {output_path}")
+        mission.save(output_path.with_suffix(".json"))
+        print(f"Mission saved to: {output_path.with_suffix('.json')}")
 
 
 async def main():
@@ -133,7 +145,9 @@ async def main():
     parser.add_argument("--count", type=int, default=3,
                         help="Number of agents to use (if not specifying crew)")
     parser.add_argument("--output", type=str,
-                        help="Output file for report")
+                        help="Output file for report (default: <report_dir>/mission-<id>-report.md)")
+    parser.add_argument("--timeout", type=int,
+                        help="Per-task timeout in seconds (default: from etc/agency.json)")
     parser.add_argument("--list-agents", action="store_true",
                         help="List available agents")
     parser.add_argument("--dry-run", action="store_true",
@@ -190,6 +204,15 @@ async def main():
         print("Custom missions not yet supported via CLI")
         return
 
+    if args.timeout:
+        mission.constraints.timeout_seconds = args.timeout
+
+    # Resolve report path up front so it can be announced before dispatch
+    if args.output:
+        report_path = Path(args.output)
+    else:
+        report_path = report_dir() / f"mission-{mission.id}-report.md"
+
     # Dry run mode
     if args.dry_run:
         print("\n" + "=" * 60)
@@ -218,7 +241,7 @@ async def main():
         return
 
     # Execute mission
-    result = await cli.run_mission(mission)
+    result = await cli.run_mission(mission, report_path)
 
     # Print summary
     print("\n" + "=" * 60)
@@ -231,13 +254,9 @@ async def main():
         duration = (result.completed_at - result.started_at).total_seconds()
         print(f"Duration: {duration:.1f}s")
 
-    # Save report
-    if args.output:
-        output_path = Path(args.output)
-    else:
-        output_path = Path(f"mission-{result.id}-report.md")
-
-    cli.save_report(result, output_path)
+    # Save report (written on success and failure - failed missions retain
+    # partial results and per-task errors)
+    cli.save_report(result, report_path)
 
     # Print report preview
     if result.final_report:
