@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/archetype.schema.json",
+  "title": "Agent Archetype",
+  "description": "Team specialist profiles defining capability and tool combinations",
+  "@type": "skos:ConceptScheme",
+  "$nim.meta": {
+    "nim.id": 400023,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "archetype",
+      "type": "schema",
+      "path": "L2.agency.reference.archetype"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "slug": {"type": "string"},
+    "label": {"type": "string"},
+    "description": {"type": "string"},
+    "focus_ids": {
+      "type": "array",
+      "items": {"type": "integer"},
+      "description": "Primary focus areas for this archetype"
+    },
+    "core_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "capability_id": {"type": "integer"},
+          "min_proficiency": {"type": "integer", "minimum": 1, "maximum": 5}
+        }
+      }
+    },
+    "tool_access": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Tool slugs accessible to this archetype"
+    },
+    "team_size": {
+      "type": "object",
+      "properties": {
+        "min": {"type": "integer"},
+        "max": {"type": "integer"}
+      }
+    },
+    "pairs_well_with": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Archetype slugs that complement this one"
+    },
+    "icon": {"type": "string"},
+    "instruction_template": {"type": "string"},
+    "sort_order": {"type": "integer"}
+  },
+  "required": ["id", "slug", "label", "core_capabilities", "tool_access"]
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "../schema/reference/status.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "standby",
+      "label": "Standby",
+      "description": "Agent created but not yet activated",
+      "is_active": false,
+      "icon": "⏸",
+      "color": "#888888",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "operational",
+      "label": "Operational",
+      "description": "Agent active and available for dispatch",
+      "is_active": true,
+      "icon": "▶",
+      "color": "#00ff88",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "deployed",
+      "label": "Deployed",
+      "description": "Agent currently assigned to active mission",
+      "is_active": true,
+      "icon": "⚡",
+      "color": "#ffaa00",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "recovery",
+      "label": "Recovery",
+      "description": "Agent recovering from low health or intensive work",
+      "is_active": false,
+      "icon": "🔧",
+      "color": "#ff6600",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "suspended",
+      "label": "Suspended",
+      "description": "Agent temporarily suspended from operations",
+      "is_active": false,
+      "icon": "⛔",
+      "color": "#ff3333",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "retired",
+      "label": "Retired",
+      "description": "Agent permanently retired from service",
+      "is_active": false,
+      "icon": "📦",
+      "color": "#666666",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "burned",
+      "label": "Burned",
+      "description": "Agent identity compromised and purged",
+      "is_active": false,
+      "icon": "🔥",
+      "color": "#330000",
+      "sort_order": 7
+    }
+  ]
+}

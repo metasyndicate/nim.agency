@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/assignment_status.schema.json",
+  "title": "Assignment Status",
+  "description": "BAGMAN: ASSIGNMENT lifecycle states (prov:Activity status vocabulary)",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400016,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-13T00:00:00Z",
+    "version": "1.1.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "assignment_status",
+      "type": "schema",
+      "path": "L2.agency.reference.assignment_status"
+    },
+    "bagman": {
+      "replaces": "mission_status"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "bagman_state": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[A-Z][A-Z_]*$",
+      "description": "BAGMAN Protocol state identifier (e.g., 'EMERGENCE', 'POLLINATION', 'DISSOLUTION_SUCCESS')"
+    },
+    "is_terminal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this status ends the ASSIGNMENT lifecycle"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether ASSIGNMENT has active BEEs in SWARM"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    }
+  },
+  "required": ["id", "slug", "label", "bagman_state", "is_terminal"]
+}

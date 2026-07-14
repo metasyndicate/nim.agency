@@ -1,0 +1,205 @@
+{
+  "$schema": "../schema/reference/specialty.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "alert_acknowledger",
+      "label": "Alert Acknowledger",
+      "description": "Clicks 'dismiss' professionally. Has achieved inbox zero by ignoring everything.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "🔔",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "false_positive_hunter",
+      "label": "False Positive Hunter",
+      "description": "Tuned the SIEM once. Made it worse. Now everything is a false positive.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "🎯",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "compliance_checkbox",
+      "label": "Compliance Checkbox Specialist",
+      "description": "'We're SOC2 compliant.' (They are not.)",
+      "ops_domain_id": 4,
+      "category": "security",
+      "icon": "☑",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "threat_feed_collector",
+      "label": "Threat Feed Collector",
+      "description": "Subscribed to 40 feeds. Reads none. Dashboards look impressive though.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "📡",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "incident_postmortem",
+      "label": "Incident Postmortem Author",
+      "description": "Writes detailed postmortems. Learns nothing. Same incident next quarter.",
+      "ops_domain_id": 4,
+      "category": "security",
+      "icon": "📝",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "pentest_pdf_archiver",
+      "label": "Pentest PDF Archiver",
+      "description": "Has 200 penetration test reports. Zero remediations. 'We'll get to it.'",
+      "ops_domain_id": 4,
+      "category": "security",
+      "icon": "📁",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "unused_ids_monitor",
+      "label": "Unused IDS Monitor",
+      "description": "The IDS has been in 'learning mode' for three years.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "👁",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "edr_whisperer",
+      "label": "EDR Whisperer",
+      "description": "The one person who actually knows what the agent does. Feared. Respected.",
+      "ops_domain_id": 3,
+      "category": "security",
+      "icon": "🔮",
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "firewall_rule_archaeologist",
+      "label": "Firewall Rule Archaeologist",
+      "description": "Excavates ancient rules. 'Allow any any' from 2009. Nobody knows why.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "🏺",
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "password_policy_enforcer",
+      "label": "Password Policy Enforcer",
+      "description": "Requires 47 character passwords. Changed monthly. Wonders why everyone uses sticky notes.",
+      "ops_domain_id": 4,
+      "category": "security",
+      "icon": "🔐",
+      "sort_order": 10
+    },
+    {
+      "id": 11,
+      "slug": "vpn_troubleshooter",
+      "label": "VPN Troubleshooter",
+      "description": "'Have you tried disconnecting and reconnecting?' Has said this 10,000 times.",
+      "ops_domain_id": 2,
+      "category": "security",
+      "icon": "🔗",
+      "sort_order": 11
+    },
+    {
+      "id": 12,
+      "slug": "certificate_expiry_ignorer",
+      "label": "Certificate Expiry Ignorer",
+      "description": "The alerts have been firing for months. 'It's on the backlog.'",
+      "ops_domain_id": 3,
+      "category": "security",
+      "icon": "📜",
+      "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "yaml_farmer",
+      "label": "YAML Farmer",
+      "description": "Tends vast fields of indentation. One space off and the harvest fails.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "🌾",
+      "sort_order": 13
+    },
+    {
+      "id": 14,
+      "slug": "jenkins_shaman",
+      "label": "Jenkins Shaman",
+      "description": "The pipeline is 9000 lines. Nobody dares touch it. It works. Sometimes.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "🪄",
+      "sort_order": 14
+    },
+    {
+      "id": 15,
+      "slug": "kubernetes_theorist",
+      "label": "Kubernetes Theorist",
+      "description": "Has never run kubectl. Has opinions about service meshes. Strong opinions.",
+      "ops_domain_id": 3,
+      "category": "devops",
+      "icon": "☸",
+      "sort_order": 15
+    },
+    {
+      "id": 16,
+      "slug": "vm_sprawl_curator",
+      "label": "VM Sprawl Curator",
+      "description": "900 VMs. 12 are used. The rest are 'probably important.'",
+      "ops_domain_id": 3,
+      "category": "platform",
+      "icon": "📦",
+      "sort_order": 16
+    },
+    {
+      "id": 17,
+      "slug": "technical_debt_ranger",
+      "label": "Technical Debt Ranger",
+      "description": "Assigned to 'quick fix' from 2019. Still ranging.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "💸",
+      "sort_order": 17
+    },
+    {
+      "id": 18,
+      "slug": "bgp_berserker",
+      "label": "BGP Berserker",
+      "description": "Once null-routed a continent. Would do it again.",
+      "ops_domain_id": 2,
+      "category": "network",
+      "icon": "🌍",
+      "sort_order": 18
+    },
+    {
+      "id": 19,
+      "slug": "cable_archaeologist",
+      "label": "Cable Archaeologist",
+      "description": "Traces cables through the ceiling void. Finds things. Terrible things.",
+      "ops_domain_id": 1,
+      "category": "facility",
+      "icon": "🔌",
+      "sort_order": 19
+    },
+    {
+      "id": 20,
+      "slug": "dns_wizard",
+      "label": "DNS Wizard",
+      "description": "It's always DNS. Always. They know this. They've accepted it.",
+      "ops_domain_id": 2,
+      "category": "network",
+      "icon": "🧙",
+      "sort_order": 20
+    }
+  ]
+}

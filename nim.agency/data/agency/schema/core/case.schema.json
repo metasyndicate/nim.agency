@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/case.schema.json",
+  "title": "Case",
+  "description": "BAGMAN: CASE - Catalytic Epistle. Dispatchable unit of work for BEE deployment (prov:Activity).",
+  "@type": "prov:Activity",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400102,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-13T00:00:00Z",
+    "version": "1.2.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "case",
+      "type": "schema",
+      "path": "L3.agency.core.case"
+    },
+    "bagman": {
+      "term": "CASE",
+      "expansion": "Catalytic Epistle",
+      "phonetic": "Charlie-Alpha-Sierra-Echo",
+      "incantation": "The CASE is opened. The work begins.",
+      "replaces": "assignment"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "codename": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_-]*$",
+      "description": "Operation codename (e.g., 'GOLDEN_HARVEST', 'NIGHT_BLOOM')"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Reference to case_status lookup"
+    },
+    "priority": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/priority"
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["routine", "sensitive", "restricted", "classified", "arcane"],
+      "default": "routine",
+      "description": "CASE sensitivity level"
+    },
+    "requirements": {
+      "type": "object",
+      "description": "BEE qualification criteria",
+      "properties": {
+        "min_rank_id": {
+          "type": "integer",
+          "description": "Minimum rank required"
+        },
+        "min_class_id": {
+          "type": "integer"
+        },
+        "required_skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain_id": { "type": "integer" },
+              "min_points": { "type": "integer" }
+            }
+          }
+        },
+        "required_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "capability_id": { "type": "integer" },
+              "min_proficiency": { "type": "integer", "minimum": 1, "maximum": 5 }
+            }
+          }
+        },
+        "archetype_id": {
+          "type": "integer",
+          "description": "Preferred archetype for lead BEE"
+        },
+        "crue_type_id": {
+          "type": "integer",
+          "description": "Recommended CRÜE formation"
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "description": "HONEY distribution on completion",
+      "properties": {
+        "xp": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "gold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "achievement_ids": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Achievements unlocked on completion"
+        }
+      }
+    },
+    "bees": {
+      "type": "array",
+      "description": "Assigned BEEs (CRÜE composition)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+            "description": "BEE identifier"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["queen", "lead", "worker", "drone", "forager", "observer"],
+            "default": "worker"
+          },
+          "emerged_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp",
+            "description": "EMERGENCE timestamp for this CASE"
+          },
+          "dissolved_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp",
+            "description": "DISSOLUTION timestamp"
+          },
+          "quality_score": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/rating",
+            "description": "Performance score (set on completion)"
+          }
+        },
+        "required": ["agent_id"]
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "description": "CAT-generated deployment specification (MFT)",
+      "properties": {
+        "generated_by": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+          "description": "CAT agent that produced this MANIFEST"
+        },
+        "generated_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "task_graph": {
+          "type": "array",
+          "description": "Decomposed task structure",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task_id": { "type": "string" },
+              "description": { "type": "string" },
+              "depends_on": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "assigned_bee": {
+                "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "active", "blocked", "completed", "failed"]
+              }
+            }
+          }
+        },
+        "resource_requirements": {
+          "type": "object",
+          "properties": {
+            "tools": {
+              "type": "array",
+              "items": { "type": "integer" }
+            },
+            "substations": {
+              "type": "array",
+              "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" }
+            },
+            "credentials": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "dispatched_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp",
+          "description": "When DISPATCH opened the CASE"
+        },
+        "swarmed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp",
+          "description": "When all BEEs achieved EMERGENCE"
+        },
+        "completed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "closed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp",
+          "description": "When CASE was closed and all BEEs achieved DISSOLUTION"
+        }
+      },
+      "required": ["created_at"]
+    },
+    "created_by": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Operator or OWL that originated the CASE"
+    },
+    "owl_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Supervising OWL for this CASE"
+    }
+  },
+  "required": ["id", "title", "status_id", "priority", "timeline"]
+}

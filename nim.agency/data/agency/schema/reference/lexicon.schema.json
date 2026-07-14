@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/lexicon.schema.json",
+  "title": "BAGMAN Protocol Lexicon",
+  "description": "NIM Biomimetic Agency vernacular - codified terminology for structured linguistic control",
+  "@type": "skos:ConceptScheme",
+  "$nim.meta": {
+    "nim.id": 400030,
+    "created": "2026-04-13T00:00:00Z",
+    "modified": "2026-04-13T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "lexicon",
+      "type": "schema",
+      "path": "L2.agency.reference.lexicon"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique lexicon entry identifier"
+    },
+    "term": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Canonical term (uppercase for acronyms, title case for full names)"
+    },
+    "acronym": {
+      "type": "string",
+      "maxLength": 12,
+      "pattern": "^[A-Z][A-Z0-9._-]*$",
+      "description": "Short form identifier"
+    },
+    "expansion": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Full expansion of acronym or formal name"
+    },
+    "phonetic": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "NATO-style phonetic or thematic pronunciation guide"
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "entity",
+        "operation",
+        "protocol",
+        "state",
+        "artifact",
+        "structure",
+        "action",
+        "role",
+        "lore"
+      ],
+      "description": "Semantic domain classification"
+    },
+    "subdomain": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Domain subcategory"
+    },
+    "definition": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Canonical definition for documentation and agent context"
+    },
+    "usage_context": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["instruction", "logging", "dispatch", "comms", "schema", "ui", "lore", "internal"]
+      },
+      "description": "Where this term should be used"
+    },
+    "standard_equiv": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Industry-standard equivalent term for translation/interop"
+    },
+    "semantic_relations": {
+      "type": "object",
+      "properties": {
+        "broader": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Parent/hypernym terms (skos:broader)"
+        },
+        "narrower": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Child/hyponym terms (skos:narrower)"
+        },
+        "related": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Associated terms (skos:related)"
+        },
+        "replaces": {
+          "type": "string",
+          "description": "Term this supersedes"
+        }
+      }
+    },
+    "incantation": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Ritual phrase, motto, or invocation associated with term"
+    },
+    "glyph": {
+      "type": "string",
+      "maxLength": 4,
+      "description": "Unicode symbol or emoji representation"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["public", "internal", "restricted", "arcane"],
+      "default": "internal",
+      "description": "Visibility/secrecy level"
+    },
+    "etymology": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "Origin story or derivation notes"
+    },
+    "sort_order": {
+      "type": "integer"
+    }
+  },
+  "required": ["id", "term", "domain", "definition"]
+}

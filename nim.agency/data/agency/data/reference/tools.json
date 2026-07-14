@@ -1,0 +1,1181 @@
+{
+  "$schema": "../schema/core/tool.schema.json",
+  "$comment": "Gold costs: safe=25-50, moderate=75-150, elevated=200-400, high=500-800, critical=1000+",
+  "data": [
+    {
+      "id": 1,
+      "slug": "bash",
+      "label": "Bash",
+      "description": "Bourne Again Shell - command execution and scripting",
+      "category_id": 3,
+      "icon": "\ud83d\udcbb",
+      "is_active": true,
+      "cost": 0,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "bash [options] [script] [arguments]",
+        "examples": [
+          "bash -c 'echo hello'",
+          "bash script.sh"
+        ],
+        "whispers": [
+          "execute shell command",
+          "run bash script",
+          "shell out to"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "slug": "curl",
+      "label": "cURL",
+      "description": "Command line URL transfer tool - HTTP/HTTPS requests",
+      "category_id": 1,
+      "icon": "\ud83c\udf10",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "curl [options] <url>",
+        "examples": [
+          "curl -X GET https://api.example.com",
+          "curl -d @data.json -H 'Content-Type: application/json' URL"
+        ],
+        "whispers": [
+          "fetch url",
+          "http request",
+          "call api",
+          "download from"
+        ]
+      },
+      "cost": 25
+    },
+    {
+      "id": 3,
+      "slug": "ssh",
+      "label": "SSH",
+      "description": "Secure Shell remote access",
+      "category_id": 1,
+      "icon": "\ud83d\udd11",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "requirements": {
+        "min_rank_id": 2
+      },
+      "usage": {
+        "syntax": "ssh [user@]host [command]",
+        "examples": [
+          "ssh user@host",
+          "ssh -i key.pem ec2-user@instance"
+        ],
+        "whispers": [
+          "connect to",
+          "remote shell",
+          "ssh into"
+        ]
+      },
+      "cost": 150
+    },
+    {
+      "id": 4,
+      "slug": "git",
+      "label": "Git",
+      "description": "Distributed version control system",
+      "category_id": 5,
+      "icon": "\ud83d\udce6",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "git <command> [options]",
+        "examples": [
+          "git clone <url>",
+          "git commit -m 'message'",
+          "git push origin main"
+        ],
+        "whispers": [
+          "version control",
+          "commit changes",
+          "push to repo",
+          "git status"
+        ]
+      },
+      "cost": 25
+    },
+    {
+      "id": 5,
+      "slug": "docker",
+      "label": "Docker",
+      "description": "Container runtime and management",
+      "category_id": 3,
+      "icon": "\ud83d\udc33",
+      "is_active": true,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "requirements": {
+        "min_rank_id": 2,
+        "capability_requirements": [
+          {
+            "capability_id": 4,
+            "min_proficiency": 1
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "docker <command> [options]",
+        "examples": [
+          "docker run -it ubuntu bash",
+          "docker compose up -d",
+          "docker ps"
+        ],
+        "whispers": [
+          "run container",
+          "docker image",
+          "container logs"
+        ]
+      },
+      "cost": 200
+    },
+    {
+      "id": 6,
+      "slug": "python",
+      "label": "Python",
+      "description": "Python interpreter and scripting",
+      "category_id": 5,
+      "icon": "\ud83d\udc0d",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "python [options] [script] [args]",
+        "examples": [
+          "python script.py",
+          "python -c 'print(1+1)'"
+        ],
+        "whispers": [
+          "run python",
+          "execute script",
+          "python code"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 7,
+      "slug": "jq",
+      "label": "jq",
+      "description": "Command-line JSON processor",
+      "category_id": 6,
+      "icon": "\ud83d\udcca",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "jq [options] <filter> [file...]",
+        "examples": [
+          "jq '.key' file.json",
+          "curl api | jq '.data[]'"
+        ],
+        "whispers": [
+          "parse json",
+          "extract field",
+          "json query",
+          "transform json"
+        ]
+      },
+      "cost": 50
+    },
+    {
+      "id": 8,
+      "slug": "openssl",
+      "label": "OpenSSL",
+      "description": "Cryptography and SSL/TLS toolkit",
+      "category_id": 4,
+      "icon": "\ud83d\udd10",
+      "is_active": true,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 7,
+            "min_proficiency": 2
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "openssl <command> [options]",
+        "examples": [
+          "openssl x509 -text -in cert.pem",
+          "openssl s_client -connect host:443"
+        ],
+        "whispers": [
+          "check certificate",
+          "ssl debug",
+          "generate key",
+          "encrypt"
+        ]
+      },
+      "cost": 200
+    },
+    {
+      "id": 9,
+      "slug": "kubectl",
+      "label": "kubectl",
+      "description": "Kubernetes cluster management CLI",
+      "category_id": 8,
+      "icon": "\u2638",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "distributed",
+        "requires_confirmation": true,
+        "dangerous_subcommands": [
+          "delete",
+          "drain",
+          "cordon",
+          "taint"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 4,
+            "min_proficiency": 3
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "kubectl <command> [type] [name] [flags]",
+        "examples": [
+          "kubectl get pods",
+          "kubectl logs -f pod-name",
+          "kubectl apply -f manifest.yaml"
+        ],
+        "whispers": [
+          "kubernetes",
+          "k8s",
+          "get pods",
+          "kubectl apply",
+          "check deployment"
+        ]
+      },
+      "cost": 400
+    },
+    {
+      "id": 10,
+      "slug": "aws",
+      "label": "AWS CLI",
+      "description": "Amazon Web Services command line interface",
+      "category_id": 8,
+      "icon": "\u2601",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true,
+        "dangerous_subcommands": [
+          "terminate",
+          "delete",
+          "destroy"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 2,
+        "capability_requirements": [
+          {
+            "capability_id": 10,
+            "min_proficiency": 2
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "aws <service> <command> [options]",
+        "examples": [
+          "aws s3 ls",
+          "aws ec2 describe-instances",
+          "aws sts get-caller-identity"
+        ],
+        "whispers": [
+          "aws",
+          "s3 bucket",
+          "ec2 instance",
+          "cloud resource"
+        ]
+      },
+      "cost": 350
+    },
+    {
+      "id": 11,
+      "slug": "terraform",
+      "label": "Terraform",
+      "description": "Infrastructure as Code provisioning tool",
+      "category_id": 8,
+      "icon": "\ud83c\udfd7",
+      "is_active": true,
+      "risk": {
+        "level": "high",
+        "reversibility": "partially_reversible",
+        "scope": "distributed",
+        "requires_confirmation": true,
+        "dangerous_subcommands": [
+          "apply",
+          "destroy"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 5,
+            "min_proficiency": 2
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "terraform <command> [options]",
+        "examples": [
+          "terraform plan",
+          "terraform apply",
+          "terraform state list"
+        ],
+        "whispers": [
+          "infrastructure as code",
+          "provision",
+          "terraform plan",
+          "iac"
+        ]
+      },
+      "cost": 600
+    },
+    {
+      "id": 12,
+      "slug": "ansible",
+      "label": "Ansible",
+      "description": "Configuration management and automation",
+      "category_id": 8,
+      "icon": "\ud83d\udccb",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "distributed",
+        "requires_confirmation": true
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 5,
+            "min_proficiency": 2
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "ansible[-playbook] [options] [playbook.yml]",
+        "examples": [
+          "ansible all -m ping",
+          "ansible-playbook site.yml --check"
+        ],
+        "whispers": [
+          "configuration management",
+          "run playbook",
+          "ansible ping"
+        ]
+      },
+      "cost": 500
+    },
+    {
+      "id": 13,
+      "slug": "systemctl",
+      "label": "systemctl",
+      "description": "Systemd service manager",
+      "category_id": 3,
+      "icon": "\u2699",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true,
+        "dangerous_subcommands": [
+          "stop",
+          "disable",
+          "mask"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 2
+      },
+      "usage": {
+        "syntax": "systemctl <command> <unit>",
+        "examples": [
+          "systemctl status nginx",
+          "systemctl restart docker",
+          "systemctl list-units"
+        ],
+        "whispers": [
+          "service status",
+          "restart service",
+          "systemd",
+          "unit status"
+        ]
+      },
+      "cost": 150
+    },
+    {
+      "id": 14,
+      "slug": "journalctl",
+      "label": "journalctl",
+      "description": "Systemd journal log viewer",
+      "category_id": 3,
+      "icon": "\ud83d\udcdc",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "journalctl [options]",
+        "examples": [
+          "journalctl -u nginx -f",
+          "journalctl --since '1 hour ago'",
+          "journalctl -p err"
+        ],
+        "whispers": [
+          "system logs",
+          "service logs",
+          "journal",
+          "check logs"
+        ]
+      },
+      "cost": 25
+    },
+    {
+      "id": 15,
+      "slug": "grep",
+      "label": "grep",
+      "description": "Pattern matching and text search",
+      "category_id": 6,
+      "icon": "\ud83d\udd0d",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "grep [options] pattern [file...]",
+        "examples": [
+          "grep -r 'error' /var/log",
+          "grep -i 'pattern' file.txt",
+          "ps aux | grep nginx"
+        ],
+        "whispers": [
+          "search for",
+          "find pattern",
+          "grep for",
+          "filter lines"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 16,
+      "slug": "awk",
+      "label": "awk",
+      "description": "Pattern scanning and text processing",
+      "category_id": 6,
+      "icon": "\u2702",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "awk 'pattern {action}' [file...]",
+        "examples": [
+          "awk '{print $1}' file",
+          "awk -F: '{print $1}' /etc/passwd"
+        ],
+        "whispers": [
+          "extract column",
+          "text processing",
+          "parse fields",
+          "awk script"
+        ]
+      },
+      "cost": 25
+    },
+    {
+      "id": 17,
+      "slug": "sed",
+      "label": "sed",
+      "description": "Stream editor for text transformation",
+      "category_id": 6,
+      "icon": "\ud83d\udcdd",
+      "is_active": true,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "partially_reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "sed [options] 'command' [file...]",
+        "examples": [
+          "sed 's/old/new/g' file",
+          "sed -i.bak 's/foo/bar/' file"
+        ],
+        "whispers": [
+          "replace text",
+          "edit stream",
+          "sed substitution",
+          "find and replace"
+        ]
+      },
+      "cost": 50
+    },
+    {
+      "id": 18,
+      "slug": "rm",
+      "label": "rm",
+      "description": "Remove files and directories",
+      "category_id": 2,
+      "icon": "\ud83d\uddd1",
+      "is_active": true,
+      "risk": {
+        "level": "high",
+        "reversibility": "irreversible",
+        "scope": "local",
+        "requires_confirmation": true,
+        "dangerous_flags": [
+          "-rf",
+          "-fr",
+          "--recursive --force"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 2
+      },
+      "usage": {
+        "syntax": "rm [options] <file...>",
+        "examples": [
+          "rm file.txt",
+          "rm -r directory/",
+          "rm -i *.log"
+        ],
+        "whispers": [
+          "delete file",
+          "remove",
+          "clean up"
+        ]
+      },
+      "cost": 100
+    },
+    {
+      "id": 19,
+      "slug": "chmod",
+      "label": "chmod",
+      "description": "Change file permissions",
+      "category_id": 2,
+      "icon": "\ud83d\udd12",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "chmod [options] mode file...",
+        "examples": [
+          "chmod 755 script.sh",
+          "chmod +x file",
+          "chmod -R 644 dir/"
+        ],
+        "whispers": [
+          "set permissions",
+          "make executable",
+          "change mode"
+        ]
+      },
+      "cost": 75
+    },
+    {
+      "id": 20,
+      "slug": "ping",
+      "label": "ping",
+      "description": "Network connectivity test",
+      "category_id": 1,
+      "icon": "\ud83d\udce1",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "ping [options] host",
+        "examples": [
+          "ping -c 4 google.com",
+          "ping 192.168.1.1"
+        ],
+        "whispers": [
+          "check connectivity",
+          "ping host",
+          "network test"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 21,
+      "slug": "dig",
+      "label": "dig",
+      "description": "DNS lookup utility",
+      "category_id": 1,
+      "icon": "\ud83d\udcd6",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "dig [@server] name [type]",
+        "examples": [
+          "dig example.com",
+          "dig +short example.com A",
+          "dig @8.8.8.8 example.com MX"
+        ],
+        "whispers": [
+          "dns lookup",
+          "resolve domain",
+          "check dns",
+          "dig query"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 22,
+      "slug": "traceroute",
+      "label": "traceroute",
+      "description": "Network path tracing",
+      "category_id": 1,
+      "icon": "\ud83d\udee4",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "traceroute [options] host",
+        "examples": [
+          "traceroute google.com",
+          "traceroute -n 192.168.1.1"
+        ],
+        "whispers": [
+          "trace route",
+          "network path",
+          "hop analysis"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 23,
+      "slug": "netstat",
+      "label": "netstat",
+      "description": "Network statistics and connections",
+      "category_id": 1,
+      "icon": "\ud83d\udcca",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "netstat [options]",
+        "examples": [
+          "netstat -tulpn",
+          "netstat -an | grep LISTEN"
+        ],
+        "whispers": [
+          "listening ports",
+          "network connections",
+          "open sockets"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 24,
+      "slug": "ss",
+      "label": "ss",
+      "description": "Socket statistics (modern netstat)",
+      "category_id": 1,
+      "icon": "\ud83d\udd0c",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "ss [options]",
+        "examples": [
+          "ss -tulpn",
+          "ss -s",
+          "ss state established"
+        ],
+        "whispers": [
+          "socket stats",
+          "connection info",
+          "listening sockets"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 25,
+      "slug": "top",
+      "label": "top",
+      "description": "Real-time process monitor",
+      "category_id": 3,
+      "icon": "\ud83d\udcc8",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "top [options]",
+        "examples": [
+          "top",
+          "top -b -n 1",
+          "top -p PID"
+        ],
+        "whispers": [
+          "process monitor",
+          "cpu usage",
+          "memory usage",
+          "system load"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 26,
+      "slug": "htop",
+      "label": "htop",
+      "description": "Interactive process viewer",
+      "category_id": 3,
+      "icon": "\ud83d\udcca",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "htop [options]",
+        "examples": [
+          "htop",
+          "htop -u username"
+        ],
+        "whispers": [
+          "process viewer",
+          "interactive top",
+          "system monitor"
+        ]
+      },
+      "cost": 25
+    },
+    {
+      "id": 27,
+      "slug": "ps",
+      "label": "ps",
+      "description": "Process status listing",
+      "category_id": 3,
+      "icon": "\ud83d\udccb",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "ps [options]",
+        "examples": [
+          "ps aux",
+          "ps -ef",
+          "ps aux | grep nginx"
+        ],
+        "whispers": [
+          "list processes",
+          "process status",
+          "running processes"
+        ]
+      },
+      "cost": 0
+    },
+    {
+      "id": 28,
+      "slug": "lsof",
+      "label": "lsof",
+      "description": "List open files and sockets",
+      "category_id": 3,
+      "icon": "\ud83d\udcc2",
+      "is_active": true,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "lsof [options]",
+        "examples": [
+          "lsof -i :80",
+          "lsof -p PID",
+          "lsof +D /var/log"
+        ],
+        "whispers": [
+          "open files",
+          "file handles",
+          "port usage",
+          "who has file open"
+        ]
+      },
+      "cost": 50
+    },
+    {
+      "id": 29,
+      "slug": "strace",
+      "label": "strace",
+      "description": "System call tracer for debugging",
+      "category_id": 3,
+      "icon": "\ud83d\udd2c",
+      "is_active": true,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "requirements": {
+        "min_rank_id": 3
+      },
+      "usage": {
+        "syntax": "strace [options] command",
+        "examples": [
+          "strace -p PID",
+          "strace -f -e open command",
+          "strace -c command"
+        ],
+        "whispers": [
+          "trace syscalls",
+          "debug process",
+          "system trace"
+        ]
+      },
+      "cost": 200
+    },
+    {
+      "id": 30,
+      "slug": "psql",
+      "label": "psql",
+      "description": "PostgreSQL interactive terminal",
+      "category_id": 6,
+      "icon": "\ud83d\udc18",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "remote",
+        "requires_confirmation": true,
+        "dangerous_commands": [
+          "DROP",
+          "DELETE",
+          "TRUNCATE",
+          "ALTER"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 2,
+        "capability_requirements": [
+          {
+            "capability_id": 6,
+            "min_proficiency": 1
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "psql [options] [dbname]",
+        "examples": [
+          "psql -h host -U user dbname",
+          "psql -c 'SELECT 1'"
+        ],
+        "whispers": [
+          "postgres",
+          "postgresql",
+          "sql query",
+          "database"
+        ]
+      },
+      "cost": 200
+    },
+    {
+      "id": 31,
+      "slug": "mysql",
+      "label": "mysql",
+      "description": "MySQL/MariaDB command line client",
+      "category_id": 6,
+      "icon": "\ud83d\udc2c",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "remote",
+        "requires_confirmation": true,
+        "dangerous_commands": [
+          "DROP",
+          "DELETE",
+          "TRUNCATE",
+          "ALTER"
+        ]
+      },
+      "requirements": {
+        "min_rank_id": 2,
+        "capability_requirements": [
+          {
+            "capability_id": 6,
+            "min_proficiency": 1
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "mysql [options] [database]",
+        "examples": [
+          "mysql -h host -u user -p database",
+          "mysql -e 'SHOW DATABASES'"
+        ],
+        "whispers": [
+          "mysql",
+          "mariadb",
+          "sql query",
+          "database"
+        ]
+      },
+      "cost": 200
+    },
+    {
+      "id": 32,
+      "slug": "nmap",
+      "label": "nmap",
+      "description": "Network scanner and security auditing",
+      "category_id": 4,
+      "icon": "\ud83d\uddfa",
+      "is_active": true,
+      "risk": {
+        "level": "high",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "requirements": {
+        "min_rank_id": 4,
+        "capability_requirements": [
+          {
+            "capability_id": 7,
+            "min_proficiency": 2
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "nmap [options] target",
+        "examples": [
+          "nmap -sV host",
+          "nmap -p 1-1000 host",
+          "nmap -A host"
+        ],
+        "whispers": [
+          "port scan",
+          "network scan",
+          "security scan"
+        ]
+      },
+      "cost": 400
+    },
+    {
+      "id": 33,
+      "slug": "iptables",
+      "label": "iptables",
+      "description": "Linux firewall administration",
+      "category_id": 4,
+      "icon": "\ud83e\uddf1",
+      "is_active": true,
+      "risk": {
+        "level": "critical",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "requirements": {
+        "min_rank_id": 5,
+        "capability_requirements": [
+          {
+            "capability_id": 7,
+            "min_proficiency": 3
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "iptables [options] [chain] [rule]",
+        "examples": [
+          "iptables -L -n",
+          "iptables -A INPUT -p tcp --dport 22 -j ACCEPT"
+        ],
+        "whispers": [
+          "firewall rule",
+          "iptables",
+          "packet filter"
+        ]
+      },
+      "cost": 800
+    },
+    {
+      "id": 34,
+      "slug": "helm",
+      "label": "Helm",
+      "description": "Kubernetes package manager",
+      "category_id": 8,
+      "icon": "\u26f5",
+      "is_active": true,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "distributed",
+        "requires_confirmation": true
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 4,
+            "min_proficiency": 3
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "helm <command> [chart] [flags]",
+        "examples": [
+          "helm list",
+          "helm install release chart",
+          "helm upgrade release chart"
+        ],
+        "whispers": [
+          "helm chart",
+          "kubernetes deploy",
+          "helm install"
+        ]
+      },
+      "cost": 350
+    },
+    {
+      "id": 35,
+      "slug": "tcpdump",
+      "label": "tcpdump",
+      "description": "Network packet analyzer",
+      "category_id": 1,
+      "icon": "\ud83d\udd0d",
+      "is_active": true,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "requirements": {
+        "min_rank_id": 3,
+        "capability_requirements": [
+          {
+            "capability_id": 3,
+            "min_proficiency": 3
+          }
+        ]
+      },
+      "usage": {
+        "syntax": "tcpdump [options] [expression]",
+        "examples": [
+          "tcpdump -i eth0",
+          "tcpdump -n port 80",
+          "tcpdump -w capture.pcap"
+        ],
+        "whispers": [
+          "packet capture",
+          "network sniff",
+          "tcpdump",
+          "traffic analysis"
+        ]
+      },
+      "cost": 250
+    }
+  ]
+}

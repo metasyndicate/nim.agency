@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/mission_status.schema.json",
+  "title": "Mission Status",
+  "description": "Mission activity states (prov:Activity status vocabulary)",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400016,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "mission_status",
+      "type": "schema",
+      "path": "L2.agency.reference.mission_status"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "is_terminal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this status ends the mission lifecycle"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether mission is actively being worked"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    }
+  },
+  "required": ["id", "slug", "label", "is_terminal"]
+}

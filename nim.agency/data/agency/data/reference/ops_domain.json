@@ -1,0 +1,60 @@
+{
+  "$schema": "../schema/reference/ops_domain.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "facility",
+      "label": "Facility",
+      "description": "The 'where'. Datacenters, cages, racks, power, cooling. The physical realm.",
+      "layer": 1,
+      "abbrev": "FAC",
+      "icon": "🏭",
+      "color": "#8b4513",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "network",
+      "label": "Network",
+      "description": "The 'wire'. Packets, protocols, firewalls, load balancers. The connective tissue.",
+      "layer": 2,
+      "abbrev": "NET",
+      "icon": "🌐",
+      "color": "#1e90ff",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "platform",
+      "label": "Platform",
+      "description": "The 'metal'. Operating systems, hypervisors, containers, bare-metal shamanism.",
+      "layer": 3,
+      "abbrev": "PLT",
+      "icon": "🖥",
+      "color": "#ff8c00",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "application",
+      "label": "Application",
+      "description": "The 'code'. APIs, services, pipelines, yaml farming, dependency hell.",
+      "layer": 4,
+      "abbrev": "APP",
+      "icon": "📦",
+      "color": "#9370db",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "data",
+      "label": "Data",
+      "description": "The 'why'. The actual reason any of this exists. Bits with meaning.",
+      "layer": 0,
+      "abbrev": "DAT",
+      "icon": "💾",
+      "color": "#00ced1",
+      "sort_order": 5
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "$schema": "../schema/reference/capability.schema.json",
+  "$comment": "XP costs: 100/300/600/1000/1500 for levels 1-5. Total to max: 3500 XP",
+  "data": [
+    {
+      "id": 1,
+      "slug": "shell_scripting",
+      "label": "Shell Scripting",
+      "description": "Bash/POSIX shell command execution and script development",
+      "category": "execution",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic commands, pipes, redirects",
+        "2": "Loops, conditionals, simple scripts",
+        "3": "Functions, arrays, process substitution",
+        "4": "Signal handling, job control, advanced patterns",
+        "5": "Performance optimization, portable scripting"
+      },
+      "unlocks_tools": ["bash", "sh", "zsh"],
+      "icon": "🐚",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "python_scripting",
+      "label": "Python Scripting",
+      "description": "Python interpreter usage and script development",
+      "category": "execution",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic syntax, data types, simple scripts",
+        "2": "Functions, modules, file I/O",
+        "3": "OOP, exceptions, standard library",
+        "4": "Async, decorators, metaclasses",
+        "5": "Performance optimization, C extensions"
+      },
+      "unlocks_tools": ["python", "pip", "venv"],
+      "icon": "🐍",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "network_diagnostics",
+      "label": "Network Diagnostics",
+      "description": "Network troubleshooting, analysis, and monitoring",
+      "category": "analysis",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "ping, traceroute, basic connectivity",
+        "2": "dig, nslookup, DNS troubleshooting",
+        "3": "tcpdump, netstat, connection analysis",
+        "4": "Wireshark, packet analysis, protocol debugging",
+        "5": "BGP, OSPF, advanced routing diagnostics"
+      },
+      "unlocks_tools": ["ping", "traceroute", "dig", "nslookup", "netstat", "ss", "tcpdump", "curl", "wget"],
+      "icon": "🌐",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "container_orchestration",
+      "label": "Container Orchestration",
+      "description": "Docker, Kubernetes, and container runtime management",
+      "category": "platform",
+      "xp_costs": [150, 400, 800, 1200, 1800],
+      "proficiency_levels": {
+        "1": "docker run, basic container operations",
+        "2": "Dockerfile, docker-compose, image management",
+        "3": "kubectl basics, deployments, services",
+        "4": "Helm, operators, custom resources",
+        "5": "Cluster administration, networking, security"
+      },
+      "unlocks_tools": ["docker", "docker-compose", "kubectl", "helm", "podman"],
+      "icon": "🐳",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "configuration_management",
+      "label": "Configuration Management",
+      "description": "Infrastructure as code and configuration automation",
+      "category": "automation",
+      "xp_costs": [150, 400, 800, 1200, 1800],
+      "proficiency_levels": {
+        "1": "Basic YAML/JSON config files",
+        "2": "Ansible playbooks, simple automation",
+        "3": "Terraform basics, state management",
+        "4": "Complex modules, providers, CI/CD integration",
+        "5": "Custom providers, policy as code"
+      },
+      "unlocks_tools": ["ansible", "ansible-playbook", "terraform", "packer"],
+      "icon": "📋",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "database_administration",
+      "label": "Database Administration",
+      "description": "Database management, querying, and optimization",
+      "category": "data",
+      "xp_costs": [150, 400, 800, 1200, 1800],
+      "proficiency_levels": {
+        "1": "Basic SQL queries, CRUD operations",
+        "2": "Joins, indexes, query optimization",
+        "3": "Backup/restore, replication basics",
+        "4": "Performance tuning, explain plans",
+        "5": "High availability, disaster recovery"
+      },
+      "unlocks_tools": ["psql", "mysql", "sqlite3", "redis-cli", "mongo"],
+      "icon": "🗄",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "security_analysis",
+      "label": "Security Analysis",
+      "description": "Security assessment, hardening, and incident response",
+      "category": "security",
+      "xp_costs": [200, 500, 1000, 1500, 2000],
+      "proficiency_levels": {
+        "1": "Basic security hygiene, password policies",
+        "2": "Log analysis, basic threat detection",
+        "3": "Vulnerability scanning, hardening",
+        "4": "Penetration testing basics, incident response",
+        "5": "Forensics, advanced threat hunting"
+      },
+      "unlocks_tools": ["openssl", "nmap", "fail2ban", "auditctl"],
+      "icon": "🔐",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "observability",
+      "label": "Observability",
+      "description": "Monitoring, logging, and metrics collection",
+      "category": "analysis",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic log reading, grep/awk",
+        "2": "Structured logging, log aggregation",
+        "3": "Metrics collection, basic dashboards",
+        "4": "APM, distributed tracing",
+        "5": "SLO/SLI design, chaos engineering"
+      },
+      "unlocks_tools": ["journalctl", "dmesg", "tail", "less", "grep", "awk"],
+      "icon": "📊",
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "version_control",
+      "label": "Version Control",
+      "description": "Git operations and repository management",
+      "category": "development",
+      "xp_costs": [75, 200, 400, 700, 1000],
+      "proficiency_levels": {
+        "1": "clone, pull, push, basic workflow",
+        "2": "Branching, merging, conflict resolution",
+        "3": "Rebasing, cherry-picking, bisect",
+        "4": "Hooks, submodules, worktrees",
+        "5": "Repository administration, migration"
+      },
+      "unlocks_tools": ["git", "gh"],
+      "icon": "📦",
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "cloud_platforms",
+      "label": "Cloud Platforms",
+      "description": "AWS, GCP, Azure CLI operations and management",
+      "category": "platform",
+      "xp_costs": [200, 500, 1000, 1500, 2000],
+      "proficiency_levels": {
+        "1": "Console basics, CLI authentication",
+        "2": "EC2/Compute, S3/Storage basics",
+        "3": "Networking, IAM, security groups",
+        "4": "Lambda/Functions, managed services",
+        "5": "Architecture design, cost optimization"
+      },
+      "unlocks_tools": ["aws", "gcloud", "az"],
+      "icon": "☁",
+      "sort_order": 10
+    },
+    {
+      "id": 11,
+      "slug": "system_administration",
+      "label": "System Administration",
+      "description": "Linux/Unix system management and maintenance",
+      "category": "platform",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "File operations, permissions, basic commands",
+        "2": "User management, systemd basics",
+        "3": "Package management, service configuration",
+        "4": "Performance tuning, kernel parameters",
+        "5": "Custom kernels, advanced troubleshooting"
+      },
+      "unlocks_tools": ["systemctl", "journalctl", "apt", "yum", "dnf", "useradd", "chmod", "chown"],
+      "icon": "🖥",
+      "sort_order": 11
+    },
+    {
+      "id": 12,
+      "slug": "api_integration",
+      "label": "API Integration",
+      "description": "REST/GraphQL API interaction and integration",
+      "category": "development",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic GET/POST requests",
+        "2": "Authentication, headers, query params",
+        "3": "Pagination, rate limiting, error handling",
+        "4": "Webhooks, async patterns",
+        "5": "API design, SDK development"
+      },
+      "unlocks_tools": ["curl", "httpie", "jq", "yq"],
+      "icon": "🔗",
+      "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "documentation",
+      "label": "Documentation",
+      "description": "Technical writing, documentation, and knowledge management",
+      "category": "communication",
+      "xp_costs": [50, 150, 300, 500, 800],
+      "proficiency_levels": {
+        "1": "Basic markdown, README files",
+        "2": "Structured docs, diagrams",
+        "3": "API documentation, runbooks",
+        "4": "Architecture docs, decision records",
+        "5": "Documentation systems, automation"
+      },
+      "unlocks_tools": [],
+      "icon": "📝",
+      "sort_order": 13
+    },
+    {
+      "id": 14,
+      "slug": "troubleshooting",
+      "label": "Troubleshooting",
+      "description": "Systematic problem diagnosis and resolution",
+      "category": "analysis",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic error message interpretation",
+        "2": "Log correlation, timeline analysis",
+        "3": "Root cause analysis, 5 whys",
+        "4": "Performance profiling, bottleneck identification",
+        "5": "Complex distributed system debugging"
+      },
+      "unlocks_tools": ["strace", "ltrace", "lsof", "pstree", "top", "htop"],
+      "icon": "🔍",
+      "sort_order": 14
+    },
+    {
+      "id": 15,
+      "slug": "data_transformation",
+      "label": "Data Transformation",
+      "description": "Data parsing, transformation, and ETL operations",
+      "category": "data",
+      "xp_costs": [100, 300, 600, 1000, 1500],
+      "proficiency_levels": {
+        "1": "Basic text processing, cut/sort/uniq",
+        "2": "JSON/YAML manipulation, jq basics",
+        "3": "Complex transformations, format conversion",
+        "4": "Streaming processing, large datasets",
+        "5": "Pipeline optimization, custom parsers"
+      },
+      "unlocks_tools": ["jq", "yq", "sed", "awk", "cut", "sort", "uniq", "xargs"],
+      "icon": "🔄",
+      "sort_order": 15
+    }
+  ]
+}

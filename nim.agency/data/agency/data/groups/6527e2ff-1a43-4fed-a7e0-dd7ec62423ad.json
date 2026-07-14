@@ -1,0 +1,25 @@
+{
+  "id": "6527e2ff-1a43-4fed-a7e0-dd7ec62423ad",
+  "slug": "ground_crue.6527",
+  "name": "Jimmy n' Em",
+  "type": "Ground Cr\u00fce",
+  "type_slug": "ground_crue",
+  "description": "Infrastructure provisioning, maintenance, and platform reliability",
+  "parent_id": null,
+  "specialization": {
+    "domains": [],
+    "tools": [],
+    "mission_types": []
+  },
+  "capacity": {
+    "max_members": 5,
+    "current_members": 5
+  },
+  "icon": "\ud83c\udfd7",
+  "is_active": true,
+  "audit": {
+    "created_at": "2026-04-08T19:38:48.497042+00:00",
+    "updated_at": "2026-04-08T19:42:26.985655+00:00",
+    "retired_at": null
+  }
+}

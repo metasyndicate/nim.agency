@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/specialty.schema.json",
+  "title": "Agent Specialty",
+  "description": "Specific role flavor within operational domains. The 'Hall of Shame' titles.",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400020,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "specialty",
+      "type": "schema",
+      "path": "L2.agency.reference.specialty"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "ops_domain_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Reference to the operational domain this specialty belongs to"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["security", "network", "platform", "devops", "facility", "data"],
+      "description": "Broad category for filtering"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label", "ops_domain_id", "category"]
+}

@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/config.schema.json",
+  "title": "Agency Configuration",
+  "description": "Operator-editable display/brand config - zero hardcoded UI strings",
+  "@type": "schema:Organization",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400105,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 1,
+      "label": "system",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "config",
+      "type": "config",
+      "path": "L1.agency.core.config"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "const": 1,
+      "description": "Single-row configuration"
+    },
+    "agency": {
+      "type": "object",
+      "description": "Agency branding",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "default": "Biomimetic Agency",
+          "description": "Full agency name"
+        },
+        "short": {
+          "type": "string",
+          "maxLength": 32,
+          "default": "Agency",
+          "description": "Short name for headers"
+        },
+        "tagline": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Agency tagline/motto"
+        },
+        "logo_path": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Path to logo asset"
+        }
+      },
+      "required": ["name", "short"]
+    },
+    "cli": {
+      "type": "object",
+      "description": "CLI interface settings",
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "maxLength": 32,
+          "default": "agent",
+          "description": "Command prefix (e.g., 'agent list')"
+        },
+        "prompt": {
+          "type": "string",
+          "maxLength": 32,
+          "default": ">",
+          "description": "Interactive prompt character"
+        }
+      }
+    },
+    "wui": {
+      "type": "object",
+      "description": "Web UI settings",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": ["dark-rpg", "light-rpg", "terminal", "minimal", "wasteland"],
+          "default": "dark-rpg"
+        },
+        "accent_color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#00ff88"
+        }
+      }
+    },
+    "tui": {
+      "type": "object",
+      "description": "TUI/curses settings",
+      "properties": {
+        "color_scheme": {
+          "type": "string",
+          "enum": ["amber", "green", "blue", "white", "matrix"],
+          "default": "green"
+        },
+        "border_style": {
+          "type": "string",
+          "enum": ["single", "double", "rounded", "ascii", "none"],
+          "default": "single"
+        },
+        "use_unicode": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default values for new agents",
+      "properties": {
+        "status_id": {
+          "type": "integer",
+          "default": 1
+        },
+        "rank_id": {
+          "type": "integer",
+          "default": 1
+        },
+        "health": {
+          "type": "integer",
+          "default": 100
+        },
+        "skill_points": {
+          "type": "integer",
+          "default": 100
+        },
+        "starting_gold": {
+          "type": "integer",
+          "default": 50
+        }
+      }
+    },
+    "organization": {
+      "type": "object",
+      "description": "Organizational context for titling/logging",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Organization name"
+        }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "description": "Operational department",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Unit name"
+        }
+      }
+    },
+    "substation": {
+      "type": "object",
+      "description": "Internal deployment codename",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Substation name"
+        }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "description": "Operator overrides (defaults derived from system/environment)",
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Override display name (default: system username)"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "operator", "viewer"],
+          "default": "operator",
+          "description": "Operator role"
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "description": "Customizable UI labels",
+      "properties": {
+        "agent": { "type": "string", "default": "Agent" },
+        "agents": { "type": "string", "default": "Agents" },
+        "mission": { "type": "string", "default": "Mission" },
+        "missions": { "type": "string", "default": "Missions" },
+        "gold": { "type": "string", "default": "Gold" },
+        "xp": { "type": "string", "default": "XP" },
+        "health": { "type": "string", "default": "Health" },
+        "rank": { "type": "string", "default": "Rank" },
+        "class": { "type": "string", "default": "Class" }
+      }
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "agency"]
+}

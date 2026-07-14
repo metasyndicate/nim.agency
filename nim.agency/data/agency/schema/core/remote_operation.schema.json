@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/remote_operation.schema.json",
+  "title": "Remote Operation",
+  "description": "Audit log entry for remote command execution",
+  "@type": ["prov:Activity"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400112,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "remote_operation",
+      "type": "schema",
+      "path": "L3.agency.core.remote_operation"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Unique operation identifier"
+    },
+    "substation_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Target substation"
+    },
+    "hostname": {
+      "type": "string",
+      "description": "Remote hostname (denormalized for audit)"
+    },
+    "command": {
+      "type": "string",
+      "maxLength": 4096,
+      "description": "Command that was executed"
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["read", "write", "deploy", "unknown"],
+      "description": "Classified operation intent"
+    },
+    "classification": {
+      "type": "object",
+      "description": "Command safety classification details",
+      "properties": {
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dangerous_patterns": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "reasons": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "operator": {
+      "type": "string",
+      "description": "Operator who requested the operation"
+    },
+    "confirmation": {
+      "type": "object",
+      "description": "Confirmation details if required",
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "confirmed": {
+          "type": "boolean"
+        },
+        "confirmed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "confirmed_by": {
+          "type": "string"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution details and results",
+      "properties": {
+        "requested_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "started_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "completed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "duration_ms": {
+          "type": "number",
+          "description": "Execution time in milliseconds"
+        },
+        "exit_code": {
+          "type": "integer",
+          "description": "Command exit code"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "timed_out": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Command output (may be truncated)",
+      "properties": {
+        "stdout": {
+          "type": "string",
+          "maxLength": 65536,
+          "description": "Standard output (truncated if > 64KB)"
+        },
+        "stderr": {
+          "type": "string",
+          "maxLength": 65536,
+          "description": "Standard error (truncated if > 64KB)"
+        },
+        "truncated": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if operation failed"
+    },
+    "permission_denied": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if operation was blocked by permissions"
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "hostname", "command", "intent", "operator", "execution", "audit"]
+}

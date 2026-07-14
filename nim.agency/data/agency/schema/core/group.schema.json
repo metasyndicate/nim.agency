@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/group.schema.json",
+  "title": "Agent Group",
+  "description": "Fleet/Team/Lab/Syndicate - organizational groupings of agents",
+  "@type": ["foaf:Group", "prov:Organization"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400103,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "group",
+      "type": "schema",
+      "path": "L3.agency.core.group"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "type": {
+      "type": "string",
+      "enum": ["fleet", "team", "lab", "syndicate", "platform"],
+      "description": "Group classification"
+    },
+    "description": {
+      "type": "string"
+    },
+    "parent_id": {
+      "oneOf": [
+        { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+        { "type": "null" }
+      ],
+      "description": "Parent group for hierarchy"
+    },
+    "specialization": {
+      "type": "object",
+      "description": "Group focus areas",
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Primary skill domain IDs"
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Specialized tool IDs"
+        },
+        "mission_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "properties": {
+        "max_members": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "current_members": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "slug", "name", "type"]
+}

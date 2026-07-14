@@ -1,0 +1,77 @@
+{
+  "$schema": "../schema/reference/tool_category.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "network",
+      "label": "Network",
+      "description": "Network analysis and communication tools",
+      "icon": "🌐",
+      "risk_level": "moderate",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "filesystem",
+      "label": "Filesystem",
+      "description": "File and directory manipulation tools",
+      "icon": "📁",
+      "risk_level": "moderate",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "process",
+      "label": "Process",
+      "description": "Process and system management tools",
+      "icon": "⚙",
+      "risk_level": "elevated",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "security",
+      "label": "Security",
+      "description": "Security and cryptography tools",
+      "icon": "🔐",
+      "risk_level": "high",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "development",
+      "label": "Development",
+      "description": "Software development and build tools",
+      "icon": "🔨",
+      "risk_level": "safe",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "data",
+      "label": "Data",
+      "description": "Data processing and transformation tools",
+      "icon": "📊",
+      "risk_level": "safe",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "communication",
+      "label": "Communication",
+      "description": "Communication and messaging tools",
+      "icon": "📡",
+      "risk_level": "moderate",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "cloud",
+      "label": "Cloud",
+      "description": "Cloud platform and infrastructure tools",
+      "icon": "☁",
+      "risk_level": "elevated",
+      "sort_order": 8
+    }
+  ]
+}

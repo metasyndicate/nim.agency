@@ -1,0 +1,335 @@
+{
+  "$schema": "../schema/reference/focus.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "datacenter",
+      "label": "Datacenter",
+      "description": "The big room with the loud fans and blinking lights.",
+      "ops_domain_id": 1,
+      "abbrev": "DC",
+      "icon": "🏢",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "colo",
+      "label": "Colo",
+      "description": "Someone else's datacenter. Your problem anyway.",
+      "ops_domain_id": 1,
+      "abbrev": "COL",
+      "icon": "🔐",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "power",
+      "label": "Power",
+      "description": "PDUs, UPS, generators. The juice that keeps the lights on.",
+      "ops_domain_id": 1,
+      "abbrev": "PWR",
+      "icon": "⚡",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "cooling",
+      "label": "Cooling",
+      "description": "CRAC units, hot/cold aisles. Fighting thermodynamics daily.",
+      "ops_domain_id": 1,
+      "abbrev": "CLG",
+      "icon": "❄",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "cabling",
+      "label": "Cabling",
+      "description": "The spaghetti monster lives here.",
+      "ops_domain_id": 1,
+      "abbrev": "CBL",
+      "icon": "🔌",
+      "sort_order": 5
+    },
+    {
+      "id": 10,
+      "slug": "core",
+      "label": "Core",
+      "description": "Backbone routers and switches. The spine.",
+      "ops_domain_id": 2,
+      "abbrev": "COR",
+      "icon": "🦴",
+      "sort_order": 10
+    },
+    {
+      "id": 11,
+      "slug": "edge",
+      "label": "Edge",
+      "description": "Where your network meets the chaos of the outside world.",
+      "ops_domain_id": 2,
+      "abbrev": "EDG",
+      "icon": "🌊",
+      "sort_order": 11
+    },
+    {
+      "id": 12,
+      "slug": "firewall",
+      "label": "Firewall",
+      "description": "The wall. Rules upon rules. 'Deny all' energy.",
+      "ops_domain_id": 2,
+      "abbrev": "FW",
+      "icon": "🧱",
+      "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "loadbalancer",
+      "label": "Load Balancer",
+      "description": "Traffic cop at the intersection of scale and failure.",
+      "ops_domain_id": 2,
+      "abbrev": "LB",
+      "icon": "⚖",
+      "sort_order": 13
+    },
+    {
+      "id": 14,
+      "slug": "wireless",
+      "label": "Wireless",
+      "description": "Magic invisible packets. 'Have you tried moving closer to the AP?'",
+      "ops_domain_id": 2,
+      "abbrev": "WLS",
+      "icon": "📶",
+      "sort_order": 14
+    },
+    {
+      "id": 15,
+      "slug": "vpn",
+      "label": "VPN",
+      "description": "Tunnels within tunnels. Split-brain debugging.",
+      "ops_domain_id": 2,
+      "abbrev": "VPN",
+      "icon": "🚇",
+      "sort_order": 15
+    },
+    {
+      "id": 16,
+      "slug": "dns",
+      "label": "DNS",
+      "description": "It's always DNS. Always.",
+      "ops_domain_id": 2,
+      "abbrev": "DNS",
+      "icon": "📖",
+      "sort_order": 16
+    },
+    {
+      "id": 20,
+      "slug": "server",
+      "label": "Server",
+      "description": "Bare metal. The real deal. No hypervisor between you and the silicon.",
+      "ops_domain_id": 3,
+      "abbrev": "SRV",
+      "icon": "🖥",
+      "sort_order": 20
+    },
+    {
+      "id": 21,
+      "slug": "vm",
+      "label": "VM",
+      "description": "Virtual machines. Servers pretending to be servers.",
+      "ops_domain_id": 3,
+      "abbrev": "VM",
+      "icon": "📦",
+      "sort_order": 21
+    },
+    {
+      "id": 22,
+      "slug": "container",
+      "label": "Container",
+      "description": "Processes pretending to be VMs pretending to be servers.",
+      "ops_domain_id": 3,
+      "abbrev": "CTR",
+      "icon": "🐳",
+      "sort_order": 22
+    },
+    {
+      "id": 23,
+      "slug": "storage",
+      "label": "Storage",
+      "description": "SAN, NAS, object stores. Where bytes go to rest.",
+      "ops_domain_id": 3,
+      "abbrev": "STR",
+      "icon": "💿",
+      "sort_order": 23
+    },
+    {
+      "id": 24,
+      "slug": "cloud",
+      "label": "Cloud",
+      "description": "Someone else's computer. Your credit card.",
+      "ops_domain_id": 3,
+      "abbrev": "CLD",
+      "icon": "☁",
+      "sort_order": 24
+    },
+    {
+      "id": 25,
+      "slug": "kubernetes",
+      "label": "Kubernetes",
+      "description": "Container orchestration. YAML all the way down.",
+      "ops_domain_id": 3,
+      "abbrev": "K8S",
+      "icon": "☸",
+      "sort_order": 25
+    },
+    {
+      "id": 26,
+      "slug": "os",
+      "label": "OS",
+      "description": "Operating systems. Kernel panics and init scripts.",
+      "ops_domain_id": 3,
+      "abbrev": "OS",
+      "icon": "🐧",
+      "sort_order": 26
+    },
+    {
+      "id": 30,
+      "slug": "service",
+      "label": "Service",
+      "description": "Daemons, systemd units, things that run forever (hopefully).",
+      "ops_domain_id": 4,
+      "abbrev": "SVC",
+      "icon": "⚙",
+      "sort_order": 30
+    },
+    {
+      "id": 31,
+      "slug": "api",
+      "label": "API",
+      "description": "REST, GraphQL, gRPC. How things talk to things.",
+      "ops_domain_id": 4,
+      "abbrev": "API",
+      "icon": "🔗",
+      "sort_order": 31
+    },
+    {
+      "id": 32,
+      "slug": "middleware",
+      "label": "Middleware",
+      "description": "Message queues, ESBs, the glue between systems.",
+      "ops_domain_id": 4,
+      "abbrev": "MID",
+      "icon": "🔀",
+      "sort_order": 32
+    },
+    {
+      "id": 33,
+      "slug": "pipeline",
+      "label": "Pipeline",
+      "description": "CI/CD. Jenkins, GitLab, GitHub Actions. Build-test-deploy-pray.",
+      "ops_domain_id": 4,
+      "abbrev": "PIP",
+      "icon": "🚀",
+      "sort_order": 33
+    },
+    {
+      "id": 34,
+      "slug": "interface",
+      "label": "Interface",
+      "description": "UIs, CLIs, TUIs. The human-facing bits.",
+      "ops_domain_id": 4,
+      "abbrev": "INT",
+      "icon": "🖼",
+      "sort_order": 34
+    },
+    {
+      "id": 35,
+      "slug": "protocol",
+      "label": "Protocol",
+      "description": "HTTP, SMTP, SSH, custom binary nightmares.",
+      "ops_domain_id": 4,
+      "abbrev": "PRT",
+      "icon": "📜",
+      "sort_order": 35
+    },
+    {
+      "id": 36,
+      "slug": "config",
+      "label": "Config",
+      "description": "Ansible, Puppet, Chef, Terraform. Infrastructure as YAML/HCL/JSON/tears.",
+      "ops_domain_id": 4,
+      "abbrev": "CFG",
+      "icon": "📋",
+      "sort_order": 36
+    },
+    {
+      "id": 40,
+      "slug": "database",
+      "label": "Database",
+      "description": "SQL, NoSQL, NewSQL. Where state lives and queries go to die.",
+      "ops_domain_id": 5,
+      "abbrev": "DB",
+      "icon": "🗄",
+      "sort_order": 40
+    },
+    {
+      "id": 41,
+      "slug": "warehouse",
+      "label": "Warehouse",
+      "description": "Data warehouses. Snowflake, Redshift, BigQuery. Analytics at scale.",
+      "ops_domain_id": 5,
+      "abbrev": "DW",
+      "icon": "🏛",
+      "sort_order": 41
+    },
+    {
+      "id": 42,
+      "slug": "lake",
+      "label": "Lake",
+      "description": "Data lakes. Dump everything, figure it out later. (They never do.)",
+      "ops_domain_id": 5,
+      "abbrev": "DL",
+      "icon": "🌊",
+      "sort_order": 42
+    },
+    {
+      "id": 43,
+      "slug": "etl",
+      "label": "ETL",
+      "description": "Extract, Transform, Load. Data plumbing.",
+      "ops_domain_id": 5,
+      "abbrev": "ETL",
+      "icon": "🔧",
+      "sort_order": 43
+    },
+    {
+      "id": 44,
+      "slug": "analytics",
+      "label": "Analytics",
+      "description": "BI tools, dashboards, reports nobody reads.",
+      "ops_domain_id": 5,
+      "abbrev": "ANL",
+      "icon": "📊",
+      "sort_order": 44
+    },
+    {
+      "id": 45,
+      "slug": "governance",
+      "label": "Governance",
+      "description": "Data governance. Policies, lineage, who touched what when.",
+      "ops_domain_id": 5,
+      "abbrev": "GOV",
+      "icon": "📏",
+      "sort_order": 45
+    },
+    {
+      "id": 46,
+      "slug": "ml",
+      "label": "ML",
+      "description": "Machine learning. Training models, deploying models, explaining why the model is wrong.",
+      "ops_domain_id": 5,
+      "abbrev": "ML",
+      "icon": "🤖",
+      "sort_order": 46
+    }
+  ]
+}

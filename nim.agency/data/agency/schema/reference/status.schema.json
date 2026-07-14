@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/status.schema.json",
+  "title": "Agent Status",
+  "description": "Agent lifecycle states (FIPA-aligned)",
+  "@type": ["skos:ConceptScheme", "fipa:AgentState"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400010,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "status",
+      "type": "schema",
+      "path": "L2.agency.reference.status"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether agents in this status are considered active"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "Display color (hex)"
+    }
+  },
+  "required": ["id", "slug", "label", "is_active"]
+}

@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/substation.schema.json",
+  "title": "Substation",
+  "description": "Remote deployment endpoint for agent operations - SSH-accessible host with permissions and deployment tracking",
+  "@type": ["schema:Place", "fipa:AgentPlatform"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400110,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "substation",
+      "type": "schema",
+      "path": "L3.agency.core.substation"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Unique substation identifier"
+    },
+    "identity": {
+      "type": "object",
+      "description": "Substation identity and naming",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Human-readable display name"
+        },
+        "codename": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z][a-z0-9._-]*$",
+          "description": "Unique codename for referencing"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Purpose or role of this substation"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["development", "staging", "production", "testing", "research"],
+          "default": "development",
+          "description": "Deployment environment classification"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 32},
+          "description": "Categorical tags for organization"
+        }
+      },
+      "required": ["name", "codename"]
+    },
+    "connection": {
+      "type": "object",
+      "description": "SSH connection parameters",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Hostname or IP address"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 22,
+          "description": "SSH port"
+        },
+        "username": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "SSH username"
+        },
+        "credential_id": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+          "description": "Reference to credential in vault"
+        },
+        "jump_host": {
+          "type": "object",
+          "description": "Bastion/jump host configuration",
+          "properties": {
+            "hostname": {"type": "string"},
+            "port": {"type": "integer", "default": 22},
+            "username": {"type": "string"},
+            "credential_id": {"$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"}
+          }
+        },
+        "timeout": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30,
+          "description": "Connection timeout in seconds"
+        }
+      },
+      "required": ["hostname", "username"]
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Operation permission configuration",
+      "properties": {
+        "read_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow read-only operations"
+        },
+        "write_enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow write/modification operations"
+        },
+        "deploy_enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow agent deployment"
+        },
+        "requires_confirmation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation for write operations"
+        },
+        "allowed_commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Whitelist of allowed commands (empty = all allowed)"
+        },
+        "blocked_commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Blacklist of blocked commands"
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "description": "Current connection/health status",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["unknown", "online", "offline", "unreachable", "error"],
+          "default": "unknown"
+        },
+        "last_check": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "last_connected": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "host_key_fingerprint": {
+          "type": "string",
+          "description": "SSH host key fingerprint (TOFU)"
+        },
+        "error_message": {
+          "type": "string",
+          "description": "Last error message if any"
+        }
+      }
+    },
+    "deployments": {
+      "type": "array",
+      "description": "Agents deployed to this substation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+          },
+          "deployed_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          },
+          "deployed_by": {
+            "type": "string",
+            "description": "Operator who deployed"
+          },
+          "remote_path": {
+            "type": "string",
+            "description": "Path on remote host"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "deployed", "running", "stopped", "failed", "removed"],
+            "default": "pending"
+          },
+          "last_health_check": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          }
+        },
+        "required": ["agent_id", "deployed_at"]
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Remote host metadata collected during connection",
+      "properties": {
+        "os_type": {
+          "type": "string",
+          "description": "Operating system type"
+        },
+        "os_version": {
+          "type": "string"
+        },
+        "hostname_reported": {
+          "type": "string",
+          "description": "Hostname as reported by remote"
+        },
+        "cpu_count": {
+          "type": "integer"
+        },
+        "memory_mb": {
+          "type": "integer"
+        },
+        "python_version": {
+          "type": "string"
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "description": "Storage scope for this substation data",
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": ["operator", "global"],
+          "default": "operator",
+          "description": "Where substation config is stored"
+        }
+      }
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "identity", "connection", "permissions", "audit"]
+}

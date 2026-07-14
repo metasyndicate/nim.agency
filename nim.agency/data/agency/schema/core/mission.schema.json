@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/mission.schema.json",
+  "title": "Mission",
+  "description": "Dispatchable unit of work (prov:Activity)",
+  "@type": "prov:Activity",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400102,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "mission",
+      "type": "schema",
+      "path": "L3.agency.core.mission"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "description": {
+      "type": "string"
+    },
+    "status_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Reference to mission_status lookup"
+    },
+    "priority": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/priority"
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "min_rank_id": {
+          "type": "integer",
+          "description": "Minimum rank required"
+        },
+        "min_class_id": {
+          "type": "integer"
+        },
+        "required_skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain_id": { "type": "integer" },
+              "min_points": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "properties": {
+        "xp": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "gold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "description": "Assigned agents (team composition)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["lead", "support", "subagent", "observer"],
+            "default": "support"
+          },
+          "quality_score": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/rating",
+            "description": "Performance score (set on completion)"
+          },
+          "joined_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          }
+        },
+        "required": ["agent_id"]
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "dispatched_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "started_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "completed_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        }
+      },
+      "required": ["created_at"]
+    },
+    "created_by": {
+      "type": "string",
+      "maxLength": 128
+    }
+  },
+  "required": ["id", "title", "status_id", "priority", "timeline"]
+}

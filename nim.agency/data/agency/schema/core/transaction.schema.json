@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/transaction.schema.json",
+  "title": "Gold Transaction",
+  "description": "Immutable gold ledger - agent economy audit trail",
+  "@type": "prov:Activity",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400104,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "transaction",
+      "type": "schema",
+      "path": "L3.agency.core.transaction"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "from_agent_id": {
+      "oneOf": [
+        { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+        { "type": "null" }
+      ],
+      "description": "Source agent (null = system award)"
+    },
+    "to_agent_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Recipient agent"
+    },
+    "amount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "mission_reward",
+        "peer_tip",
+        "delegation",
+        "achievement",
+        "bonus",
+        "penalty",
+        "transfer"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "description": "Reference to source entity",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["mission", "peer_review", "achievement", "manual"]
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+    }
+  },
+  "required": ["id", "to_agent_id", "amount", "type", "created_at"]
+}

@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/reference/rank.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "grunt",
+      "label": "Grunt",
+      "description": "Carries the boxes. Racks the servers. Knows where the bodies are buried in the raised floor.",
+      "xp_threshold": 0,
+      "tier": 1,
+      "title_prefix": "",
+      "icon": "⛏",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "tinkerer",
+      "label": "Tinkerer",
+      "description": "Breaks things to understand them. 'It worked on my machine.'",
+      "xp_threshold": 100,
+      "tier": 2,
+      "title_prefix": "",
+      "icon": "🔧",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "operator",
+      "label": "Operator",
+      "description": "Actually runs the thing. Pager duty survivor. Has the scars to prove it.",
+      "xp_threshold": 250,
+      "tier": 2,
+      "title_prefix": "",
+      "icon": "⚙",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "ranger",
+      "label": "Ranger",
+      "description": "Roams between systems. Fixes your mess, judges you silently.",
+      "xp_threshold": 750,
+      "tier": 3,
+      "title_prefix": "",
+      "icon": "🌲",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "synthesizer",
+      "label": "Synthesizer",
+      "description": "Connects disparate garbage into something that somehow works. Duct tape virtuoso.",
+      "xp_threshold": 2000,
+      "tier": 4,
+      "title_prefix": "",
+      "icon": "⚗",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "theorist",
+      "label": "Theorist",
+      "description": "Draws diagrams. Attends meetings about meetings. Has opinions about architecture.",
+      "xp_threshold": 2000,
+      "tier": 4,
+      "title_prefix": "",
+      "icon": "📐",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "neckbeard",
+      "label": "Neckbeard",
+      "description": "Ancient wisdom. Mass of dotfiles. Last person who understands the legacy system.",
+      "xp_threshold": 5000,
+      "tier": 5,
+      "title_prefix": "",
+      "icon": "🧙",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "berserker",
+      "label": "Berserker",
+      "description": "rm -rf'd prod once. Would do it again. Chaos path unlocked.",
+      "xp_threshold": 10000,
+      "tier": 6,
+      "title_prefix": "",
+      "icon": "💀",
+      "sort_order": 8
+    }
+  ]
+}

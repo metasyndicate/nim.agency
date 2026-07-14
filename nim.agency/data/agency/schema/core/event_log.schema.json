@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/event_log.schema.json",
+  "title": "Agent Event Log",
+  "description": "Time-series audit events (health, xp, activity)",
+  "@type": "prov:Activity",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400106,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "event_log",
+      "type": "schema",
+      "path": "L3.agency.core.event_log"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "agent_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "health_change",
+        "xp_change",
+        "gold_change",
+        "rank_change",
+        "status_change",
+        "skill_change",
+        "tool_assigned",
+        "tool_removed",
+        "achievement_earned",
+        "mission_joined",
+        "mission_completed",
+        "peer_review_given",
+        "peer_review_received"
+      ]
+    },
+    "delta": {
+      "type": "integer",
+      "description": "Signed change value (positive or negative)"
+    },
+    "value_before": {
+      "type": "integer",
+      "description": "Value before change"
+    },
+    "value_after": {
+      "type": "integer",
+      "description": "Value after change"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Human-readable reason for change"
+    },
+    "reference": {
+      "type": "object",
+      "description": "Reference to triggering entity",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["mission", "peer_review", "achievement", "system", "manual"]
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional event-specific data",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+    }
+  },
+  "required": ["id", "agent_id", "event_type", "created_at"]
+}

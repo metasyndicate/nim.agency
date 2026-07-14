@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/index.json",
+  "title": "NIM Agency Schema Index",
+  "description": "Registry of all schema definitions for the biomimetic agent system",
+  "@type": "dcat:Catalog",
+  "$nim.meta": {
+    "nim.id": 400001,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-13T00:00:00Z",
+    "version": "1.1.0",
+    "bagman_protocol": "1.0.0",
+    "layer": {
+      "id": 0,
+      "label": "meta",
+      "component": "agency",
+      "object": "index",
+      "type": "index",
+      "path": "L0.agency.index"
+    }
+  },
+  "schemas": {
+    "meta": {
+      "metaschema": {
+        "path": "meta/agency.metaschema.json",
+        "description": "Base definitions and common patterns",
+        "nim_id": 400000
+      }
+    },
+    "reference": {
+      "status": {
+        "path": "reference/status.schema.json",
+        "description": "Agent lifecycle states (FIPA-aligned)",
+        "nim_id": 400010,
+        "data_path": "../data/reference/status.json"
+      },
+      "rank": {
+        "path": "reference/rank.schema.json",
+        "description": "Rank hierarchy with XP-gated progression",
+        "nim_id": 400011,
+        "data_path": "../data/reference/rank.json"
+      },
+      "class": {
+        "path": "reference/class.schema.json",
+        "description": "Agent classification tier",
+        "nim_id": 400012,
+        "data_path": "../data/reference/class.json"
+      },
+      "skill_domain": {
+        "path": "reference/skill_domain.schema.json",
+        "description": "Routable capability dimensions",
+        "nim_id": 400013,
+        "data_path": "../data/reference/skill_domain.json"
+      },
+      "tool_category": {
+        "path": "reference/tool_category.schema.json",
+        "description": "Tool classification",
+        "nim_id": 400014,
+        "data_path": "../data/reference/tool_category.json"
+      },
+      "achievement": {
+        "path": "reference/achievement.schema.json",
+        "description": "Achievement/badge catalog",
+        "nim_id": 400015,
+        "data_path": "../data/reference/achievement.json"
+      },
+      "case_status": {
+        "path": "reference/case_status.schema.json",
+        "description": "BAGMAN: CASE lifecycle states - from epistle to closure",
+        "nim_id": 400016,
+        "data_path": "../data/reference/case_status.json",
+        "bagman": {
+          "term": "CASE",
+          "expansion": "Catalytic Epistle",
+          "replaces": "assignment_status"
+        }
+      },
+      "lexicon": {
+        "path": "reference/lexicon.schema.json",
+        "description": "BAGMAN Protocol vocabulary - NIM Agency vernacular",
+        "nim_id": 400030,
+        "data_path": "../data/reference/lexicon.json"
+      },
+      "qualifier": {
+        "path": "reference/qualifier.schema.json",
+        "description": "Seniority/vibe modifiers (Rookie, Senior, Burnout, etc.)",
+        "nim_id": 400018,
+        "data_path": "../data/reference/qualifier.json"
+      },
+      "ops_domain": {
+        "path": "reference/ops_domain.schema.json",
+        "description": "Operational domain hierarchy (Facility → Network → Platform → Application → Data)",
+        "nim_id": 400019,
+        "data_path": "../data/reference/ops_domain.json"
+      },
+      "focus": {
+        "path": "reference/focus.schema.json",
+        "description": "Subspecialties within operational domains (Firewall, Kubernetes, Database, etc.)",
+        "nim_id": 400021,
+        "data_path": "../data/reference/focus.json"
+      },
+      "specialty": {
+        "path": "reference/specialty.schema.json",
+        "description": "Role specialties and Hall of Shame titles",
+        "nim_id": 400020,
+        "data_path": "../data/reference/specialty.json"
+      },
+      "capability": {
+        "path": "reference/capability.schema.json",
+        "description": "Operational capabilities mapping to agentic actions",
+        "nim_id": 400022,
+        "data_path": "../data/reference/capability.json"
+      },
+      "archetype": {
+        "path": "reference/archetype.schema.json",
+        "description": "Team specialist profiles (Linux Admin, DevOps, SRE, etc.)",
+        "nim_id": 400023,
+        "data_path": "../data/reference/archetype.json"
+      },
+      "instruction": {
+        "path": "reference/instruction.schema.json",
+        "description": "System prompt templates defining BEE behavior and DOCTRINE constraints",
+        "nim_id": 400024,
+        "data_path": "../data/reference/instruction.json"
+      },
+      "agent_relation": {
+        "path": "reference/agent_relation.schema.json",
+        "description": "BAGMAN: BEE-to-BEE relationship types within the HIVE",
+        "nim_id": 400026,
+        "data_path": "../data/reference/agent_relation.json"
+      },
+      "crue_type": {
+        "path": "reference/crue_type.schema.json",
+        "description": "BAGMAN: CRÜE team composition templates with coordination patterns",
+        "nim_id": 400027,
+        "data_path": "../data/reference/crue_type.json"
+      }
+    },
+    "core": {
+      "agent": {
+        "path": "core/agent.schema.json",
+        "description": "BAGMAN: BEE - Biomimetic Emergence Entity. Core agent with FIPA + prov:Agent + RPG attributes",
+        "nim_id": 400100,
+        "data_path": "../data/agents/",
+        "bagman": {
+          "term": "BEE",
+          "expansion": "Biomimetic Emergence Entity"
+        }
+      },
+      "tool": {
+        "path": "core/tool.schema.json",
+        "description": "Global tool catalog",
+        "nim_id": 400101,
+        "data_path": "../data/reference/tools.json"
+      },
+      "case": {
+        "path": "core/case.schema.json",
+        "description": "BAGMAN: CASE - Catalytic Epistle. Dispatchable unit of work for BEE deployment.",
+        "nim_id": 400102,
+        "data_path": "../data/cases/",
+        "bagman": {
+          "term": "CASE",
+          "expansion": "Catalytic Epistle",
+          "phonetic": "Charlie-Alpha-Sierra-Echo",
+          "incantation": "The CASE is opened. The work begins.",
+          "replaces": "assignment"
+        }
+      },
+      "group": {
+        "path": "core/group.schema.json",
+        "description": "Fleet/Team/Lab organizational groupings",
+        "nim_id": 400103,
+        "data_path": "../data/groups/"
+      },
+      "transaction": {
+        "path": "core/transaction.schema.json",
+        "description": "Gold transaction ledger",
+        "nim_id": 400104,
+        "data_path": "../data/transactions/"
+      },
+      "config": {
+        "path": "core/config.schema.json",
+        "description": "Agency configuration",
+        "nim_id": 400105,
+        "data_path": "../data/reference/config.json"
+      },
+      "event_log": {
+        "path": "core/event_log.schema.json",
+        "description": "Time-series audit events",
+        "nim_id": 400106,
+        "data_path": "../data/events/"
+      },
+      "peer_review": {
+        "path": "core/peer_review.schema.json",
+        "description": "Agent-to-agent evaluations",
+        "nim_id": 400107,
+        "data_path": "../data/reviews/"
+      },
+      "substation": {
+        "path": "core/substation.schema.json",
+        "description": "Remote deployment endpoint for agent operations",
+        "nim_id": 400110,
+        "data_path": "~/.nim/agency/substations/",
+        "local_storage": true
+      },
+      "credential": {
+        "path": "core/credential.schema.json",
+        "description": "Encrypted credential stored in vault",
+        "nim_id": 400111,
+        "data_path": "~/.nim/agency/vault/credentials/",
+        "local_storage": true
+      },
+      "remote_operation": {
+        "path": "core/remote_operation.schema.json",
+        "description": "Audit log entry for remote command execution",
+        "nim_id": 400112,
+        "data_path": "~/.nim/agency/remote_operations.json",
+        "local_storage": true
+      }
+    }
+  },
+  "ontology_mappings": {
+    "fipa": "http://www.fipa.org/specs/fipa00023#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "schema": "https://schema.org/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "dcat": "http://www.w3.org/ns/dcat#"
+  }
+}

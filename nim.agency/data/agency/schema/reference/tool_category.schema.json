@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/tool_category.schema.json",
+  "title": "Tool Category",
+  "description": "Tool classification for agent inventory",
+  "@type": ["skos:ConceptScheme", "owl-s:ServiceCategory"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400014,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "tool_category",
+      "type": "schema",
+      "path": "L2.agency.reference.tool_category"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["safe", "moderate", "elevated", "high"],
+      "default": "safe",
+      "description": "Risk classification for tool usage"
+    }
+  },
+  "required": ["id", "slug", "label"]
+}

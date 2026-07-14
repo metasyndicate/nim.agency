@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/qualifier.schema.json",
+  "title": "Agent Qualifier",
+  "description": "Seniority/vibe modifier for agent titles. The seasoning on the rank.",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400018,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "qualifier",
+      "type": "schema",
+      "path": "L2.agency.reference.qualifier"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "min_xp": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Minimum XP to qualify for this modifier"
+    },
+    "max_xp": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Maximum XP for this modifier (null = no upper bound)"
+    },
+    "vibe": {
+      "type": "string",
+      "enum": ["naive", "reliable", "seasoned", "political", "jaded", "ascended"],
+      "description": "The general energy/attitude of this qualifier"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label", "min_xp", "vibe"]
+}

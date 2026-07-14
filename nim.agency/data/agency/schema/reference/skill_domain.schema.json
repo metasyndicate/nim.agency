@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/skill_domain.schema.json",
+  "title": "Skill Domain",
+  "description": "Routable capability dimensions for agent dispatch",
+  "@type": ["skos:ConceptScheme", "sosa:ObservableProperty"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400013,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "skill_domain",
+      "type": "schema",
+      "path": "L2.agency.reference.skill_domain"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["cognitive", "technical", "operational", "social"],
+      "description": "Skill category grouping"
+    },
+    "max_points": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "description": "Maximum allocatable points for this domain"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "abbrev": {
+      "type": "string",
+      "maxLength": 4,
+      "description": "Short abbreviation for compact display (e.g., 'ANL', 'NET')"
+    }
+  },
+  "required": ["id", "slug", "label", "category"]
+}

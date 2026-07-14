@@ -1,0 +1,61 @@
+{
+  "$schema": "../schema/core/config.schema.json",
+  "data": {
+    "id": 1,
+    "agency": {
+      "name": "Biomimetic Agency",
+      "short": "Agency",
+      "tagline": "Agentic identity life-cycle management",
+      "logo_path": null
+    },
+    "cli": {
+      "prefix": "agent",
+      "prompt": ">"
+    },
+    "wui": {
+      "theme": "dark-rpg",
+      "accent_color": "#00ff88"
+    },
+    "tui": {
+      "color_scheme": "green",
+      "border_style": "single",
+      "use_unicode": true
+    },
+    "defaults": {
+      "status_id": 1,
+      "rank_id": 1,
+      "health": 100,
+      "skill_points": 100,
+      "starting_gold": 50
+    },
+    "organization": {
+      "name": "The New Infrastructure Metasyndicate"
+    },
+    "unit": {
+      "name": "Office of Synthesis"
+    },
+    "substation": {
+      "name": "Outer Perimeter"
+    },
+    "operator": {
+      "display_name": null,
+      "role": "operator"
+    },
+    "labels": {
+      "agent": "Agent",
+      "agents": "Agents",
+      "mission": "Mission",
+      "missions": "Missions",
+      "gold": "Gold",
+      "xp": "XP",
+      "health": "Health",
+      "rank": "Rank",
+      "class": "Class"
+    },
+    "audit": {
+      "created_at": "2026-04-06T00:00:00Z",
+      "updated_at": "2026-04-08T06:52:04.327989+00:00",
+      "retired_at": null
+    }
+  }
+}

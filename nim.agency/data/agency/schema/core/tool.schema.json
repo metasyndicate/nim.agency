@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/tool.schema.json",
+  "title": "Agent Tool",
+  "description": "Global tool catalog - agents assigned from this inventory",
+  "@type": ["sosa:Actuator", "owl-s:AtomicProcess"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400101,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "tool",
+      "type": "schema",
+      "path": "L3.agency.core.tool"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Tool identifier (e.g., 'curl', 'ssh', 'git')"
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Display name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Tool description and capabilities"
+    },
+    "category_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Reference to tool_category"
+    },
+    "usage": {
+      "type": "object",
+      "description": "Usage information",
+      "properties": {
+        "syntax": {
+          "type": "string",
+          "description": "Basic usage syntax"
+        },
+        "examples": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Usage examples"
+        },
+        "documentation_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "min_rank_id": {
+          "type": "integer",
+          "description": "Minimum rank required to use"
+        },
+        "required_skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain_id": { "type": "integer" },
+              "min_points": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "slug", "label", "category_id"]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/capability.schema.json",
+  "title": "Agent Capability",
+  "description": "Real operational capabilities that map to agentic actions and tool usage",
+  "@type": "skos:ConceptScheme",
+  "$nim.meta": {
+    "nim.id": 400022,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "capability",
+      "type": "schema",
+      "path": "L2.agency.reference.capability"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "slug": {"type": "string"},
+    "label": {"type": "string"},
+    "description": {"type": "string"},
+    "category": {
+      "type": "string",
+      "enum": ["execution", "analysis", "platform", "automation", "data", "security", "development", "communication"]
+    },
+    "proficiency_levels": {
+      "type": "object",
+      "description": "Map of proficiency level (1-5) to description",
+      "additionalProperties": {"type": "string"}
+    },
+    "unlocks_tools": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Tool slugs unlocked by this capability"
+    },
+    "icon": {"type": "string"},
+    "sort_order": {"type": "integer"}
+  },
+  "required": ["id", "slug", "label", "category"]
+}

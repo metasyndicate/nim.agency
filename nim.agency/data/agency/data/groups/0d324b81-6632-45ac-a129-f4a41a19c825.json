@@ -1,0 +1,25 @@
+{
+  "id": "0d324b81-6632-45ac-a129-f4a41a19c825",
+  "slug": "weld_crue.0d32",
+  "name": "New Weld Cr\u00fce",
+  "type": "Weld Cr\u00fce",
+  "type_slug": "weld_crue",
+  "description": "System integration, API development, data flow orchestration",
+  "parent_id": null,
+  "specialization": {
+    "domains": [],
+    "tools": [],
+    "mission_types": []
+  },
+  "capacity": {
+    "max_members": 4,
+    "current_members": 0
+  },
+  "icon": "\ud83d\udd27",
+  "is_active": true,
+  "audit": {
+    "created_at": "2026-04-11T06:50:40.753518+00:00",
+    "updated_at": "2026-04-11T06:50:40.753518+00:00",
+    "retired_at": null
+  }
+}

@@ -1,0 +1,24 @@
+
+Title,Index:Classifier
+Free Agent,1:Rogue
+Conscript,1:Field,2:Platform,3:System,4:Data
+Inquisitor,1:Field,2:Platform,3:System,4:Data
+Cadet,1:Field,2:Luminous
+Ensign,1:Junior,2:Field,3:Luminous
+Ranger,1:Field,2:Platform,3:System,4:Data
+Grenadier,1:Light,2:Heavy,3:Chaos
+Aviator,1:Field,2:Platform,3:System,4:Data
+Agent,1:Field,2:Platform,3:System,4:Data
+Scientist,1:Alchemaic,2:Luminous,3:Entropic,4:Sublime
+Operative,1:Field,2:Platform,3:System,4:Data
+Machinist,1:Field,2:Platform,3:System,4:Data
+Synthesist,1:Field,2:Platform,3:System,4:Data
+Officer,1:Field,2:Entropic,3:Parametric
+Constable,1:Field,2:Entropic,3:Parametric
+Sentry,1:Field,2:Entropic,3:Parametric
+Prophet,1:Annointed,2:Luminous,3:Meta
+Metaoperative,1:Luminous,2:Entropic,3:Sublime
+Metasynthesist,1:Luminous,2:Entropic,3:Sublime
+Metaagent,1:Luminous,2:Entropic,3:Sublime
+Metatheorist,1:Luminous,2:Entropic,3:Sublime
+Metaprimus,1:Luminous,2:Entropic,3:Sublime

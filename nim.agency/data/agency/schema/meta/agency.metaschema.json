@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "title": "NIM Agency Metaschema",
+  "description": "Base definitions and common patterns for biomimetic agent fleet management",
+  "@type": ["easme:Metaschema", "skos:ConceptScheme"],
+  "@context": {
+    "nim": "https://nim.agency/ns#",
+    "fipa": "http://www.fipa.org/specs/fipa00023#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "schema": "https://schema.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "$nim.meta": {
+    "nim.id": 400000,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 0,
+      "label": "meta",
+      "component": "agency",
+      "object": "metaschema",
+      "type": "schema",
+      "path": "L0.agency.metaschema"
+    },
+    "agent": {
+      "type": "system",
+      "name": "nim.agency",
+      "version": "1.0.0"
+    },
+    "summary": "Biomimetic agent fleet management - core schema definitions"
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "RFC 4122 UUID v4 identifier",
+      "$comment": "rdf:property dcterms:identifier"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 2,
+      "maxLength": 64,
+      "description": "URL-safe identifier slug",
+      "$comment": "rdf:property skos:notation"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp",
+      "$comment": "rdf:property xsd:dateTime"
+    },
+    "percentage": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percentage value (0-100)"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Five-star rating scale"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5,
+      "description": "Priority scale (1=critical, 10=low)"
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Origin/creation metadata (prov:wasGeneratedBy)",
+      "$comment": "rdf:type prov:Generation",
+      "properties": {
+        "operator": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Spawning operator username",
+          "$comment": "rdf:property prov:wasAssociatedWith"
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Spawning host/IP address",
+          "$comment": "rdf:property prov:atLocation"
+        },
+        "client": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Interface type (cli, wui, api, scan)",
+          "$comment": "rdf:property nim:originClient"
+        },
+        "discovery": {
+          "type": "string",
+          "enum": ["created", "scanned", "imported", "migrated"],
+          "default": "created",
+          "description": "Discovery/creation method"
+        },
+        "timestamp": {
+          "$ref": "#/$defs/timestamp",
+          "description": "Origin timestamp",
+          "$comment": "rdf:property prov:atTime"
+        },
+        "provider": {
+          "type": "string",
+          "description": "Agent model/service provider (anthropic, openai, etc.)"
+        },
+        "model": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Model name (opus, sonnet, gpt-4)" },
+            "version": { "type": "string", "description": "Model version" }
+          }
+        }
+      },
+      "required": ["timestamp"]
+    },
+    "audit_timestamps": {
+      "type": "object",
+      "description": "Standard audit timestamp fields",
+      "properties": {
+        "created_at": {
+          "$ref": "#/$defs/timestamp",
+          "$comment": "rdf:property dcterms:created"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/timestamp",
+          "$comment": "rdf:property dcterms:modified"
+        },
+        "retired_at": {
+          "oneOf": [
+            { "$ref": "#/$defs/timestamp" },
+            { "type": "null" }
+          ],
+          "description": "Retirement/archive timestamp"
+        }
+      },
+      "required": ["created_at", "updated_at"]
+    },
+    "concept": {
+      "type": "object",
+      "description": "SKOS Concept - base for all lookup/reference entities",
+      "$comment": "rdf:type skos:Concept",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Numeric identifier"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug",
+          "description": "URL-safe unique identifier"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Human-readable label",
+          "$comment": "rdf:property skos:prefLabel"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description",
+          "$comment": "rdf:property skos:definition"
+        },
+        "sort_order": {
+          "type": "integer",
+          "default": 0,
+          "description": "Display ordering"
+        }
+      },
+      "required": ["id", "slug", "label"]
+    },
+    "icon_ref": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Icon reference - emoji, unicode symbol, or asset path",
+      "examples": ["🎖", "⭐", "assets/badges/centurion.png"]
+    },
+    "rpg_economy": {
+      "type": "object",
+      "description": "RPG-style agent economy attributes",
+      "$comment": "nim:AgentEconomy - gamification mechanics for engagement",
+      "properties": {
+        "health": {
+          "type": "object",
+          "properties": {
+            "current": { "$ref": "#/$defs/percentage", "default": 100 },
+            "max": { "$ref": "#/$defs/percentage", "default": 100 }
+          },
+          "required": ["current", "max"]
+        },
+        "xp": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Experience points (drives rank promotion)"
+        },
+        "gold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Currency for agent economy"
+        },
+        "skill_points": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0, "default": 100 },
+            "assigned": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          "required": ["total", "assigned"]
+        }
+      },
+      "required": ["health", "xp", "gold", "skill_points"]
+    },
+    "ratings": {
+      "type": "object",
+      "description": "Dual-scoring reputation system",
+      "properties": {
+        "operator": {
+          "type": "object",
+          "description": "Operator/human ratings",
+          "properties": {
+            "sum": { "type": "integer", "minimum": 0, "default": 0 },
+            "count": { "type": "integer", "minimum": 0, "default": 0 }
+          }
+        },
+        "peer": {
+          "type": "object",
+          "description": "Agent-to-agent peer ratings",
+          "properties": {
+            "sum": { "type": "integer", "minimum": 0, "default": 0 },
+            "count": { "type": "integer", "minimum": 0, "default": 0 }
+          }
+        },
+        "missions_completed": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    }
+  }
+}

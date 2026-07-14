@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/reference/mission_status.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "draft",
+      "label": "Draft",
+      "description": "Mission defined but not yet approved",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "📝",
+      "color": "#888888",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "queued",
+      "label": "Queued",
+      "description": "Mission approved and awaiting dispatch",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "⏳",
+      "color": "#4488ff",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "dispatched",
+      "label": "Dispatched",
+      "description": "Agents assigned, mission initiated",
+      "is_terminal": false,
+      "is_active": true,
+      "icon": "🚀",
+      "color": "#ffaa00",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "active",
+      "label": "Active",
+      "description": "Mission in progress",
+      "is_terminal": false,
+      "is_active": true,
+      "icon": "⚡",
+      "color": "#00ff88",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "review",
+      "label": "Under Review",
+      "description": "Mission work complete, pending review",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "🔍",
+      "color": "#aa88ff",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "completed",
+      "label": "Completed",
+      "description": "Mission successfully completed",
+      "is_terminal": true,
+      "is_active": false,
+      "icon": "✓",
+      "color": "#00ff00",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "failed",
+      "label": "Failed",
+      "description": "Mission failed to achieve objectives",
+      "is_terminal": true,
+      "is_active": false,
+      "icon": "✗",
+      "color": "#ff3333",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "aborted",
+      "label": "Aborted",
+      "description": "Mission terminated before completion",
+      "is_terminal": true,
+      "is_active": false,
+      "icon": "⛔",
+      "color": "#ff6600",
+      "sort_order": 8
+    }
+  ]
+}

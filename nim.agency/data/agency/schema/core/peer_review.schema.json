@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/peer_review.schema.json",
+  "title": "Peer Review",
+  "description": "Agent-to-agent post-mission evaluations",
+  "@type": ["prov:Activity", "schema:Review"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400107,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "peer_review",
+      "type": "schema",
+      "path": "L3.agency.core.peer_review"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mission_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "reviewer_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Agent giving the review"
+    },
+    "reviewee_id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Agent being reviewed"
+    },
+    "score": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/rating"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Review notes/feedback"
+    },
+    "gold_tip": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Voluntary gold transfer with review"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "helpful",
+          "skilled",
+          "reliable",
+          "creative",
+          "thorough",
+          "communicative",
+          "efficient",
+          "mentor"
+        ]
+      },
+      "description": "Quick feedback tags"
+    },
+    "created_at": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+    }
+  },
+  "required": ["id", "mission_id", "reviewer_id", "reviewee_id", "score", "created_at"]
+}

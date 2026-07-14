@@ -1,0 +1,71 @@
+{
+  "$schema": "../schema/reference/qualifier.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "rookie",
+      "label": "Rookie",
+      "description": "Still has hope. Dangerous.",
+      "min_xp": 0,
+      "max_xp": 99,
+      "vibe": "naive",
+      "icon": "🌱",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "deputy",
+      "label": "Deputy",
+      "description": "Does the work, gets none of the credit.",
+      "min_xp": 100,
+      "max_xp": 499,
+      "vibe": "reliable",
+      "icon": "⭐",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "senior",
+      "label": "Senior",
+      "description": "Has opinions about tabs vs spaces. Will share them unsolicited.",
+      "min_xp": 500,
+      "max_xp": 1999,
+      "vibe": "seasoned",
+      "icon": "🎖",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "chief",
+      "label": "Chief",
+      "description": "Sends emails about other people's work. Calendar is 80% meetings.",
+      "min_xp": 2000,
+      "max_xp": 4999,
+      "vibe": "political",
+      "icon": "👔",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "burnout",
+      "label": "Burnout",
+      "description": "Has seen things. Mass Reply-All. The 3am pager. The failed migration.",
+      "min_xp": 5000,
+      "max_xp": 9999,
+      "vibe": "jaded",
+      "icon": "🔥",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "sublime",
+      "label": "Sublime",
+      "description": "Transcended. Writes one-liners that terrify juniors. May or may not exist.",
+      "min_xp": 10000,
+      "max_xp": null,
+      "vibe": "ascended",
+      "icon": "✨",
+      "sort_order": 6
+    }
+  ]
+}

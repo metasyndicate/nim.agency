@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/achievement.schema.json",
+  "title": "Achievement Definition",
+  "description": "Achievement/badge catalog with trigger conditions",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400015,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "achievement",
+      "type": "schema",
+      "path": "L2.agency.reference.achievement"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": ["common", "uncommon", "rare", "epic", "legendary"],
+      "default": "common",
+      "description": "Achievement rarity tier"
+    },
+    "trigger": {
+      "type": "object",
+      "description": "Auto-award trigger conditions",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "mission_count",
+            "age_days",
+            "health_floor",
+            "xp_threshold",
+            "gold_threshold",
+            "peer_rating_avg",
+            "skill_max",
+            "manual"
+          ],
+          "description": "Trigger condition type"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Threshold value for trigger"
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["gte", "lte", "eq"],
+          "default": "gte",
+          "description": "Comparison operator"
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "properties": {
+        "gold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "xp": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    },
+    "is_auto_awarded": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether achievement is automatically awarded when conditions met"
+    },
+    "is_hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hidden achievements not shown until earned"
+    }
+  },
+  "required": ["id", "slug", "label", "rarity"]
+}

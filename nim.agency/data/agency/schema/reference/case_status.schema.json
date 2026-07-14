@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/case_status.schema.json",
+  "title": "Case Status",
+  "description": "BAGMAN: CASE lifecycle states (prov:Activity status vocabulary)",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400016,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-13T00:00:00Z",
+    "version": "1.2.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "case_status",
+      "type": "schema",
+      "path": "L2.agency.reference.case_status"
+    },
+    "bagman": {
+      "replaces": "assignment_status"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "bagman_state": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[A-Z][A-Z_]*$",
+      "description": "BAGMAN Protocol state identifier (e.g., 'EMERGENCE', 'POLLINATION', 'CASE_CLOSED')"
+    },
+    "is_terminal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this status closes the CASE"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether CASE has active BEEs in SWARM"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    }
+  },
+  "required": ["id", "slug", "label", "bagman_state", "is_terminal"]
+}

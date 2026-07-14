@@ -1,0 +1,115 @@
+{
+  "$schema": "../schema/reference/skill_domain.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "analysis",
+      "label": "Analysis",
+      "description": "Data analysis, pattern recognition, research synthesis",
+      "category": "cognitive",
+      "abbrev": "ANL",
+      "max_points": 20,
+      "icon": "🔍",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "strategy",
+      "label": "Strategy",
+      "description": "Planning, architecture, system design",
+      "category": "cognitive",
+      "abbrev": "STR",
+      "max_points": 20,
+      "icon": "♟",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "operations",
+      "label": "Operations",
+      "description": "Execution, deployment, process management",
+      "category": "operational",
+      "abbrev": "OPS",
+      "max_points": 20,
+      "icon": "⚙",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "network",
+      "label": "Network",
+      "description": "Network infrastructure, protocols, security",
+      "category": "technical",
+      "abbrev": "NET",
+      "max_points": 20,
+      "icon": "🌐",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "platform",
+      "label": "Platform",
+      "description": "Operating systems, hardware, cloud infrastructure",
+      "category": "technical",
+      "abbrev": "PLT",
+      "max_points": 20,
+      "icon": "🖥",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "application",
+      "label": "Application",
+      "description": "Software development, APIs, integration",
+      "category": "technical",
+      "abbrev": "APP",
+      "max_points": 20,
+      "icon": "📱",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "data",
+      "label": "Data",
+      "description": "Databases, data modeling, ETL, analytics",
+      "category": "technical",
+      "abbrev": "DAT",
+      "max_points": 20,
+      "icon": "🗄",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "security",
+      "label": "Security",
+      "description": "Cybersecurity, cryptography, threat analysis",
+      "category": "technical",
+      "abbrev": "SEC",
+      "max_points": 20,
+      "icon": "🔐",
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "communication",
+      "label": "Communication",
+      "description": "Documentation, reporting, coordination",
+      "category": "social",
+      "abbrev": "COM",
+      "max_points": 20,
+      "icon": "💬",
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "automation",
+      "label": "Automation",
+      "description": "Scripting, CI/CD, workflow orchestration",
+      "category": "operational",
+      "abbrev": "AUT",
+      "max_points": 20,
+      "icon": "🤖",
+      "sort_order": 10
+    }
+  ]
+}

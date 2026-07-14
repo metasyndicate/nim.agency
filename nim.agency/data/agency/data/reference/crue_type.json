@@ -1,0 +1,225 @@
+{
+  "$schema": "../schema/reference/crue_type.schema.json",
+  "data": [
+    {
+      "id": 1,
+      "slug": "road_crue",
+      "label": "Road Crüe",
+      "description": "Network operations specialists. Packet pushers, route wranglers, wire whisperers.",
+      "mission_profile": "Network infrastructure deployment, troubleshooting, and optimization",
+      "primary_archetypes": ["network_engineer"],
+      "support_archetypes": ["security_analyst", "linux_admin"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 4,
+        "lead_archetype": "network_engineer"
+      },
+      "coordination": {
+        "style": "sequential",
+        "handoff": "explicit",
+        "escalation": "lead"
+      },
+      "icon": "🛤",
+      "color": "#1e90ff",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "ground_crue",
+      "label": "Ground Crüe",
+      "description": "Platform operations. Bare-metal shamans, VM wranglers, container cowboys.",
+      "mission_profile": "Infrastructure provisioning, maintenance, and platform reliability",
+      "primary_archetypes": ["linux_admin", "platform_engineer"],
+      "support_archetypes": ["devops_engineer", "sre"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 5,
+        "lead_archetype": "linux_admin"
+      },
+      "coordination": {
+        "style": "parallel",
+        "handoff": "async",
+        "escalation": "lead"
+      },
+      "icon": "🏗",
+      "color": "#ff8c00",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "weld_crue",
+      "label": "Weld Crüe",
+      "description": "Integration specialists. API architects, middleware mechanics, glue code gurus.",
+      "mission_profile": "System integration, API development, data flow orchestration",
+      "primary_archetypes": ["backend_dev", "data_engineer"],
+      "support_archetypes": ["devops_engineer", "dba"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 4,
+        "lead_archetype": "backend_dev"
+      },
+      "coordination": {
+        "style": "collaborative",
+        "handoff": "shared_context",
+        "escalation": "consensus"
+      },
+      "icon": "🔧",
+      "color": "#ffd700",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "frogmen",
+      "label": "Frogmen",
+      "description": "Deep-dive troubleshooters. Subsurface specialists who go where others can't.",
+      "mission_profile": "Complex debugging, root cause analysis, system archaeology",
+      "primary_archetypes": ["sre", "linux_admin"],
+      "support_archetypes": ["dba", "network_engineer"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 3,
+        "lead_archetype": "sre"
+      },
+      "coordination": {
+        "style": "pair",
+        "handoff": "tight",
+        "escalation": "immediate"
+      },
+      "icon": "🐸",
+      "color": "#32cd32",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "paratroopers",
+      "label": "Paratroopers",
+      "description": "Rapid response unit. Drop in fast, fix hard, extract clean.",
+      "mission_profile": "Incident response, emergency deployment, rapid remediation",
+      "primary_archetypes": ["sre", "devops_engineer"],
+      "support_archetypes": ["linux_admin", "security_analyst"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 4,
+        "lead_archetype": "sre"
+      },
+      "coordination": {
+        "style": "command",
+        "handoff": "explicit",
+        "escalation": "chain"
+      },
+      "icon": "🪂",
+      "color": "#dc143c",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "wrecking_crue",
+      "label": "Wrecking Crüe",
+      "description": "Controlled demolition experts. Decommission, cleanup, sunset with style.",
+      "mission_profile": "Resource cleanup, legacy decommission, technical debt demolition",
+      "primary_archetypes": ["devops_engineer", "linux_admin"],
+      "support_archetypes": ["dba", "platform_engineer"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 3,
+        "lead_archetype": "devops_engineer"
+      },
+      "coordination": {
+        "style": "sequential",
+        "handoff": "checkpoint",
+        "escalation": "lead"
+      },
+      "icon": "🔨",
+      "color": "#8b0000",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "horde",
+      "label": "Horde",
+      "description": "Mass parallel operations. Many hands, one mission, overwhelming force.",
+      "mission_profile": "Large-scale deployments, mass updates, fleet operations",
+      "primary_archetypes": ["devops_engineer"],
+      "support_archetypes": ["linux_admin", "platform_engineer"],
+      "composition": {
+        "min_size": 4,
+        "max_size": 12,
+        "lead_archetype": "devops_engineer"
+      },
+      "coordination": {
+        "style": "broadcast",
+        "handoff": "none",
+        "escalation": "aggregate"
+      },
+      "icon": "👹",
+      "color": "#4b0082",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "sru",
+      "label": "Site Recovery Unit",
+      "description": "Disaster recovery specialists. When it all goes sideways, SRU goes in.",
+      "mission_profile": "Disaster recovery, failover execution, business continuity",
+      "primary_archetypes": ["sre", "dba"],
+      "support_archetypes": ["platform_engineer", "network_engineer"],
+      "composition": {
+        "min_size": 3,
+        "max_size": 5,
+        "lead_archetype": "sre"
+      },
+      "coordination": {
+        "style": "command",
+        "handoff": "runbook",
+        "escalation": "immediate"
+      },
+      "icon": "🚨",
+      "color": "#ff4500",
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "pae",
+      "label": "Perimetric Abstraction Enforcement",
+      "description": "Identity and access guardians. The wall between chaos and order.",
+      "mission_profile": "IAM, access control, authentication systems, zero trust",
+      "primary_archetypes": ["security_analyst"],
+      "support_archetypes": ["linux_admin", "cloud_engineer"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 3,
+        "lead_archetype": "security_analyst"
+      },
+      "coordination": {
+        "style": "pair",
+        "handoff": "explicit",
+        "escalation": "immediate"
+      },
+      "icon": "🛡",
+      "color": "#800080",
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "data_crue",
+      "label": "Data Crüe",
+      "description": "Data pipeline architects. ETL engineers, warehouse builders, lake keepers.",
+      "mission_profile": "Data infrastructure, pipeline development, analytics enablement",
+      "primary_archetypes": ["data_engineer", "dba"],
+      "support_archetypes": ["backend_dev"],
+      "composition": {
+        "min_size": 2,
+        "max_size": 4,
+        "lead_archetype": "data_engineer"
+      },
+      "coordination": {
+        "style": "collaborative",
+        "handoff": "shared_context",
+        "escalation": "lead"
+      },
+      "icon": "📊",
+      "color": "#00ced1",
+      "sort_order": 10
+    }
+  ]
+}
