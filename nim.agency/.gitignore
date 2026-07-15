@@ -6,6 +6,7 @@ arc
 **/*CLAUDE*
 **/*AGENT*
 !lib/cli/agent.py
+!data/agency/schema/core/agent.schema.json
 **/*instructions*
 **/*prompt*
 **/.DS_Store

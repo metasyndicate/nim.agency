@@ -16,13 +16,15 @@ def cmd_list(args) -> int:
         print("No agents. Generate some: nim.agency agent generate -n 5")
         return 0
 
-    print(f"{'CODENAME':<24} {'NAME':<28} {'RANK':<6} ARCH")
-    print("-" * 66)
+    print(f"{'CODENAME':<24} {'NAME':<28} {'RANK':<6} {'ARCH':<6} VIOL")
+    print("-" * 72)
     for agent in agents:
         ident = agent["identity"]
         cls = agent.get("classification", {})
+        violations = (agent.get("conduct") or {}).get("violations", 0)
         print(f"{ident['codename']:<24} {ident['name']:<28} "
-              f"{cls.get('rank_id', '?'):<6} {cls.get('archetype_id', '?')}")
+              f"{cls.get('rank_id', '?'):<6} {cls.get('archetype_id', '?'):<6} "
+              f"{violations if violations else '-'}")
     return 0
 
 
@@ -52,6 +54,15 @@ def cmd_show(args) -> int:
             domain = domains.get(skill.get("domain_id"), {})
             label = domain.get("label", f"domain {skill.get('domain_id', '?')}")
             print(f"  {label:<20} {skill.get('points', 0)}")
+
+    conduct = agent.get("conduct") or {}
+    if conduct.get("violations"):
+        by_provider = ", ".join(f"{p}: {n}" for p, n in
+                                (conduct.get("by_provider") or {}).items())
+        print(f"CONDUCT:  {conduct['violations']} policy violation(s)"
+              + (f"  ({by_provider})" if by_provider else ""))
+        if conduct.get("last_violation_at"):
+            print(f"          last: {conduct['last_violation_at']}")
 
     profile = agent.get("profile", {})
     if profile.get("bio"):

@@ -19,7 +19,7 @@ from ..data import DataStore, get_datastore
 from ..data.composer import AgentComposer, get_composer
 
 from .mission import Mission, MissionStatus, Task, TaskStatus, TaskResult
-from .provider import Provider, ClaudeCliProvider, get_provider
+from .provider import Provider, ClaudeCliProvider, get_provider, POLICY_VIOLATION_PREFIX
 from .ops_log import DispatchLogger, get_dispatch_logger, AgentState
 
 
@@ -268,6 +268,11 @@ class Dispatcher:
                     )
                     emit("task_complete", f"Task '{task.role}' completed by {agent_name}", task.id, task.agent_id)
                 else:
+                    violation_note = ""
+                    if result.error and result.error.startswith(POLICY_VIOLATION_PREFIX):
+                        total = self._record_violation(agent)
+                        violation_note = f" [conduct ledger: {total} violation(s) for {agent_name}]"
+
                     self.logger.log_task_fail(
                         dispatch_id=dispatch_id,
                         mission_id=mission.id,
@@ -277,7 +282,7 @@ class Dispatcher:
                         error=result.error or "Unknown error",
                         duration_ms=task_duration
                     )
-                    emit("task_failed", f"Task '{task.role}' failed: {result.error}", task.id, task.agent_id)
+                    emit("task_failed", f"Task '{task.role}' failed: {result.error}{violation_note}", task.id, task.agent_id)
 
         # Execute tasks in dependency order
         task_index = 0
@@ -342,6 +347,26 @@ class Dispatcher:
             emit("mission_complete", f"Mission complete!")
 
         return mission
+
+    def _record_violation(self, agent: dict) -> int:
+        """Increment the agent's conduct ledger after a provider policy refusal.
+
+        Returns the agent's new total violation count.
+        """
+        provider_name = getattr(getattr(self.provider, "config", None), "name", "unknown")
+        prior = agent.get("conduct") or {}
+        by_provider = dict(prior.get("by_provider") or {})
+        by_provider[provider_name] = by_provider.get(provider_name, 0) + 1
+
+        conduct = {
+            "violations": prior.get("violations", 0) + 1,
+            "by_provider": by_provider,
+            "last_violation_at": datetime.now(timezone.utc).isoformat(),
+        }
+        updated = self.ds.update("agent", agent["id"], {"conduct": conduct})
+        if updated:
+            self._agent_cache[agent["id"]] = updated
+        return conduct["violations"]
 
     def execute_sync(
         self,

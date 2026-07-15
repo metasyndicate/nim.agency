@@ -135,7 +135,9 @@ def render_briefing(briefing: Briefing, verbosity: int = 0) -> str:
         else:
             ident = agent["identity"]
             arch = agent.get("classification", {}).get("archetype_id", "?")
-            lines.append(f"  - {ident['name']} ({ident['codename']})  arch:{arch}")
+            violations = (agent.get("conduct") or {}).get("violations", 0)
+            flag = f"  [!] {violations} policy violation(s) on record" if violations else ""
+            lines.append(f"  - {ident['name']} ({ident['codename']})  arch:{arch}{flag}")
 
     lines.extend(["", f"TASKS ({len(m.tasks)}):"])
     for task in m.tasks:

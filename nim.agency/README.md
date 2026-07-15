@@ -170,7 +170,14 @@ Every dispatch announces its output locations in the briefing and writes:
 Missions default to `read_only=True` and `local_only=True`; destructive
 commands (`rm`, `mv`, `chmod`, `chown`, `sudo`, `su`) are blocked by
 constraint injection. Remote operations require vaulted credentials, pass
-through command risk classification, and land in an audit log. Note that the
+through command risk classification, and land in an audit log.
+
+Provider refusals are classified and attributed: when the model declines a
+composed prompt on usage-policy grounds, the task fails with a
+`policy_violation` error and the assigned agent's **conduct ledger**
+(`conduct.violations`, per-provider counts) is incremented. Repeat offenders
+are flagged in `agent list` (VIOL column), `agent show`, and the mission
+briefing crew roster — so you know who keeps getting sent to HR. Note that the
 provider invokes `claude --print --dangerously-skip-permissions` for
 unattended runs — constraints are enforced via prompt injection, so point
 missions only at targets you'd trust an intern with root... er, read access.

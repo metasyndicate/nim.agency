@@ -22,6 +22,19 @@ from typing import Optional
 from .mission import Task, TaskResult, TaskStatus, MissionConstraints
 
 
+# Error taxonomy: task errors beginning with this prefix are provider policy
+# refusals (the model declined the composed prompt). The dispatcher uses the
+# prefix to attribute conduct violations to the assigned agent.
+POLICY_VIOLATION_PREFIX = "policy_violation"
+
+# Signatures of a policy refusal in claude CLI output. Refusals arrive on
+# stdout with a nonzero exit code and an empty stderr.
+POLICY_REFUSAL_MARKERS = (
+    "usage policy",
+    "unable to respond to this request",
+)
+
+
 @dataclass
 class ProviderConfig:
     """Configuration for a provider."""
@@ -203,12 +216,14 @@ Proceed with the task. Provide your analysis and findings in a clear, structured
                     completed_at=completed_at
                 )
             else:
+                out = stdout.decode()
+                err = stderr.decode()
                 return TaskResult(
                     task_id=task.id,
                     agent_id=task.agent_id,
                     status=TaskStatus.FAILED,
-                    output=stdout.decode(),
-                    error=stderr.decode(),
+                    output=out,
+                    error=self._classify_error(out, err, process.returncode),
                     started_at=started_at,
                     completed_at=completed_at
                 )
@@ -233,6 +248,20 @@ Proceed with the task. Provide your analysis and findings in a clear, structured
                 started_at=started_at,
                 completed_at=datetime.now()
             )
+
+    def _classify_error(self, stdout: str, stderr: str, returncode: int) -> str:
+        """Derive a meaningful task error from provider output.
+
+        The claude CLI reports usage-policy refusals on stdout with a nonzero
+        exit and empty stderr, which previously produced blank task errors.
+        """
+        text = f"{stdout}\n{stderr}".lower()
+        if any(marker in text for marker in POLICY_REFUSAL_MARKERS):
+            return (f"{POLICY_VIOLATION_PREFIX}: provider refused the composed "
+                    "prompt (usage policy); full response retained in task output")
+        first_line = stdout.strip().split("\n")[0][:200] if stdout.strip() else ""
+        return (stderr.strip() or first_line
+                or f"provider exited with code {returncode}")
 
     def execute_sync(
         self,

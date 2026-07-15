@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/agent.schema.json",
+  "title": "Biomimetic Agent",
+  "description": "Core agent entity - FIPA AgentDescription + prov:Agent + RPG character sheet",
+  "@type": ["fipa:AgentDescription", "prov:Agent", "schema:Person"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400100,
+    "created": "2026-04-06T00:00:00Z",
+    "modified": "2026-04-06T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "agent",
+      "type": "schema",
+      "path": "L3.agency.core.agent"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Unique agent identifier"
+    },
+    "identity": {
+      "type": "object",
+      "description": "Agent identity attributes",
+      "$comment": "rdf:type foaf:Agent",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Full display name",
+          "$comment": "rdf:property foaf:name"
+        },
+        "codename": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z._-]*$",
+          "description": "Unique dot-notated alphabetic codename (e.g., 'stellar.nova', 'echo.prime')",
+          "$comment": "rdf:property fipa:agentName"
+        },
+        "tag": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999,
+          "description": "Numeric tag/badge number (e.g., 007, 1138)"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Honorific or title prefix (e.g., 'Dr.', 'Agent', 'Commander')"
+        },
+        "dogtag": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^[a-z][a-z0-9._-]*$",
+          "readOnly": true,
+          "description": "Computed identifier: normalized, lowercased, dot-delimited title.first.last (e.g., 'prof.foo.barbaz')",
+          "$comment": "Derived from title + name; immutable after creation"
+        },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 64 },
+          "description": "Alternative names or handles"
+        }
+      },
+      "required": ["name", "codename", "tag", "title", "dogtag"]
+    },
+    "classification": {
+      "type": "object",
+      "description": "Agent classification and status",
+      "properties": {
+        "status_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Reference to status lookup"
+        },
+        "rank_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Reference to rank lookup"
+        },
+        "class_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Reference to class lookup"
+        }
+      },
+      "required": ["status_id", "rank_id"]
+    },
+    "economy": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/rpg_economy",
+      "description": "RPG-style economy attributes"
+    },
+    "skills": {
+      "type": "array",
+      "description": "Skill point allocations by domain",
+      "$comment": "rdf:type sosa:Capability",
+      "items": {
+        "type": "object",
+        "properties": {
+          "domain_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Reference to skill_domain lookup"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0
+          }
+        },
+        "required": ["domain_id", "points"]
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "Assigned tools from global inventory",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Reference to tool"
+          },
+          "assigned_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          },
+          "assigned_by": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "proficiency": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "default": 3,
+            "description": "Tool proficiency level"
+          }
+        },
+        "required": ["tool_id"]
+      }
+    },
+    "achievements": {
+      "type": "array",
+      "description": "Earned achievements/badges",
+      "items": {
+        "type": "object",
+        "properties": {
+          "achievement_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "awarded_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          },
+          "awarded_by": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "'system' or operator username"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": ["achievement_id", "awarded_at"]
+      }
+    },
+    "ratings": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/ratings",
+      "description": "Reputation scores"
+    },
+    "conduct": {
+      "type": "object",
+      "description": "Behavioral conduct ledger - provider policy violations attributed to this agent, for tracking and flagging agents that need adjustment",
+      "properties": {
+        "violations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total provider policy refusals attributed to this agent"
+        },
+        "by_provider": {
+          "type": "object",
+          "description": "Violation counts keyed by provider name",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "last_violation_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Timestamp of the most recent violation"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "description": "Extended profile/persona attributes",
+      "properties": {
+        "bio": {
+          "type": "string",
+          "maxLength": 4096,
+          "description": "Narrative biography/backstory"
+        },
+        "avatar": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Avatar image path or URL"
+        },
+        "motto": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Personal motto or catchphrase"
+        },
+        "personality": {
+          "type": "object",
+          "description": "Personality traits and temperament",
+          "properties": {
+            "temperament": {
+              "type": "string",
+              "enum": ["analytical", "driven", "amiable", "expressive"],
+              "description": "Primary temperament"
+            },
+            "traits": {
+              "type": "array",
+              "items": { "type": "string", "maxLength": 32 },
+              "maxItems": 5,
+              "description": "Personality trait keywords"
+            },
+            "tone": {
+              "type": "string",
+              "enum": ["formal", "casual", "terse", "verbose", "friendly", "professional"],
+              "default": "professional"
+            }
+          }
+        },
+        "interests": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 64 },
+          "description": "Areas of interest"
+        },
+        "zodiac": {
+          "type": "string",
+          "maxLength": 16,
+          "description": "Astrological sign (thematic)"
+        },
+        "quotes": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 512 },
+          "description": "Memorable quotes attributed to agent"
+        }
+      }
+    },
+    "origin": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/provenance",
+      "description": "Creation/discovery provenance"
+    },
+    "socket": {
+      "type": "object",
+      "description": "Network endpoint for agent API/comms",
+      "$comment": "fipa:ServiceDescription",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Hostname or IP"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["http", "https", "ws", "wss", "grpc"],
+          "default": "https"
+        },
+        "base_uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "is_active": {
+          "type": "boolean",
+          "default": false
+        },
+        "last_heartbeat": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "crypto": {
+      "type": "object",
+      "description": "Cryptographic identity/signatures",
+      "properties": {
+        "public_key": {
+          "type": "string",
+          "description": "PEM-encoded public key or key ID"
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[A-F0-9:]+$",
+          "description": "Key fingerprint"
+        },
+        "key_type": {
+          "type": "string",
+          "enum": ["rsa", "ed25519", "ecdsa", "gpg"],
+          "default": "ed25519"
+        },
+        "created_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "expires_at": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "Fleet/team/lab memberships",
+      "items": {
+        "type": "object",
+        "properties": {
+          "group_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["member", "lead", "advisor", "observer"],
+            "default": "member"
+          },
+          "joined_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          }
+        },
+        "required": ["group_id"]
+      }
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "identity", "classification", "economy", "origin", "audit"]
+}

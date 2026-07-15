@@ -55,10 +55,10 @@ non-TTY without `-y` refuses, exit 2).
 | OWL / CrüeRoster | `lib/data/owl.py` | crew assembly | stable |
 | Mission / Constraints | `lib/dispatch/mission.py` | work orders, tasks, dependency graph, JSON persistence | stable |
 | MissionBuilder + templates | `lib/dispatch/builder.py` | fluent builder; `codebase`/`security` templates | stable |
-| Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure) | stable |
+| Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger | stable |
 | Briefing | `lib/dispatch/briefing.py` | centralized mission disclosure renderer (verbosity 0/-v/-vv); single scope authority (`mission_scope`) shared with dispatcher | stable |
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
-| Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure | stable |
+| Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
 | Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, ops_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
 | TUI | `tui/builder.py` | RPG-themed agent builder HUD | functional; refactor candidate |
