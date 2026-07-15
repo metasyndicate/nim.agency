@@ -50,43 +50,70 @@ logs, and audit trails are not.
 
 ```sh
 # initialize / verify the datastore, generate some agents
-python3 lib/data/seed.py --verify
-python3 lib/data/seed.py --seed-agents 10
+bin/nim.agency data verify
+bin/nim.agency data seed --agents 10
 
 # see who's on the roster
-python3 bin/dispatch.py --list-agents
+bin/nim.agency agent list
+bin/nim.agency agent show some.codename
 
-# preview a mission without executing
-python3 bin/dispatch.py --mission codebase --target /path/to/repo --dry-run
+# preview a mission briefing without executing (add -v/-vv for detail)
+bin/nim.agency mission plan --mission codebase --target /path/to/repo
 
-# dispatch a crew
-python3 bin/dispatch.py --mission codebase --target /path/to/repo --count 3
+# dispatch a crew (shows the briefing, then asks for confirmation)
+bin/nim.agency dispatch --mission codebase --target /path/to/repo --count 3
+
+# review past runs
+bin/nim.agency mission list
+bin/nim.agency mission show <id> -v
+bin/nim.agency mission report <id>
 
 # launch the TUI agent builder (min terminal 80x24)
-python3 bin/nim tui
+bin/nim.agency tui
 ```
 
 ## INTERFACES
 
-### Command: `bin/dispatch.py`
+### Command: `bin/nim.agency`
 
-```
-python3 bin/dispatch.py [options]
+One canonical entry point with a consistent grammar:
+`nim.agency <component> <action> [--flags]`
 
-  --mission {codebase,security,custom}   mission template (default: codebase)
-  --target DIR                           target directory (default: .)
-  --crew name.one,name.two               explicit crew by codename
-  --count N                              crew size when auto-selecting (default: 3)
-  --timeout S                            per-task timeout override
-  --output FILE                          report path override
-  --dry-run                              print the mission plan, don't execute
-  --list-agents                          show available agents
-```
+| Command | Purpose |
+|---|---|
+| `dispatch [flags] [-y] [-v\|-vv]` | execute a mission (briefing + confirmation gate) |
+| `mission plan [flags] [-v\|-vv]` | build a mission and render its briefing, no execution |
+| `mission show <id> [-v\|-vv]` | render a saved mission's briefing |
+| `mission list` | list saved missions |
+| `mission report <id>` | print a saved mission report |
+| `agent list [--limit N]` | tabular agent roster |
+| `agent show <codename>` | agent details |
+| `agent generate [-n N]` | procedurally generate and save agents |
+| `data verify` | verify reference data |
+| `data seed --agents N` | generate sample agents |
+| `data schemas` / `data describe <schema>` | schema inspection |
+| `tui` | interactive curses agent builder |
 
-### TUI: `bin/nim tui`
+Mission flags (shared by `dispatch` and `mission plan`):
+`--mission {codebase,security}`, `--target DIR`, `--crew a.one,b.two`,
+`--count N`, `--timeout S`, `--output FILE`.
 
-Interactive curses agent builder — create and configure agents, allocate
-skill points, manage keys and credentials.
+### The briefing gate
+
+Anything that spawns agent work discloses everything first. `dispatch`
+renders the mission briefing — scope with READ/WRITE tags, crew, tasks,
+provider binary and permission mode, timeouts, concurrency, and output
+paths — then requires confirmation. `-y/--yes` bypasses the prompt
+(required for non-interactive use; a non-TTY without `--yes` refuses with
+exit 2). Verbosity is escalating disclosure:
+
+- *(default)* condensed summary
+- `-v` + full constraints and per-agent instruction/prompt source file paths
+- `-vv` + the full composed system prompts and task prompts, verbatim
+
+The same renderer backs `mission plan` and `mission show`, so what you
+preview is what gets executed — no surprise swarms, no aggressively angry
+operators.
 
 ### Programmatic: `lib.data` + `lib.dispatch`
 
@@ -128,7 +155,7 @@ and treated as read-only at runtime. Override per-invocation with CLI flags
 
 ## OUTPUTS & LOGS
 
-Every dispatch announces its output locations up front and writes:
+Every dispatch announces its output locations in the briefing and writes:
 
 | Artifact | Location | Notes |
 |---|---|---|
@@ -151,10 +178,11 @@ missions only at targets you'd trust an intern with root... er, read access.
 ## PROJECT STRUCTURE
 
 ```
-bin/          CLI entry points (nim, dispatch.py)
+bin/          canonical CLI entry point (nim.agency)
 etc/          source-controlled defaults (agency.json)
+lib/cli/      CLI command modules (dispatch, mission, agent, data)
 lib/data/     datastore, schema, agent generation & composition
-lib/dispatch/ missions, dispatcher, provider, logging
+lib/dispatch/ missions, dispatcher, provider, briefing, logging
 lib/remote/   ssh, vault, safety, audit
 data/agency/  JSON schemas + instance data
 lex/          lexicon/taxonomy CSVs

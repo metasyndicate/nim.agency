@@ -84,6 +84,11 @@ class ClaudeCliProvider(Provider):
     def is_available(self) -> bool:
         return self._available
 
+    @property
+    def binary_path(self) -> Optional[str]:
+        """Resolved path to the claude binary (None if unavailable)."""
+        return self._claude_path
+
     def _build_prompt(
         self,
         system_prompt: str,

@@ -178,8 +178,10 @@ class Dispatcher:
         mission.status = MissionStatus.DISPATCHED
         mission.started_at = datetime.now()
 
-        # Determine scope from constraints
-        scope = "read_only" if mission.constraints.read_only else "supervised"
+        # Determine scope from constraints (shared with briefing so disclosed
+        # prompts match executed prompts)
+        from .briefing import mission_scope
+        scope = mission_scope(mission.constraints)
 
         # Process tasks respecting dependencies
         semaphore = asyncio.Semaphore(max_concurrent)

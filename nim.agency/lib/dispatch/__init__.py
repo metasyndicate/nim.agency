@@ -37,6 +37,13 @@ from .builder import (
     security_audit_mission,
 )
 
+from .briefing import (
+    Briefing,
+    build_briefing,
+    render_briefing,
+    mission_scope,
+)
+
 from .ops_log import (
     DispatchLogger,
     DispatchLogEntry,
@@ -67,6 +74,11 @@ __all__ = [
     "MissionBuilder",
     "codebase_analysis_mission",
     "security_audit_mission",
+    # Briefing
+    "Briefing",
+    "build_briefing",
+    "render_briefing",
+    "mission_scope",
     # Logging
     "DispatchLogger",
     "DispatchLogEntry",

@@ -106,6 +106,10 @@ class OperationalProfile:
     pairs_well_with: list[str]
     team_size: dict
 
+    # Provenance: instruction sources (reference slugs and file paths) that
+    # contributed to this profile
+    sources: list[str] = field(default_factory=list)
+
     def render_system_prompt(self) -> str:
         """Render the complete system prompt for LLM consumption."""
         sections = []
@@ -236,7 +240,8 @@ class OperationalProfile:
                 "capabilities": self.capabilities_desc,
                 "constraints": self.constraints,
                 "decision_framework": self.decision_framework,
-                "communication_style": self.communication_style
+                "communication_style": self.communication_style,
+                "sources": self.sources
             },
             "capabilities": [
                 {
@@ -317,7 +322,9 @@ class AgentComposer:
                 with open(json_file, "r") as f:
                     data = json.load(f)
                     if "instruction_blocks" in data:
-                        blocks.append(InstructionBlock.from_dict(data))
+                        block = InstructionBlock.from_dict(data)
+                        block.meta["source_path"] = str(json_file)
+                        blocks.append(block)
             except (json.JSONDecodeError, IOError):
                 continue
 
@@ -526,7 +533,11 @@ class AgentComposer:
             tools=tools,
             tool_risk_overrides=merged.get("tool_risk_overrides", {}),
             pairs_well_with=archetype.get("pairs_well_with", []),
-            team_size=archetype.get("team_size", {"min": 1, "max": 1})
+            team_size=archetype.get("team_size", {"min": 1, "max": 1}),
+            sources=(
+                [f"reference:instruction/{instruction_slug}"]
+                + [b.meta.get("source_path", b.slug) for b in applicable_blocks]
+            )
         )
 
     def compose_from_archetype(

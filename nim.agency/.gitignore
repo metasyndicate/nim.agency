@@ -5,6 +5,7 @@ arc
 **/__pycache__
 **/*CLAUDE*
 **/*AGENT*
+!lib/cli/agent.py
 **/*instructions*
 **/*prompt*
 **/.DS_Store
