@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/instruction.schema.json",
+  "title": "Agent Instructions",
+  "description": "System prompt templates defining agent behavior, constraints, and communication style",
+  "@type": "skos:ConceptScheme",
+  "$nim.meta": {
+    "nim.id": 400024,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "instruction",
+      "type": "schema",
+      "path": "L2.agency.reference.instruction"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "slug": {"type": "string"},
+    "label": {"type": "string"},
+    "archetype_id": {"type": "integer"},
+    "preamble": {
+      "type": "string",
+      "description": "Opening identity statement"
+    },
+    "role": {
+      "type": "object",
+      "properties": {
+        "primary": {"type": "string"},
+        "secondary": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What the agent CAN do"
+    },
+    "constraints": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What the agent MUST NOT do or MUST do"
+    },
+    "decision_framework": {
+      "type": "object",
+      "properties": {
+        "investigate_first": {"type": "string"},
+        "reversibility": {"type": "string"},
+        "blast_radius": {"type": "string"},
+        "escalation": {"type": "string"}
+      }
+    },
+    "communication_style": {
+      "type": "object",
+      "properties": {
+        "format": {"type": "string"},
+        "verbosity": {"type": "string"},
+        "tone": {"type": "string"}
+      }
+    },
+    "tool_risk_overrides": {
+      "type": "object",
+      "description": "Per-tool risk configuration overrides"
+    },
+    "sort_order": {"type": "integer"}
+  },
+  "required": ["id", "slug", "label", "preamble", "role", "constraints"]
+}

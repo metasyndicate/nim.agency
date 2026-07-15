@@ -5,8 +5,6 @@ arc
 **/__pycache__
 **/*CLAUDE*
 **/*AGENT*
-!lib/cli/agent.py
-!data/agency/schema/core/agent.schema.json
 **/*instructions*
 **/*prompt*
 **/.DS_Store
@@ -32,4 +30,24 @@ OBJECTIVE.md
 tmp
 **/tmp
 tmp/**
+
+# --- NIM Agency distribution policy -----------------------------------------
+# Instance data is operator-local and never shipped: distributed operators
+# populate their own agents/behaviors/profiles. Explicit (case-exact) rules -
+# do not rely on the case-insensitive matches of the patterns above.
+data/agency/data/agents/
+data/agency/data/archive/
+data/agency/data/groups/
+data/agency/data/missions/
+data/agency/data/transactions/
+
+# Schemas and shipped defaults are hard dependencies of the code - the schema
+# determines the data. Re-include anything the generic patterns above caught.
+!lib/cli/agent.py
+!data/agency/schema/
+!data/agency/schema/**
+!data/agency/data/reference/
+!data/agency/data/reference/*.json
+!data/agency/data/instruction/
+!data/agency/data/instruction/**
 

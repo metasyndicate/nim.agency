@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/instruction_block.schema.json",
+  "title": "Composable Instruction Block",
+  "description": "Modular instruction building blocks that compose agent behavior dynamically based on rank, focus, scope, and persona",
+  "@type": "skos:Concept",
+  "$nim.meta": {
+    "nim.id": 400025,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "instruction_block",
+      "type": "schema",
+      "path": "L2.agency.reference.instruction_block"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {"type": "string"},
+    "slug": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "label": {"type": "string"},
+    "category": {
+      "type": "string",
+      "enum": ["rank", "focus", "scope", "persona", "context", "expertise"],
+      "description": "Block category for organization and loading"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 50,
+      "description": "Merge priority - higher values override lower. Base=10, Rank=30, Focus=50, Scope=70, Persona=20"
+    },
+    "applies_when": {
+      "type": "object",
+      "description": "Conditions for when this block applies to an agent",
+      "properties": {
+        "archetype_ids": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "description": "Apply only to these archetypes (empty = all)"
+        },
+        "focus_ids": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "description": "Apply only to agents with these focus areas"
+        },
+        "rank_ids": {
+          "oneOf": [
+            {"type": "array", "items": {"type": "integer"}},
+            {
+              "type": "object",
+              "properties": {
+                "min": {"type": "integer"},
+                "max": {"type": "integer"}
+              }
+            }
+          ],
+          "description": "Apply to specific ranks or rank range"
+        },
+        "qualifier_ids": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "description": "Apply only to agents with these qualifiers"
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["read_only", "supervised", "autonomous", "lead"],
+          "description": "Apply only when agent is operating in this scope"
+        }
+      }
+    },
+    "instruction_blocks": {
+      "type": "object",
+      "description": "Instruction content to merge",
+      "properties": {
+        "preamble_append": {
+          "type": "string",
+          "description": "Text to append to base preamble"
+        },
+        "preamble_replace": {
+          "type": "string",
+          "description": "Replace base preamble entirely (use sparingly)"
+        },
+        "role_additions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Additional role descriptions"
+        },
+        "capability_additions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Additional capabilities"
+        },
+        "capability_restrictions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Capabilities to disable/restrict"
+        },
+        "constraint_additions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Additional constraints to enforce"
+        },
+        "constraint_removals": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Constraint slugs to remove (for expert-level relaxation)"
+        },
+        "decision_framework_overrides": {
+          "type": "object",
+          "description": "Override decision framework fields"
+        },
+        "communication_style_overrides": {
+          "type": "object",
+          "description": "Override communication style fields"
+        },
+        "tool_unlocks": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Additional tool slugs to grant access"
+        },
+        "tool_locks": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Tool slugs to revoke access"
+        },
+        "tool_risk_adjustments": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "requires_confirmation": {"type": "boolean"},
+              "risk_level": {"type": "string", "enum": ["safe", "moderate", "elevated", "high", "critical"]}
+            }
+          },
+          "description": "Per-tool risk adjustments"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "description": {"type": "string"},
+        "author": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    }
+  },
+  "required": ["id", "slug", "label", "category", "instruction_blocks"]
+}

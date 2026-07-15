@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/agent_relation.schema.json",
+  "title": "Agent Relation Type",
+  "description": "Types of relationships between agents in the hierarchy",
+  "@type": "skos:ConceptScheme",
+  "$nim.meta": {
+    "nim.id": 400026,
+    "created": "2026-04-08T00:00:00Z",
+    "modified": "2026-04-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "agent_relation",
+      "type": "schema",
+      "path": "L2.agency.reference.agent_relation"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "slug": {"type": "string"},
+    "label": {"type": "string"},
+    "description": {"type": "string"},
+    "inverse": {
+      "type": "string",
+      "description": "Slug of the inverse relation type"
+    },
+    "hierarchy_direction": {
+      "type": "string",
+      "enum": ["up", "down", "lateral", "advisory"]
+    },
+    "scope_delta": {
+      "type": "string",
+      "description": "Change in scope: +1 (broader), -1 (narrower), 0 (same)"
+    },
+    "can_delegate": {"type": "boolean"},
+    "can_escalate": {"type": "boolean"},
+    "icon": {"type": "string"},
+    "sort_order": {"type": "integer"}
+  },
+  "required": ["id", "slug", "label", "hierarchy_direction"]
+}
