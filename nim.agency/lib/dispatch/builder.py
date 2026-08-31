@@ -221,6 +221,39 @@ Create an executive summary suitable for stakeholders.""",
     return builder.build()
 
 
+def adhoc_task_mission(
+    agents: list[dict],
+    target_dir: str,
+    task_prompt: str,
+    title: Optional[str] = None
+) -> Mission:
+    """
+    Create an ad-hoc mission from an operator-supplied task prompt.
+
+    The shorthand dispatch case: one operator-worded task against a local
+    target. Every crew member receives the task independently - use a crew
+    of one for a single specialist, more for independent takes.
+    """
+    builder = MissionBuilder()
+
+    # Title gets a truncated summary; the objective keeps the full prompt
+    # (collapsed to one line) so briefings and reports stay honest
+    objective = " ".join(task_prompt.split())
+    summary = objective if len(objective) <= 60 else objective[:57] + "..."
+
+    builder.title(title or f"Ad-hoc: {summary}")
+    builder.objective(objective)
+    builder.working_dir(target_dir)
+    builder.constraint_read_only()
+    builder.timeout(get_config()["dispatch"]["timeout_seconds"])
+
+    for agent in agents:
+        builder.add_crew_member(agent)
+        builder.add_task(agent["id"], "Field Specialist", task_prompt)
+
+    return builder.build()
+
+
 def security_audit_mission(
     agents: list[dict],
     target_dir: str

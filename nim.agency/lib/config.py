@@ -24,6 +24,14 @@ DEFAULTS = {
         "dispatch_csv": "dispatch.log",
         "dispatch_json": "dispatch.json",
     },
+    "economy": {
+        "xp_per_task": 25,
+        "gold_per_task": 10,
+        "mission_bonus_xp": 15,
+        "mission_bonus_gold": 5,
+        "skill_points_per_rank": 10,
+        "max_tool_proficiency": 3,
+    },
 }
 
 _config = None

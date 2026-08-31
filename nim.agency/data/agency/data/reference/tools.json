@@ -516,7 +516,10 @@
           "search for",
           "find pattern",
           "grep for",
-          "filter lines"
+          "filter lines",
+          "regex",
+          "regular expression",
+          "pattern match"
         ]
       },
       "cost": 0
@@ -545,7 +548,9 @@
           "extract column",
           "text processing",
           "parse fields",
-          "awk script"
+          "awk script",
+          "regex",
+          "regular expression"
         ]
       },
       "cost": 25
@@ -574,7 +579,9 @@
           "replace text",
           "edit stream",
           "sed substitution",
-          "find and replace"
+          "find and replace",
+          "regex",
+          "regular expression"
         ]
       },
       "cost": 50

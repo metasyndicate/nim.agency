@@ -42,14 +42,21 @@ def cmd_tui(args) -> int:
 def build_parser() -> argparse.ArgumentParser:
     # Shared parent parsers
     mission_flags = argparse.ArgumentParser(add_help=False)
-    mission_flags.add_argument("--mission", choices=["codebase", "security"],
+    mission_flags.add_argument("--mission", choices=["codebase", "security", "task"],
                                default="codebase", help="Mission template (default: codebase)")
+    mission_flags.add_argument("--task", type=str,
+                               help="Ad-hoc task prompt (implies --mission task)")
     mission_flags.add_argument("--target", type=str, default=".",
                                help="Target directory (default: .)")
     mission_flags.add_argument("--crew", type=str,
                                help="Comma-separated agent codenames")
-    mission_flags.add_argument("--count", type=int, default=3,
-                               help="Crew size when auto-selecting (default: 3)")
+    mission_flags.add_argument("--skill", type=str,
+                               help="Comma-separated competency terms for crew "
+                                    "selection (matches skills, tools, specialties; "
+                                    "drafts a new hire when nobody qualifies)")
+    mission_flags.add_argument("--count", type=int,
+                               help="Crew size when auto-selecting "
+                                    "(default: 1 for task missions, 3 otherwise)")
     mission_flags.add_argument("--timeout", type=int,
                                help="Per-task timeout in seconds (default: etc/agency.json)")
     mission_flags.add_argument("--output", type=str,

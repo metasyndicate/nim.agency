@@ -9,10 +9,10 @@ from datetime import datetime
 from pathlib import Path
 
 from ..config import get_config, report_dir
-from ..data import DataStore
+from ..data import DataStore, match_agents, draft_hire
 from ..dispatch import (
     DispatchEvent, Mission,
-    codebase_analysis_mission, security_audit_mission,
+    adhoc_task_mission, codebase_analysis_mission, security_audit_mission,
 )
 
 
@@ -46,8 +46,16 @@ def select_crew(ds: DataStore, count: int) -> list[dict]:
     return selected
 
 
+def crew_count(args) -> int:
+    """Crew size: --count override, else 1 for ad-hoc tasks, 3 for templates."""
+    if args.count:
+        return args.count
+    return 1 if getattr(args, "task", None) or args.mission == "task" else 3
+
+
 def resolve_crew(ds: DataStore, args) -> list[dict]:
-    """Resolve crew from --crew codenames or auto-select --count agents.
+    """Resolve crew from --crew codenames, --skill competency terms, or
+    auto-select --count agents.
 
     Exits with an error message when resolution fails.
     """
@@ -59,7 +67,25 @@ def resolve_crew(ds: DataStore, args) -> list[dict]:
             raise SystemExit(1)
         return crew
 
-    crew = select_crew(ds, args.count)
+    if getattr(args, "skill", None):
+        terms = [t.strip() for t in args.skill.split(",") if t.strip()]
+        matches = match_agents(terms, count=crew_count(args), ds=ds)
+        if matches:
+            print(f"CREW SELECTION ({', '.join(terms)}):")
+            for m in matches:
+                print(f"  ~ {m.codename}  score:{m.score}  "
+                      f"[{'; '.join(m.reasons)}]")
+            return [m.agent for m in matches]
+
+        # Nobody on the roster qualifies - draft a general-purpose hire
+        hire = draft_hire(ds)
+        ident = hire["identity"]
+        print(f"CREW SELECTION ({', '.join(terms)}): no qualified agent on "
+              f"roster - drafted new hire "
+              f"{ident['name']} ({ident['codename']})")
+        return [hire]
+
+    crew = select_crew(ds, crew_count(args))
     if not crew:
         print("\033[91mERROR: No agents available. "
               "Generate some first: nim.agency agent generate -n 5\033[0m", file=sys.stderr)
@@ -74,7 +100,13 @@ def build_mission_from_args(args, crew: list[dict]) -> Mission:
         print(f"\033[91mERROR: Target directory not found: {target}\033[0m", file=sys.stderr)
         raise SystemExit(1)
 
-    if args.mission == "codebase":
+    if getattr(args, "task", None) or args.mission == "task":
+        if not getattr(args, "task", None):
+            print("\033[91mERROR: --mission task requires --task PROMPT\033[0m",
+                  file=sys.stderr)
+            raise SystemExit(1)
+        mission = adhoc_task_mission(crew, str(target), args.task)
+    elif args.mission == "codebase":
         mission = codebase_analysis_mission(crew, str(target))
     elif args.mission == "security":
         mission = security_audit_mission(crew, str(target))
@@ -125,6 +157,7 @@ def print_event(event: DispatchEvent):
         "task_started": "\033[93m[TASK]\033[0m",
         "task_complete": "\033[92m[DONE]\033[0m",
         "task_failed": "\033[91m[FAIL]\033[0m",
+        "payroll": "\033[93m[PAYROLL]\033[0m",
         "collecting": "\033[96m[COLLECT]\033[0m",
         "error": "\033[91m[ERROR]\033[0m",
     }.get(event.event_type, f"[{event.event_type}]")

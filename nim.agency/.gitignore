@@ -41,6 +41,9 @@ data/agency/data/groups/
 data/agency/data/missions/
 data/agency/data/transactions/
 
+# The depot vault holds live key material - never distributed, no exceptions.
+data/agency/hive/depot/.vault/
+
 # Schemas and shipped defaults are hard dependencies of the code - the schema
 # determines the data. Re-include anything the generic patterns above caught.
 !lib/cli/agent.py

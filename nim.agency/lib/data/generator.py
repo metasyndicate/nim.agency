@@ -995,9 +995,14 @@ class AgentGenerator:
         return [self.generate(**kwargs) for _ in range(count)]
 
     def create_and_save(self, **kwargs) -> dict:
-        """Generate an agent and save to datastore."""
+        """Generate an agent, save to datastore, and enroll it (badge +
+        primary keypair). Enrollment failure defers, never blocks creation."""
+        from .identity import try_enroll
+
         agent = self.generate(**kwargs)
-        return self.datastore.create("agent", agent, validate=False)
+        agent = self.datastore.create("agent", agent, validate=False)
+        enrollment = try_enroll(self.datastore, agent)
+        return enrollment.agent if enrollment else agent
 
 
 # Module-level convenience

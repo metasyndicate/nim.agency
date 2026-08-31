@@ -33,6 +33,7 @@ from .provider import (
 
 from .builder import (
     MissionBuilder,
+    adhoc_task_mission,
     codebase_analysis_mission,
     security_audit_mission,
 )
@@ -72,6 +73,7 @@ __all__ = [
     "get_provider",
     # Builder
     "MissionBuilder",
+    "adhoc_task_mission",
     "codebase_analysis_mission",
     "security_audit_mission",
     # Briefing

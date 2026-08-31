@@ -31,6 +31,18 @@ logs, and audit trails are not.
 - **Mission dispatch** — crews of agents execute dependency-ordered tasks
   against a target directory via the `claude` CLI, with per-task timeouts and
   concurrency limits
+- **Competency-matched crews** — `--skill` terms resolve against skill
+  domains, tools, specialties, and capabilities with scored, disclosed
+  rationale; when nobody on the roster qualifies, dispatch drafts a
+  general-purpose hire on the spot
+- **RPG economy** — completed tasks pay XP and gold (full missions pay a
+  bonus), promotions follow the rank ladder and grant skill points to spend
+  at the dojo (`agent train`), gold buys tooling at the depot
+  (`agent equip`), and every gold movement lands in an immutable ledger
+- **Agent identity** — every agent is enrolled with a badge (org ID,
+  username) and an immutable primary ed25519 keypair, issued at creation
+  (or via `agent enroll --backfill`) into the operator-owned depot vault;
+  the record carries only the public half and fingerprint
 - **Constraints by default** — missions run read-only, local-only, with
   blocked destructive commands
 - **Full paper trail** — markdown report + complete mission JSON (prompts,
@@ -63,6 +75,9 @@ bin/nim.agency mission plan --mission codebase --target /path/to/repo
 # dispatch a crew (shows the briefing, then asks for confirmation)
 bin/nim.agency dispatch --mission codebase --target /path/to/repo --count 3
 
+# shorthand: one competency-matched specialist on an ad-hoc local task
+bin/nim.agency dispatch --task "inventory all TODO comments" --skill regex
+
 # review past runs
 bin/nim.agency mission list
 bin/nim.agency mission show <id> -v
@@ -86,17 +101,23 @@ One canonical entry point with a consistent grammar:
 | `mission show <id> [-v\|-vv]` | render a saved mission's briefing |
 | `mission list` | list saved missions |
 | `mission report <id>` | print a saved mission report |
-| `agent list [--limit N]` | tabular agent roster |
+| `agent list [--limit N] [--by-xp]` | tabular agent roster (XP, gold, missions) |
 | `agent show <codename>` | agent details |
 | `agent generate [-n N]` | procedurally generate and save agents |
+| `agent credit <codename> --xp N --gold N` | paymaster adjustment (negatives allowed) |
+| `agent train <codename> --skill S --points N` | dojo: spend unassigned skill points |
+| `agent equip <codename> --tool T` | depot: buy/upgrade a tool with gold |
+| `agent enroll <codename> \| --backfill` | issue badge + primary keypair into the vault |
 | `data verify` | verify reference data |
 | `data seed --agents N` | generate sample agents |
 | `data schemas` / `data describe <schema>` | schema inspection |
 | `tui` | interactive curses agent builder |
 
 Mission flags (shared by `dispatch` and `mission plan`):
-`--mission {codebase,security}`, `--target DIR`, `--crew a.one,b.two`,
-`--count N`, `--timeout S`, `--output FILE`.
+`--mission {codebase,security,task}`, `--task PROMPT` (implies
+`--mission task`), `--target DIR`, `--crew a.one,b.two`,
+`--skill term1,term2`, `--count N` (default: 1 for task missions,
+3 otherwise), `--timeout S`, `--output FILE`.
 
 ### The briefing gate
 
@@ -152,6 +173,9 @@ and treated as read-only at runtime. Override per-invocation with CLI flags
 | `dispatch.timeout_seconds` | `600` | per-task timeout |
 | `dispatch.report_dir` | `log` | mission report/JSON output dir (project-relative) |
 | `logging.dir` | `~/.nim/agency` | operator-local log directory |
+| `economy.xp_per_task` / `gold_per_task` | `25` / `10` | pay per completed task |
+| `economy.mission_bonus_xp` / `_gold` | `15` / `5` | full-mission completion bonus |
+| `economy.skill_points_per_rank` | `10` | skill points granted per rank threshold crossed |
 
 ## OUTPUTS & LOGS
 
@@ -159,7 +183,9 @@ Every dispatch announces its output locations in the briefing and writes:
 
 | Artifact | Location | Notes |
 |---|---|---|
-| Mission report | `log/mission-<id>-report.md` | written on success **and** failure |
+| Mission report | `log/mission-<id>-report.md` | written on success **and** failure, includes payroll |
+| Gold ledger | `data/agency/data/transactions/ledger.json` | immutable, every gold movement |
+| Depot vault | `data/agency/hive/depot/.vault/<dogtag>/` | keys + manifest, 0700/0600, gitignored |
 | Mission record | `log/mission-<id>-report.json` | full prompts, constraints, per-task results/errors |
 | Dispatch log (CSV) | `~/.nim/agency/dispatch.log` | lifecycle events |
 | Dispatch log (JSON) | `~/.nim/agency/dispatch.json` | lifecycle events, structured |
@@ -171,6 +197,13 @@ Missions default to `read_only=True` and `local_only=True`; destructive
 commands (`rm`, `mv`, `chmod`, `chown`, `sudo`, `su`) are blocked by
 constraint injection. Remote operations require vaulted credentials, pass
 through command risk classification, and land in an audit log.
+
+Agent identity is AGENCY-custodial: primary keypairs are generated
+passphrase-free (automation prohibits interactive unlock) and protection
+defers to host/OS permissions — vault directories are operator-only (0700),
+private keys and manifests 0600, and the vault is excluded from
+distribution by `.gitignore`. Primary keys are immutable: lifecycle is
+revoke-and-supersede, never rotate-in-place.
 
 Provider refusals are classified and attributed: when the model declines a
 composed prompt on usage-policy grounds, the task fails with a
@@ -202,7 +235,10 @@ maturity assessment.
 
 ## STATUS
 
-Early revision. Functional: generation, datastore, dispatch, TUI, logging.
-In progress: custom missions via CLI, remote-layer live validation, tests,
-WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
+Early revision. Functional: generation, datastore, dispatch (template and
+ad-hoc `--task` missions, competency-matched crews), RPG economy
+(payroll, promotions, dojo/depot), agent identity (badges, keypairs, depot
+vault), TUI, logging.
+In progress: key distribution/revocation flows, remote-layer live
+validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
 amnesia, neckbeard, and sporadic anomalous flow — patch early, patch often.

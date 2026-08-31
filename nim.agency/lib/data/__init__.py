@@ -10,6 +10,9 @@ from .crud import DataStore, get_datastore
 from .generator import AgentGenerator
 from .composer import AgentComposer, get_composer, compose_agent, compose_from_archetype
 from .owl import OWL, assemble_crue, CrüeRoster
+from .roster import RosterMatch, match_agents, draft_hire
+from .economy import Payout, apply_award, award_mission, train, equip
+from .identity import Enrollment, enroll, backfill, is_enrolled
 
 # Re-export remote module for convenience
 from ..remote import (
@@ -36,6 +39,18 @@ __all__ = [
     "OWL",
     "assemble_crue",
     "CrüeRoster",
+    "RosterMatch",
+    "match_agents",
+    "draft_hire",
+    "Payout",
+    "apply_award",
+    "award_mission",
+    "train",
+    "equip",
+    "Enrollment",
+    "enroll",
+    "backfill",
+    "is_enrolled",
     # Remote layer
     "CredentialVault",
     "VaultScope",

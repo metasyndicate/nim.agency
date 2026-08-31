@@ -17,6 +17,7 @@ from typing import Callable, Optional
 
 from ..data import DataStore, get_datastore
 from ..data.composer import AgentComposer, get_composer
+from ..data.economy import Payout, award_mission
 
 from .mission import Mission, MissionStatus, Task, TaskStatus, TaskResult
 from .provider import Provider, ClaudeCliProvider, get_provider, POLICY_VIOLATION_PREFIX
@@ -317,9 +318,12 @@ class Dispatcher:
         if mission.any_failed():
             mission.status = MissionStatus.FAILED
             failed_count = sum(1 for t in mission.tasks if t.status == TaskStatus.FAILED)
+            # Completed tasks still pay out on a failed mission - only the
+            # completion bonus is forfeit
+            payouts = self._run_payroll(mission, emit)
             # Assemble a report even on failure so partial results and
             # per-task errors are never lost.
-            mission.final_report = self._assemble_report(mission)
+            mission.final_report = self._assemble_report(mission, payouts)
             self.logger.log_mission_fail(
                 dispatch_id=dispatch_id,
                 mission_id=mission.id,
@@ -333,9 +337,11 @@ class Dispatcher:
             mission.status = MissionStatus.COLLECTING
             emit("collecting", "Assembling final report...")
 
-            # Assemble final report
-            mission.final_report = self._assemble_report(mission)
+            # Flip to COMPLETE before assembly so the report snapshot
+            # records the terminal status, not the transient collecting state
             mission.status = MissionStatus.COMPLETE
+            payouts = self._run_payroll(mission, emit)
+            mission.final_report = self._assemble_report(mission, payouts)
 
             self.logger.log_mission_complete(
                 dispatch_id=dispatch_id,
@@ -347,6 +353,16 @@ class Dispatcher:
             emit("mission_complete", f"Mission complete!")
 
         return mission
+
+    def _run_payroll(self, mission: Mission, emit) -> list[Payout]:
+        """Settle XP/gold for the mission and refresh the agent cache so
+        report rendering sees post-payroll state."""
+        payouts = award_mission(self.ds, mission)
+        for payout in payouts:
+            self._agent_cache[payout.agent["id"]] = payout.agent
+            emit("payroll", payout.summary_line(),
+                 agent_id=payout.agent["id"])
+        return payouts
 
     def _record_violation(self, agent: dict) -> int:
         """Increment the agent's conduct ledger after a provider policy refusal.
@@ -377,7 +393,9 @@ class Dispatcher:
         """Synchronous wrapper for execute."""
         return asyncio.run(self.execute(mission, on_event, max_concurrent))
 
-    def _assemble_report(self, mission: Mission) -> str:
+    def _assemble_report(
+        self, mission: Mission, payouts: Optional[list[Payout]] = None
+    ) -> str:
         """Assemble the final report from task results."""
         lines = [
             f"# Mission Report: {mission.title}",
@@ -434,6 +452,12 @@ class Dispatcher:
 
             lines.append("---")
             lines.append("")
+
+        if payouts:
+            lines.extend(["## Payroll", ""])
+            for payout in payouts:
+                lines.append(f"- {payout.summary_line()}")
+            lines.extend(["", "---", ""])
 
         return "\n".join(lines)
 
