@@ -12,8 +12,14 @@ from typing import Optional
 
 from .crud import DataStore
 
-# assignment_status ids (engagement lifecycle vocabulary - reused, not reinvented)
+# assignment_status ids (engagement lifecycle vocabulary - reused, not
+# reinvented). Cycle flow: queued -> swarming (dispatch) -> review (mission
+# complete) or smoked (mission failed; non-terminal suspension). completed/
+# failed are reserved for release-time outcomes.
 ENGAGEMENT_QUEUED = 2
+ENGAGEMENT_SWARMING = 4
+ENGAGEMENT_REVIEW = 7
+ENGAGEMENT_SMOKED = 11
 
 # project_status ids
 PROJECT_DRAFT = 1
@@ -52,6 +58,77 @@ def active_engagements(project: dict) -> list[dict]:
 def next_objective_id(project: dict) -> int:
     return max((o.get("id", 0) for o in project.get("objectives", [])),
                default=0) + 1
+
+
+def agent_bookings(
+    ds: DataStore, agent_id: str, exclude_project_id: Optional[str] = None
+) -> list[dict]:
+    """Active bookings for an agent across all projects: unreleased rows
+    whose assignment_status is non-terminal. A queued engagement books the
+    agent - assignment reserves, dispatch activates.
+
+    Returns [{"project": ..., "engagement": ...}].
+    """
+    bookings = []
+    for project in ds.query("project").data:
+        if project.get("id") == exclude_project_id:
+            continue
+        for row in active_engagements(project):
+            if row.get("agent_id") != agent_id:
+                continue
+            if not engagement_status(ds, row).get("is_terminal"):
+                bookings.append({"project": project, "engagement": row})
+    return bookings
+
+
+def availability_map(ds: DataStore) -> dict[str, list[str]]:
+    """agent_id -> [project slugs] for every active booking, in one scan.
+    Agents absent from the map are available."""
+    booked: dict[str, list[str]] = {}
+    for project in ds.query("project").data:
+        for row in active_engagements(project):
+            if engagement_status(ds, row).get("is_terminal"):
+                continue
+            booked.setdefault(row["agent_id"], []).append(project["slug"])
+    return booked
+
+
+def transition_engagements(
+    ds: DataStore,
+    project: dict,
+    status_id: int,
+    agent_ids: Optional[list[str]] = None,
+) -> int:
+    """Move active engagement rows to a new assignment_status. Limited to
+    agent_ids when given. Returns the number of rows moved."""
+    rows = list(project.get("engagements", []))
+    moved = 0
+    for row in rows:
+        if row.get("released_at"):
+            continue
+        if agent_ids is not None and row.get("agent_id") not in agent_ids:
+            continue
+        if row.get("status_id") != status_id:
+            row["status_id"] = status_id
+            moved += 1
+    if moved:
+        ds.update("project", project["id"], {"engagements": rows})
+        project["engagements"] = rows
+    return moved
+
+
+def apply_mission_outcome(
+    ds: DataStore,
+    project: dict,
+    mission_status: str,
+    agent_ids: Optional[list[str]] = None,
+) -> tuple[int, int]:
+    """Drive engagement state from a mission outcome: complete -> review
+    (awaiting operator between cycles); anything else -> smoked (suspended
+    pending operator intervention). Returns (rows_moved, status_id)."""
+    status_id = (ENGAGEMENT_REVIEW if mission_status == "complete"
+                 else ENGAGEMENT_SMOKED)
+    return transition_engagements(ds, project, status_id, agent_ids), status_id
 
 
 def create_project(
@@ -113,12 +190,23 @@ def assign_agent(
     responsibilities: Optional[list[str]] = None,
 ) -> dict:
     """Engage an agent on a project. One active engagement per agent per
-    project - re-engaging requires releasing the current row first."""
+    project, and bookings elsewhere count against the target project's
+    max_concurrent_engagements cap - availability is derived, never stored."""
     for row in active_engagements(project):
         if row.get("agent_id") == agent.get("id"):
             raise ValueError(
                 f"{agent['identity']['codename']} is already engaged on "
                 f"{project['slug']} as {row.get('role', '?')}")
+
+    cap = (project.get("policy") or {}).get("max_concurrent_engagements", 1)
+    bookings = agent_bookings(ds, agent["id"],
+                              exclude_project_id=project.get("id"))
+    if len(bookings) + 1 > cap:
+        slugs = ", ".join(b["project"]["slug"] for b in bookings)
+        raise ValueError(
+            f"{agent['identity']['codename']} is BOOKED ({slugs}) - cap is "
+            f"{cap}; release an engagement or raise it: "
+            f"nim.agency project edit {project['slug']} --cap N")
 
     engagement = {
         "agent_id": agent["id"],

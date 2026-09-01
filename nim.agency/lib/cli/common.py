@@ -10,6 +10,7 @@ from pathlib import Path
 
 from ..config import get_config, report_dir
 from ..data import DataStore, match_agents, draft_hire
+from ..data.project import availability_map
 from ..dispatch import (
     DispatchEvent, Mission,
     adhoc_task_mission, codebase_analysis_mission, security_audit_mission,
@@ -31,12 +32,19 @@ def find_agents_by_codenames(ds: DataStore, codenames: list[str]) -> tuple[list[
 
 
 def select_crew(ds: DataStore, count: int) -> list[dict]:
-    """Select a crew of agents, preferring diverse archetypes."""
-    agents = ds.query("agent", limit=count * 2).data
+    """Select a crew of agents, preferring diverse archetypes. Agents
+    booked on a project are skipped, with disclosure."""
+    booked = availability_map(ds)
+    agents = ds.query("agent").data
 
     selected = []
     seen_archetypes = set()
     for agent in agents:
+        slugs = booked.get(agent["id"])
+        if slugs:
+            print(f"  ~ {agent['identity']['codename']}  "
+                  f"BOOKED ({', '.join(slugs)}) - skipped")
+            continue
         arch_id = agent.get("classification", {}).get("archetype_id", 0)
         if arch_id not in seen_archetypes or len(selected) < count:
             selected.append(agent)
@@ -65,24 +73,39 @@ def resolve_crew(ds: DataStore, args) -> list[dict]:
         if missing:
             print(f"\033[91mERROR: Agents not found: {missing}\033[0m", file=sys.stderr)
             raise SystemExit(1)
+        # Explicit --crew overrides availability, but bookings are disclosed
+        booked = availability_map(ds)
+        for agent in crew:
+            slugs = booked.get(agent["id"])
+            if slugs:
+                print(f"NOTE: {agent['identity']['codename']} is BOOKED "
+                      f"({', '.join(slugs)}) - proceeding on explicit --crew")
         return crew
 
     if getattr(args, "skill", None):
         terms = [t.strip() for t in args.skill.split(",") if t.strip()]
-        matches = match_agents(terms, count=crew_count(args), ds=ds)
+        matches = match_agents(terms, count=crew_count(args), ds=ds,
+                               available_only=True)
+        crew = [m for m in matches if m.available]
         if matches:
             print(f"CREW SELECTION ({', '.join(terms)}):")
             for m in matches:
-                print(f"  ~ {m.codename}  score:{m.score}  "
-                      f"[{'; '.join(m.reasons)}]")
-            return [m.agent for m in matches]
+                if m.available:
+                    print(f"  ~ {m.codename}  score:{m.score}  "
+                          f"[{'; '.join(m.reasons)}]")
+                else:
+                    print(f"  ~ {m.codename}  score:{m.score}  "
+                          f"BOOKED ({', '.join(m.booked_on)}) - skipped")
+        if crew:
+            return [m.agent for m in crew]
 
-        # Nobody on the roster qualifies - draft a general-purpose hire
+        # Nobody available on the roster qualifies - draft a hire
         hire = draft_hire(ds)
         ident = hire["identity"]
-        print(f"CREW SELECTION ({', '.join(terms)}): no qualified agent on "
-              f"roster - drafted new hire "
-              f"{ident['name']} ({ident['codename']})")
+        why = ("everyone qualified is booked" if matches
+               else "no qualified agent on roster")
+        print(f"CREW SELECTION ({', '.join(terms)}): {why} - drafted "
+              f"new hire {ident['name']} ({ident['codename']})")
         crypto = hire.get("crypto") or {}
         if crypto.get("fingerprint"):
             print(f"  badge issued: {ident['dogtag']}  "
@@ -162,6 +185,7 @@ def print_event(event: DispatchEvent):
         "task_complete": "\033[92m[DONE]\033[0m",
         "task_failed": "\033[91m[FAIL]\033[0m",
         "payroll": "\033[93m[PAYROLL]\033[0m",
+        "engagement": "\033[96m[ENGAGE]\033[0m",
         "collecting": "\033[96m[COLLECT]\033[0m",
         "error": "\033[91m[ERROR]\033[0m",
     }.get(event.event_type, f"[{event.event_type}]")

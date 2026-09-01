@@ -40,7 +40,9 @@ logs, and audit trails are not.
   engagements (roles + responsibilities), a host/worktree, objectives with
   acceptance criteria, and standing directives into one slug-referenced
   aggregate; steered by editing between cycles (project-scoped dispatch
-  cycles land in a later phase)
+  cycles land in a later phase). Engagements book agents: availability is
+  derived, crew selection skips and discloses `BOOKED (project)` agents,
+  and mission outcomes drive engagement state (swarming/review/smoked)
 - **RPG economy** — completed tasks pay XP and gold (full missions pay a
   bonus), promotions follow the rank ladder and grant skill points to spend
   at the dojo (`agent train`), gold buys tooling at the depot
@@ -261,6 +263,6 @@ Early revision. Functional: generation, datastore, dispatch (template and
 ad-hoc `--task` missions, competency-matched crews), RPG economy
 (payroll, promotions, dojo/depot), agent identity (badges, keypairs, depot
 vault), projects (chartering, engagements, objectives), TUI, logging.
-In progress: project availability/booking + cycle engine, key
-distribution/revocation flows, remote-layer live validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
+In progress: project cycle engine, key distribution/revocation flows,
+remote-layer live validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
 amnesia, neckbeard, and sporadic anomalous flow — patch early, patch often.

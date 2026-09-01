@@ -230,6 +230,16 @@ def cmd_edit(args) -> int:
         updates["priority"] = args.priority
         changes.append(f"~ priority: {args.priority}")
 
+    if args.cap is not None:
+        if args.cap < 1:
+            print("\033[91mERROR: --cap must be at least 1\033[0m",
+                  file=sys.stderr)
+            return 1
+        policy = dict(project.get("policy") or {})
+        policy["max_concurrent_engagements"] = args.cap
+        updates["policy"] = policy
+        changes.append(f"~ max_concurrent_engagements: {args.cap}")
+
     if args.status:
         status = ds.get_reference_by_slug("project_status", args.status)
         if not status:
@@ -394,6 +404,9 @@ def add_parser(subparsers):
     edit.add_argument("--title", help="New title")
     edit.add_argument("--description", help="New description")
     edit.add_argument("--priority", type=int, help="New priority (1-10)")
+    edit.add_argument("--cap", type=int,
+                      help="Per-agent concurrent engagement cap "
+                           "(policy.max_concurrent_engagements)")
     edit.add_argument("--status",
                       help="New status slug (draft, active, paused, blocked, "
                            "review, complete, archived)")

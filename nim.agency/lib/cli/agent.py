@@ -76,6 +76,15 @@ def cmd_show(args) -> int:
           f"skill points: {sp.get('assigned', 0)}/{sp.get('total', 0)} assigned  "
           f"missions: {agent.get('ratings', {}).get('missions_completed', 0)}")
 
+    from ..data.project import agent_bookings, engagement_status
+    bookings = agent_bookings(ds, agent["id"])
+    if bookings:
+        engaged = ", ".join(
+            f"{b['project']['slug']} ({b['engagement'].get('role', '?')}, "
+            f"{engagement_status(ds, b['engagement']).get('label', '?')})"
+            for b in bookings)
+        print(f"ENGAGED:  {engaged}")
+
     crypto = agent.get("crypto") or {}
     if is_enrolled(agent):
         print(f"ACCESS:   badge:{org_id(agent)}  user:{ident.get('dogtag')}  "

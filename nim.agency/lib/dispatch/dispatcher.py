@@ -18,6 +18,9 @@ from typing import Callable, Optional
 from ..data import DataStore, get_datastore
 from ..data.composer import AgentComposer, get_composer
 from ..data.economy import Payout, award_mission
+from ..data.project import (
+    ENGAGEMENT_SWARMING, apply_mission_outcome, transition_engagements,
+)
 
 from .mission import Mission, MissionStatus, Task, TaskStatus, TaskResult
 from .provider import Provider, ClaudeCliProvider, get_provider, POLICY_VIOLATION_PREFIX
@@ -179,6 +182,15 @@ class Dispatcher:
         mission.status = MissionStatus.DISPATCHED
         mission.started_at = datetime.now()
 
+        # Project-tagged missions drive engagement state on the project
+        project = self._mission_project(mission)
+        if project:
+            moved = transition_engagements(
+                self.ds, project, ENGAGEMENT_SWARMING,
+                agent_ids=mission.crew_ids)
+            emit("engagement",
+                 f"{moved} engagement(s) -> swarming on {project['slug']}")
+
         # Determine scope from constraints (shared with briefing so disclosed
         # prompts match executed prompts)
         from .briefing import mission_scope
@@ -333,6 +345,7 @@ class Dispatcher:
                 tasks_total=len(mission.tasks)
             )
             emit("mission_failed", f"Mission failed - {failed_count} tasks failed")
+            self._settle_engagements(project, mission, emit)
         else:
             mission.status = MissionStatus.COLLECTING
             emit("collecting", "Assembling final report...")
@@ -351,8 +364,28 @@ class Dispatcher:
                 tasks_total=len(mission.tasks)
             )
             emit("mission_complete", f"Mission complete!")
+            self._settle_engagements(project, mission, emit)
 
         return mission
+
+    def _mission_project(self, mission: Mission) -> Optional[dict]:
+        """Resolve a mission's tagged project, if any."""
+        project_id = getattr(mission, "project_id", None)
+        return self.ds.read("project", project_id) if project_id else None
+
+    def _settle_engagements(self, project: Optional[dict],
+                            mission: Mission, emit) -> None:
+        """Drive engagement status from the mission outcome: complete ->
+        review, failed -> smoked (suspended pending operator)."""
+        if not project:
+            return
+        moved, status_id = apply_mission_outcome(
+            self.ds, project, mission.status.value,
+            agent_ids=mission.crew_ids)
+        status = self.ds.get_reference_by_id("assignment_status", status_id)
+        label = (status or {}).get("slug", status_id)
+        emit("engagement",
+             f"{moved} engagement(s) -> {label} on {project['slug']}")
 
     def _run_payroll(self, mission: Mission, emit) -> list[Payout]:
         """Settle XP/gold for the mission and refresh the agent cache so

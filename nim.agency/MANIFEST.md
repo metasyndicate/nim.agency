@@ -57,13 +57,13 @@ non-TTY without `-y` refuses, exit 2).
 | AgentGenerator | `lib/data/generator.py` | procedural agents from `lex/` taxonomies, weighted class/tier | stable |
 | AgentComposer | `lib/data/composer.py` | operational profile / system prompt assembly; tracks instruction source provenance (`OperationalProfile.sources`) | stable |
 | OWL / CrüeRoster | `lib/data/owl.py` | crew assembly | stable |
-| Roster matching | `lib/data/roster.py` | competency-term crew selection (skills/tools/specialties/capabilities, scored + disclosed); draft-hire fallback | functional |
-| Projects | `lib/data/project.py` | aggregate-root work units: engagement rows (reuse `assignment_status`), host binding, objectives, journal; slug/id-prefix resolution | functional |
+| Roster matching | `lib/data/roster.py` | competency-term crew selection (skills/tools/specialties/capabilities, scored + disclosed); draft-hire fallback; `available_only` consults project bookings with BOOKED disclosure | functional |
+| Projects | `lib/data/project.py` | aggregate-root work units: engagement rows (reuse `assignment_status`), host binding, objectives, journal; derived availability + booking cap; mission outcomes drive engagement transitions (swarming/review/smoked) | functional |
 | Economy | `lib/data/economy.py` | mission payroll, rank/qualifier progression, gold ledger, dojo (`train`) + depot (`equip`) | functional |
 | Identity | `lib/data/identity.py` | badge + immutable ed25519 keypair issuance; depot vault custody (`hive/depot/.vault/<dogtag>/`, 0700/0600) | functional |
-| Mission / Constraints | `lib/dispatch/mission.py` | work orders, tasks, dependency graph, JSON persistence | stable |
+| Mission / Constraints | `lib/dispatch/mission.py` | work orders, tasks, dependency graph, JSON persistence; optional `project_id`/`cycle` tags | stable |
 | MissionBuilder + templates | `lib/dispatch/builder.py` | fluent builder; `codebase`/`security` templates | stable |
-| Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger | stable |
+| Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger; drives project engagement transitions for project-tagged missions | stable |
 | Briefing | `lib/dispatch/briefing.py` | centralized mission disclosure renderer (verbosity 0/-v/-vv); single scope authority (`mission_scope`) shared with dispatcher | stable |
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
 | Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
@@ -104,8 +104,8 @@ Output artifacts per mission run:
   mission outcomes feed the economy but not achievements.
 - TUI dispatch backgrounds its worker thread if the operator leaves the
   run screen; no reattach view yet beyond re-entering Dispatch.
-- Project subsystem phases B–E pending (derived availability/booking,
-  cycle engine, access grants + remote dispatch, TUI screen) — tracked in
+- Project subsystem phases C–E pending (cycle engine, access grants +
+  remote dispatch, TUI screen) — tracked in
   `.nim/instructions/nim.agency.projects.bootstrap.md`.
 - Remote layer (`lib/remote/`) untested against live infrastructure this revision.
 - `mission show -v/-vv` recomposes prompts from the current datastore, not

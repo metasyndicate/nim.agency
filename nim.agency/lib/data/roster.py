@@ -32,10 +32,15 @@ class RosterMatch:
     agent: dict
     score: int = 0
     reasons: list[str] = field(default_factory=list)  # "regex->tool:grep(p3)"
+    booked_on: list[str] = field(default_factory=list)  # project slugs
 
     @property
     def codename(self) -> str:
         return self.agent["identity"]["codename"]
+
+    @property
+    def available(self) -> bool:
+        return not self.booked_on
 
 
 def _text_surfaces(entry: dict) -> list[str]:
@@ -65,7 +70,8 @@ def _match_reference(term: str, entries: list[dict]) -> dict[int, dict]:
 def match_agents(
     terms: list[str],
     count: int = 1,
-    ds: Optional[DataStore] = None
+    ds: Optional[DataStore] = None,
+    available_only: bool = False,
 ) -> list[RosterMatch]:
     """
     Rank roster agents against competency terms.
@@ -74,6 +80,11 @@ def match_agents(
     whispers) of skill domains, tools, specialties, and capabilities;
     agents accumulate score from the competencies they actually hold.
     Returns the top `count` positive-score candidates, best first.
+
+    With available_only, project bookings are consulted: the top `count`
+    AVAILABLE candidates are returned, plus any booked candidate that
+    outranked them (booked_on populated) so crew selection can disclose
+    who was passed over and why. Callers filter with `.available`.
     """
     ds = ds or get_datastore()
 
@@ -140,7 +151,29 @@ def match_agents(
         key=lambda m: (m.score, m.agent.get("economy", {}).get("xp", 0)),
         reverse=True,
     )
-    return matches[:count]
+    if not available_only:
+        return matches[:count]
+
+    from .project import availability_map
+    booked = availability_map(ds)
+    for match in matches:
+        match.booked_on = booked.get(match.agent["id"], [])
+
+    selected: list[RosterMatch] = []
+    passed_over: list[RosterMatch] = []
+    for match in matches:
+        if match.available:
+            selected.append(match)
+            if len(selected) >= count:
+                break
+        else:
+            passed_over.append(match)  # outranked a selection - disclose
+    result = selected + passed_over
+    result.sort(
+        key=lambda m: (m.score, m.agent.get("economy", {}).get("xp", 0)),
+        reverse=True,
+    )
+    return result
 
 
 def draft_hire(ds: Optional[DataStore] = None) -> dict:

@@ -138,6 +138,11 @@ class Mission:
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
+    # Project tagging - set when a mission is composed from a project
+    # cycle; drives engagement status transitions and the project journal
+    project_id: Optional[str] = None
+    cycle: Optional[int] = None
+
     # Results
     final_report: Optional[str] = None
 
@@ -176,6 +181,8 @@ class Mission:
             "created_at": self.created_at.isoformat(),
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "project_id": self.project_id,
+            "cycle": self.cycle,
             "final_report": self.final_report
         }
 
@@ -205,6 +212,8 @@ class Mission:
             mission.completed_at = datetime.fromisoformat(data["completed_at"])
 
         mission.final_report = data.get("final_report")
+        mission.project_id = data.get("project_id")
+        mission.cycle = data.get("cycle")
 
         # Load constraints
         c = data.get("constraints", {})
