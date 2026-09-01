@@ -7,8 +7,10 @@ Navigate with arrow keys, enter to select, 'q' to quit.
 """
 
 import curses
+import json
 import os
 import sys
+import threading
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -16,6 +18,13 @@ from typing import Optional, Callable
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lib.data import DataStore, AgentGenerator
+from lib.data.composer import get_composer
+from lib.data.economy import train as dojo_train
+from lib.data.identity import enroll as issue_badge, is_enrolled, org_id
+from lib.data.roster import match_agents, draft_hire
+from lib.dispatch import Dispatcher, adhoc_task_mission, get_provider
+from lib.config import get_config as agency_config, report_dir
+from tui.textkit import clip, display_width, pad
 
 # Optional remote imports (may not be available if dependencies missing)
 try:
@@ -142,6 +151,23 @@ class MugshotLoader:
         return cls.load(options[idx])
 
     @classmethod
+    def get_blended(cls, rank_slug: str, archetype_slug: str, agent_id: str) -> list[str]:
+        """Mugshot from the merged rank + archetype pools, deterministic
+        per agent. Takes resolved slugs so callers with reference-table
+        access (the dossier) get archetype-flavored portraits."""
+        import hashlib
+
+        combined = list(cls.RANK_MUGSHOTS.get(rank_slug, []))
+        for opt in cls.ARCHETYPE_MUGSHOTS.get(archetype_slug, []):
+            if opt not in combined:
+                combined.append(opt)
+        if not combined:
+            combined = cls.ALL_MUGSHOTS
+
+        idx = int(hashlib.md5(agent_id.encode()).hexdigest(), 16) % len(combined)
+        return cls.load(combined[idx])
+
+    @classmethod
     def get_for_agent(cls, agent: dict) -> list[str]:
         """
         Get a mugshot for an agent, considering rank and archetype.
@@ -264,6 +290,54 @@ class AgentBuilder:
         self.selected_agents = []  # Agent IDs in shortlist for bulk ops
         self.deploy_target_index = 0  # Target substation for deploy
 
+        # Stats screen state
+        self.stats_data = None
+
+        # New-agent creation state
+        self.create_candidate = None
+        self.create_edit_field = None
+
+        # Dojo (skill training) state
+        self.dojo_index = 0
+
+        # Crue member picker state
+        self.crue_member_intent = "add"
+        self.crue_member_candidates = []
+
+        # Dispatch state
+        self.dispatch_field_index = 0
+        self.dispatch_form = {"task": "", "skill": "", "target": ".", "count": "1"}
+        self.dispatch_brief = None
+        self.dispatch_events = []
+        self.dispatch_thread = None
+        self.dispatch_running = False
+        self.dispatch_result = None
+        self.dispatch_crew_override = []   # direct-dispatch crew (dossier/crue)
+        self.dispatch_crew_label = ""
+
+        # Generic text viewer state
+        self.viewer_title = ""
+        self.viewer_lines = []
+        self.viewer_scroll = 0
+        self.viewer_return_mode = "menu"
+
+        # Missions browser state
+        self.mission_list = []
+        self.mission_index = 0
+
+        # Agent edit form state
+        self.agent_edit_index = 0
+        self.agent_edit_form = {}
+
+        # Type foundry state
+        self.foundry_table = None
+        self.foundry_table_index = 0
+        self.foundry_entries = []
+        self.foundry_index = 0
+        self.foundry_form = {}
+        self.foundry_field_index = 0
+        self.foundry_entry_id = None   # None = creating new
+
         # Load reference data
         self.ranks = {r["id"]: r for r in self.ds.load_reference("rank")}
         self.statuses = {s["id"]: s for s in self.ds.load_reference("status")}
@@ -274,6 +348,8 @@ class AgentBuilder:
         self.ops_domains = {d["id"]: d for d in self.ds.load_reference("ops_domain")}
         self.archetypes = {a["id"]: a for a in self.ds.load_reference("archetype")}
         self.crue_types = {c["id"]: c for c in self.ds.load_reference("crue_type")}
+        self.capability_refs = {c["id"]: c for c in self.ds.load_reference("capability")}
+        self.tool_refs = {t["id"]: t for t in self.ds.load_reference("tool")}
         self.config = self.ds.get_config()
 
         # Roster filter state
@@ -314,13 +390,14 @@ class AgentBuilder:
             self._draw()
             key = stdscr.getch()
 
-            if key == ord('q') or key == ord('Q'):
+            if key in (ord('q'), ord('Q')) and not self.editing:
                 if self.mode == "menu":
                     break
                 else:
-                    self.mode = "menu"
+                    self._handle_input(key)
             elif key == curses.KEY_RESIZE:
-                stdscr.clear()
+                curses.update_lines_cols()
+                stdscr.erase()
             else:
                 self._handle_input(key)
 
@@ -424,6 +501,30 @@ class AgentBuilder:
             self._draw_crue_edit(height, width)
         elif self.mode == "crue_create":
             self._draw_crue_create(height, width)
+        elif self.mode == "crue_member_select":
+            self._draw_crue_member_select(height, width)
+        elif self.mode == "stats":
+            self._draw_stats(height, width)
+        elif self.mode == "dojo":
+            self._draw_dojo(height, width)
+        elif self.mode == "dispatch":
+            self._draw_dispatch_form(height, width)
+        elif self.mode == "dispatch_brief":
+            self._draw_dispatch_brief(height, width)
+        elif self.mode == "dispatch_run":
+            self._draw_dispatch_run(height, width)
+        elif self.mode == "viewer":
+            self._draw_viewer(height, width)
+        elif self.mode == "missions":
+            self._draw_missions(height, width)
+        elif self.mode == "agent_edit":
+            self._draw_agent_edit(height, width)
+        elif self.mode == "foundry":
+            self._draw_foundry(height, width)
+        elif self.mode == "foundry_list":
+            self._draw_foundry_list(height, width)
+        elif self.mode == "foundry_form":
+            self._draw_foundry_form(height, width)
 
         self.stdscr.refresh()
 
@@ -488,16 +589,19 @@ class AgentBuilder:
             ("R", "Agent Roster", "Browse registered agents"),
             ("N", "New Agent", "Create a new agent"),
             ("G", "Generate Random", "Generate random agent"),
+            ("D", "Dispatch", "Send agents on a mission"),
+            ("M", "Missions", "Browse mission history and reports"),
             ("X", "Substations", "Manage remote substations"),
             ("C", "Crues", "Manage teams and groups"),
             ("T", "Statistics", "View agency statistics"),
+            ("F", "Type Foundry", "Define specialties, foci, tools, crue types"),
             ("S", "Setup", "Configuration and data management"),
             ("Q", "Quit", "Exit the application")
         ]
 
         box_height = len(menu_items) + 4
         box_width = 50
-        box_y = 8
+        box_y = 6
         box_x = (width - box_width) // 2
 
         self._draw_box(box_y, box_x, box_height, box_width, "MAIN MENU")
@@ -509,22 +613,15 @@ class AgentBuilder:
             display_label = f"{label} (N/A)" if is_unavailable else label
 
             if i == self.menu_index:
-                self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                self.stdscr.addstr(y, box_x + 2, f" [{key}] {display_label:<20} ")
-                self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
+                self._safe_addstr(y, box_x + 2, f" [{key}] {display_label:<20} ",
+                                  curses.color_pair(Colors.HIGHLIGHT))
             else:
                 color = Colors.DIM if is_unavailable else Colors.NORMAL
-                self.stdscr.addstr(y, box_x + 2, f" [{key}] {display_label:<20} ",
-                                   curses.color_pair(color))
+                self._safe_addstr(y, box_x + 2, f" [{key}] {display_label:<20} ",
+                                  curses.color_pair(color))
 
         # Show status message if any
-        if self.message:
-            msg_y = box_y + box_height + 2
-            try:
-                self.stdscr.addstr(msg_y, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(box_y + box_height + 2, width)
 
         # Footer
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Select | Q: Quit")
@@ -594,31 +691,28 @@ class AgentBuilder:
             tag_str = f"{tag:04d}" if isinstance(tag, int) else "????"
 
             # Build row with archetype icon + label, focus abbrev, rank icon
-            arch_str = f"{archetype.get('icon', '')} {archetype.get('label', '?')}"[:18]
-            focus_str = focus.get('abbrev', focus.get('label', '?')[:3])[:12]
-            rank_str = f"{rank.get('icon', '')} {rank.get('label', '')}"[:10]
-            status_icon = status.get('icon', '?')[:4]
+            # (pad() is cell-accurate - wide icons no longer drift columns)
+            arch_str = pad(f"{archetype.get('icon', '')} {archetype.get('label', '?')}", 18)
+            focus_str = pad(focus.get('abbrev', focus.get('label', '?')[:3]), 12)
+            rank_str = pad(f"{rank.get('icon', '')} {rank.get('label', '')}", 10)
+            status_icon = pad(status.get('icon', '?'), 4)
 
             # Mark selected agents with asterisk
             selected_marker = "*" if agent["id"] in self.selected_agents else " "
-            row = f"{selected_marker}{tag_str:>4} {ident['name']:<22} {arch_str:<18} {focus_str:<12} {rank_str:<10} {status_icon:<4}"
+            row = f"{selected_marker}{tag_str:>4} {pad(ident['name'], 22)} {arch_str} {focus_str} {rank_str} {status_icon}"
+            row = f" {clip(row, list_width - 6)} "
 
-            try:
-                is_selected = start_idx + i == self.roster_index
-                is_in_shortlist = agent["id"] in self.selected_agents
-
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(row_y, list_x + 2, f" {row[:list_width-6]} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                elif is_in_shortlist:
-                    # Gold tint for shortlisted agents
-                    self.stdscr.addstr(row_y, list_x + 2, f" {row[:list_width-6]} ",
-                                       curses.color_pair(Colors.GOLD))
-                else:
-                    self.stdscr.addstr(row_y, list_x + 2, f" {row[:list_width-6]} ")
-            except curses.error:
-                pass
+            is_selected = start_idx + i == self.roster_index
+            is_in_shortlist = agent["id"] in self.selected_agents
+            if is_selected:
+                self._safe_addstr(row_y, list_x + 2, row,
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            elif is_in_shortlist:
+                # Gold tint for shortlisted agents
+                self._safe_addstr(row_y, list_x + 2, row,
+                                  curses.color_pair(Colors.GOLD))
+            else:
+                self._safe_addstr(row_y, list_x + 2, row)
 
         # Dynamic footer based on shortlist state
         if self.selected_agents:
@@ -675,18 +769,14 @@ class AgentBuilder:
 
             # Mark current filter
             marker = " *" if is_current else "  "
+            row = f" {pad(icon, 2)}{pad(label, 45)}{marker}"
 
-            try:
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(y + i, box_x + 2, f" {icon} {label:<45}{marker}")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    color = Colors.STAT_VALUE if is_current else Colors.NORMAL
-                    self.stdscr.addstr(y + i, box_x + 2, f" {icon} {label:<45}{marker}",
-                                       curses.color_pair(color))
-            except curses.error:
-                pass
+            if is_selected:
+                self._safe_addstr(y + i, box_x + 2, row,
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                color = Colors.STAT_VALUE if is_current else Colors.NORMAL
+                self._safe_addstr(y + i, box_x + 2, row, curses.color_pair(color))
 
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Apply | Q: Cancel")
 
@@ -716,6 +806,12 @@ class AgentBuilder:
         col2_width = max(44, int(width * 0.38))  # Identity/Economy
         col3_width = width - col1_width - col2_width - 6  # Capabilities/Tools
 
+        # Below ~110 columns the third column collapses to a sliver; drop
+        # it and widen the dossier instead of drawing broken boxes
+        show_col3 = col3_width >= 22
+        if not show_col3:
+            col2_width = width - col1_width - 5
+
         top_height = max(18, int(height * 0.60))
         profile_height = height - top_height - 4
 
@@ -726,7 +822,8 @@ class AgentBuilder:
 
         self._draw_box(portrait_y, portrait_x, portrait_box_height, col1_width, "MUGSHOT")
 
-        mugshot_lines = MugshotLoader.get_for_rank(rank.get("slug", "grunt"), agent["id"])
+        mugshot_lines = MugshotLoader.get_blended(
+            rank.get("slug", "grunt"), archetype.get("slug", ""), agent["id"])
         for i, line in enumerate(mugshot_lines[:portrait_box_height - 2]):
             if portrait_y + 1 + i < portrait_y + portrait_box_height - 1:
                 padded = line[:col1_width - 4].center(col1_width - 4)
@@ -741,12 +838,9 @@ class AgentBuilder:
 
         # Archetype (icon + label, centered, prominent)
         arch_display = f"{archetype.get('icon', '')} {archetype.get('label', 'Unknown')}"
-        try:
-            self.stdscr.addstr(char_y, portrait_x + 1,
-                               arch_display[:col1_width - 2].center(col1_width - 2),
-                               curses.color_pair(Colors.GOLD) | curses.A_BOLD)
-        except curses.error:
-            pass
+        self._safe_addstr(char_y, portrait_x + 1,
+                          pad(arch_display, col1_width - 2, "center"),
+                          curses.color_pair(Colors.GOLD) | curses.A_BOLD)
         char_y += 1
 
         # Role title (qualifier + focus + rank)
@@ -832,12 +926,26 @@ class AgentBuilder:
                                curses.color_pair(Colors.STAT_VALUE))
         except curses.error:
             pass
-        y += 2
+        y += 1
+
+        # Access identity: badge + primary key fingerprint
+        crypto = agent.get("crypto") or {}
+        if crypto.get("fingerprint"):
+            self._safe_addstr(y, info_x + 2, "Badge: ",
+                              curses.color_pair(Colors.STAT_LABEL))
+            badge = f"{org_id(agent)} {crypto.get('key_type', '?')} {crypto.get('fingerprint', '')}"
+            self._safe_addstr(y, info_x + 9, clip(badge, col2_width - 12),
+                              curses.color_pair(Colors.DIM))
+        else:
+            self._safe_addstr(y, info_x + 2, "Badge: not enrolled - press B",
+                              curses.color_pair(Colors.HEALTH))
+        y += 1
 
         # Classification row (removed redundant "Class:" label)
         class_num = agent_class.get('label', '?').replace('Class ', '')
         try:
-            self.stdscr.addstr(y, info_x + 2, f"{rank.get('icon', '')} {rank['label']:<12}",
+            self.stdscr.addstr(y, info_x + 2,
+                               pad(f"{rank.get('icon', '')} {rank['label']}", 15),
                                curses.color_pair(Colors.STAT_VALUE))
             self.stdscr.addstr(f"[{class_num}] ",
                                curses.color_pair(Colors.DIM))
@@ -868,6 +976,11 @@ class AgentBuilder:
                                curses.color_pair(Colors.GOLD) | curses.A_BOLD)
             self.stdscr.addstr(f"{eco['gold']:>5,}",
                                curses.color_pair(Colors.GOLD))
+            sp = eco.get("skill_points", {})
+            self.stdscr.addstr(f"   SP ",
+                               curses.color_pair(Colors.STAT_LABEL) | curses.A_BOLD)
+            self.stdscr.addstr(f"{sp.get('assigned', 0)}/{sp.get('total', 0)}",
+                               curses.color_pair(Colors.STAT_VALUE))
         except curses.error:
             pass
         y += 1
@@ -909,108 +1022,83 @@ class AgentBuilder:
                 except curses.error:
                     pass
 
-        # === COLUMN 3: Capabilities, Tools & Awards ===
-        cap_x = info_x + col2_width + 1
-        cap_y = 2
-        cap_height = top_height
+        # === COLUMN 3: Capabilities, Tools & Awards (wide terminals only) ===
+        if show_col3:
+            cap_x = info_x + col2_width + 1
+            cap_y = 2
+            cap_height = top_height
 
-        self._draw_box(cap_y, cap_x, cap_height, col3_width, "CAPABILITIES & AWARDS")
+            self._draw_box(cap_y, cap_x, cap_height, col3_width, "CAPABILITIES")
 
-        cy = cap_y + 1
+            cy = cap_y + 1
 
-        # Capabilities section with level/max
-        capabilities = agent.get("capabilities", [])
-        if capabilities:
-            try:
-                self.stdscr.addstr(cy, cap_x + 2, f"CAPABILITIES",
-                                   curses.color_pair(Colors.TITLE))
-            except curses.error:
-                pass
-            cy += 1
-
-            cap_refs = {c["id"]: c for c in self.ds.load_reference("capability")}
-            for cap in capabilities[:min(5, (cap_height - 10) // 2)]:
-                cap_ref = cap_refs.get(cap.get("capability_id"), {})
-                prof = cap.get("proficiency", 1)
-                max_prof = 5
-                icon = cap_ref.get("icon", "●")
-                label = cap_ref.get("label", "Unknown")[:14]
-                bar = self._progress_bar(5, prof / max_prof)
-                try:
-                    self.stdscr.addstr(cy, cap_x + 2, f"{icon} {label:<14} [{bar}] {prof}/{max_prof}",
-                                       curses.color_pair(Colors.STAT_VALUE))
-                except curses.error:
-                    pass
+            # Capabilities section with level/max
+            capabilities = agent.get("capabilities", [])
+            if capabilities:
+                self._safe_addstr(cy, cap_x + 2, "CAPABILITIES",
+                                  curses.color_pair(Colors.TITLE))
                 cy += 1
-        cy += 1
 
-        # Tools section (compact)
-        tools = agent.get("tools", [])
-        if tools and cy < cap_y + cap_height - 6:
-            try:
-                self.stdscr.addstr(cy, cap_x + 2, f"TOOLS ({len(tools)})",
-                                   curses.color_pair(Colors.TITLE))
-            except curses.error:
-                pass
+                for cap in capabilities[:max(0, min(5, (cap_height - 10) // 2))]:
+                    cap_ref = self.capability_refs.get(cap.get("capability_id"), {})
+                    prof = cap.get("proficiency", 1)
+                    max_prof = 5
+                    lead = pad(f"{cap_ref.get('icon', '●')} {cap_ref.get('label', 'Unknown')}", 17)
+                    bar = self._progress_bar(5, prof / max_prof)
+                    self._safe_addstr(cy, cap_x + 2,
+                                      clip(f"{lead} [{bar}] {prof}/{max_prof}", col3_width - 4),
+                                      curses.color_pair(Colors.STAT_VALUE))
+                    cy += 1
             cy += 1
 
-            tool_refs = {t["id"]: t for t in self.ds.load_reference("tool")}
-            tool_per_row = max(1, (col3_width - 4) // 10)
-            for i, tool in enumerate(tools[:min(8, (cap_height - cy + cap_y - 4) * tool_per_row)]):
-                tool_ref = tool_refs.get(tool.get("tool_id"), {})
-                icon = tool_ref.get("icon", "▪")
-                slug = tool_ref.get("slug", "???")[:7]
-                col = i % tool_per_row
-                row = i // tool_per_row
-                tx = cap_x + 2 + (col * 10)
-                ty = cy + row
-                if ty < cap_y + cap_height - 4:
-                    try:
-                        self.stdscr.addstr(ty, tx, f"{icon}{slug:<8}",
-                                           curses.color_pair(Colors.STAT_VALUE))
-                    except curses.error:
-                        pass
-            cy += (len(tools) - 1) // tool_per_row + 2
+            # Tools section (compact grid; 11 cells per entry - wide icons fit)
+            tools = agent.get("tools", [])
+            if tools and cy < cap_y + cap_height - 6:
+                self._safe_addstr(cy, cap_x + 2, f"TOOLS ({len(tools)})",
+                                  curses.color_pair(Colors.TITLE))
+                cy += 1
 
-        # Awards/Ratings section
-        if cy < cap_y + cap_height - 3:
-            try:
-                self.stdscr.addstr(cy, cap_x + 2, "─" * (col3_width - 4),
-                                   curses.color_pair(Colors.BORDER))
-                self.stdscr.addstr(cy, cap_x + 2, " RATINGS ",
-                                   curses.color_pair(Colors.TITLE))
-            except curses.error:
-                pass
-            cy += 1
+                cell = 11
+                tool_per_row = max(1, (col3_width - 4) // cell)
+                shown = 0
+                for i, tool in enumerate(tools[:min(8, max(1, (cap_height - cy + cap_y - 4)) * tool_per_row)]):
+                    tool_ref = self.tool_refs.get(tool.get("tool_id"), {})
+                    entry = pad(f"{tool_ref.get('icon', '▪')} {tool_ref.get('slug', '???')}", cell - 1)
+                    col = i % tool_per_row
+                    row = i // tool_per_row
+                    ty = cy + row
+                    if ty < cap_y + cap_height - 4:
+                        self._safe_addstr(ty, cap_x + 2 + (col * cell), entry,
+                                          curses.color_pair(Colors.STAT_VALUE))
+                        shown = i + 1
+                cy += (max(1, shown) - 1) // tool_per_row + 2
 
-            missions = ratings.get("missions_completed", 0)
-            peer_count = ratings.get("peer", {}).get("count", 0)
-            peer_avg = ratings.get("peer", {}).get("sum", 0) / max(1, peer_count) if peer_count else 0
+            # Awards/Ratings section
+            if cy < cap_y + cap_height - 3:
+                self._safe_addstr(cy, cap_x + 2, "─" * (col3_width - 4),
+                                  curses.color_pair(Colors.BORDER))
+                self._safe_addstr(cy, cap_x + 2, " RATINGS ",
+                                  curses.color_pair(Colors.TITLE))
+                cy += 1
 
-            try:
-                self.stdscr.addstr(cy, cap_x + 2, f"Missions: {missions}",
-                                   curses.color_pair(Colors.STAT_VALUE))
+                missions = ratings.get("missions_completed", 0)
+                peer_count = ratings.get("peer", {}).get("count", 0)
+                peer_avg = ratings.get("peer", {}).get("sum", 0) / max(1, peer_count) if peer_count else 0
+
+                line = f"Missions: {missions}"
                 if peer_count > 0:
-                    self.stdscr.addstr(f"  Peer: {peer_avg:.1f}/5 ({peer_count})",
-                                       curses.color_pair(Colors.DIM))
-            except curses.error:
-                pass
-            cy += 1
+                    line += f"  Peer: {peer_avg:.1f}/5 ({peer_count})"
+                self._safe_addstr(cy, cap_x + 2, clip(line, col3_width - 4),
+                                  curses.color_pair(Colors.STAT_VALUE))
+                cy += 1
 
-            # Achievements (placeholder)
-            achievements = agent.get("achievements", [])
-            if achievements:
-                try:
-                    self.stdscr.addstr(cy, cap_x + 2, f"Awards: {len(achievements)}",
-                                       curses.color_pair(Colors.GOLD))
-                except curses.error:
-                    pass
-            else:
-                try:
-                    self.stdscr.addstr(cy, cap_x + 2, "No citations yet",
-                                       curses.color_pair(Colors.DIM))
-                except curses.error:
-                    pass
+                achievements = agent.get("achievements", [])
+                if achievements:
+                    self._safe_addstr(cy, cap_x + 2, f"Awards: {len(achievements)}",
+                                      curses.color_pair(Colors.GOLD))
+                else:
+                    self._safe_addstr(cy, cap_x + 2, "No citations yet",
+                                      curses.color_pair(Colors.DIM))
 
         # === BOTTOM: Profile Panel ===
         profile_y = 2 + top_height
@@ -1087,16 +1175,12 @@ class AgentBuilder:
             pass
 
         # Show status message if any (important for ping/deploy feedback)
-        if self.message:
-            try:
-                msg_x = (width - len(self.message)) // 2
-                self.stdscr.addstr(height - 3, msg_x, self.message,
-                                   curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 3, width)
 
         # Updated footer with rolodex controls
-        footer = "<</>>/H/L: Nav | C: +Crew | P: Ping | D: Deploy | S: Skills | T: Tools | V: Profile | R: Reroll | X: Del | Q: Back"
+        footer = ("H/L: Nav | D: Dispatch | O: OpProfile | W: Service | E: Edit | "
+                  "S: Skills | T: Tools | J: Dojo | B: Badge | V: Bio | R: Roll | "
+                  "X: Del | Q: Back")
         self._draw_footer(height, width, footer)
 
     def _get_next_rank_info(self, current_xp: int) -> dict:
@@ -1141,9 +1225,9 @@ class AgentBuilder:
         except curses.error:
             pass
 
-        # Tool list
-        tools = self.ds.load_reference("tool")
-        tools.sort(key=lambda t: (t.get("cost", 0), t.get("label", "")))
+        # Tool list (sorted copy - the reference cache must not be mutated)
+        tools = sorted(self.tool_refs.values(),
+                       key=lambda t: (t.get("cost", 0), t.get("label", "")))
 
         list_y = 7
         list_height = height - 12
@@ -1189,19 +1273,13 @@ class AgentBuilder:
                 status_color = Colors.HEALTH
 
             icon = tool.get("icon", "▪")
-            label = f"{icon} {tool.get('label', '???')}"
-            row = f"{label:<20} {cost:>5}g {risk:<10} {min_rank:<10} {status:<12}"
+            label = pad(f"{icon} {tool.get('label', '???')}", 20)
+            row = f" {clip(f'{label} {cost:>5}g {risk:<10} {min_rank:<10} {status:<12}', width - 10)} "
 
-            try:
-                if start_idx + i == self.shop_index:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(row_y, 4, f" {row[:width - 10]} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(row_y, 4, f" {row[:width - 10]} ",
-                                       curses.color_pair(status_color))
-            except curses.error:
-                pass
+            if start_idx + i == self.shop_index:
+                self._safe_addstr(row_y, 4, row, curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(row_y, 4, row, curses.color_pair(status_color))
 
         # Show tool description at bottom
         if available and 0 <= self.shop_index < len(available):
@@ -1240,7 +1318,7 @@ class AgentBuilder:
             pass
 
         # Capability list
-        cap_refs = {c["id"]: c for c in self.ds.load_reference("capability")}
+        cap_refs = self.capability_refs
 
         list_y = 7
         list_height = height - 12
@@ -1262,7 +1340,7 @@ class AgentBuilder:
             xp_costs = cap_ref.get("xp_costs", [100, 300, 600, 1000, 1500])
 
             icon = cap_ref.get("icon", "●")
-            label = f"{icon} {cap_ref.get('label', 'Unknown')}"
+            label = pad(f"{icon} {cap_ref.get('label', 'Unknown')}", 25)
 
             if prof >= 5:
                 next_cost = "MAX"
@@ -1279,18 +1357,12 @@ class AgentBuilder:
                 next_cost = f"{next_cost:,}"
 
             bar = self._progress_bar(5, prof / 5)
-            row = f"{label:<25} [{bar}] {next_cost:>10} {status:<15}"
+            row = f" {clip(f'{label} [{bar}] {next_cost:>10} {status:<15}', width - 10)} "
 
-            try:
-                if i == self.skill_index:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(row_y, 4, f" {row[:width - 10]} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(row_y, 4, f" {row[:width - 10]} ",
-                                       curses.color_pair(status_color))
-            except curses.error:
-                pass
+            if i == self.skill_index:
+                self._safe_addstr(row_y, 4, row, curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(row_y, 4, row, curses.color_pair(status_color))
 
         # Show capability description at bottom
         if caps and 0 <= self.skill_index < len(caps):
@@ -1371,18 +1443,17 @@ class AgentBuilder:
             except curses.error:
                 pass
 
-        # Scroll indicator
+        # Scroll indicator (kept inside the box - it used to overwrite the border)
         if total_lines > visible_lines:
             pct = self.profile_scroll / max(1, max_scroll)
             indicator_y = content_y + int(pct * (visible_lines - 1))
-            try:
-                self.stdscr.addstr(indicator_y, content_width, "█",
-                                   curses.color_pair(Colors.STAT_VALUE))
-                self.stdscr.addstr(content_y, content_width + 1,
-                                   f"{self.profile_scroll + 1}-{min(self.profile_scroll + visible_lines, total_lines)}/{total_lines}",
-                                   curses.color_pair(Colors.DIM))
-            except curses.error:
-                pass
+            self._safe_addstr(indicator_y, content_width - 1, "█",
+                              curses.color_pair(Colors.STAT_VALUE))
+            range_str = (f" {self.profile_scroll + 1}-"
+                         f"{min(self.profile_scroll + visible_lines, total_lines)}"
+                         f"/{total_lines} ")
+            self._safe_addstr(content_y - 1, max(4, content_width - len(range_str) - 2),
+                              range_str, curses.color_pair(Colors.DIM))
 
         self._draw_footer(height, width, "UP/DOWN/PgUp/PgDn: Scroll | Q: Back to Agent")
 
@@ -1517,11 +1588,64 @@ class AgentBuilder:
         return lines
 
     def _draw_create(self, height: int, width: int):
-        """Draw agent creation view."""
+        """Draw the new-agent creation screen: candidate preview + controls."""
         self._draw_header(width)
-        self.stdscr.addstr(10, (width - 30) // 2, "Agent creation coming soon...",
-                           curses.color_pair(Colors.DIM))
-        self._draw_footer(height, width, "Q: Back")
+
+        candidate = self.create_candidate
+        if not candidate:
+            self._safe_addstr(10, max(0, (width - 24) // 2), "No candidate - press R",
+                              curses.color_pair(Colors.DIM))
+            self._draw_footer(height, width, "R: Roll Candidate | Q: Cancel")
+            return
+
+        ident = candidate["identity"]
+        cls = candidate["classification"]
+        rank = self.ranks.get(cls.get("rank_id"), {})
+        archetype = self.archetypes.get(cls.get("archetype_id"), {})
+        agent_class = self.classes.get(cls.get("class_id"), {})
+        focus = self.focuses.get(cls.get("focus_id"), {})
+        profile = candidate.get("profile", {})
+
+        box_width = min(70, width - 4)
+        box_height = 15
+        box_y = 6
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width, "NEW AGENT - CANDIDATE")
+
+        def field(y, label, value, color=Colors.STAT_VALUE, editing_key=None):
+            self._safe_addstr(y, box_x + 2, f"{label:<10}",
+                              curses.color_pair(Colors.STAT_LABEL))
+            if self.editing and self.create_edit_field == editing_key:
+                self._safe_addstr(y, box_x + 12, f"[{self.edit_buffer}_]",
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(y, box_x + 12, clip(str(value), box_width - 14),
+                                  curses.color_pair(color))
+
+        y = box_y + 2
+        field(y, "Name", ident.get("name", "?"), Colors.TITLE, "name"); y += 1
+        field(y, "Codename", ident.get("codename", "?"), Colors.STAT_VALUE, "codename"); y += 1
+        field(y, "Dogtag", ident.get("dogtag", "?"), Colors.DIM); y += 2
+        field(y, "Rank", pad(f"{rank.get('icon', '')} {rank.get('label', '?')}", 20)
+              + f"Class: {agent_class.get('label', '?')}"); y += 1
+        field(y, "Role", f"{archetype.get('label', '?')} / {focus.get('label', '?')}"); y += 1
+        field(y, "Title", ident.get("role_title", "?"), Colors.DIM); y += 2
+
+        skills = sorted(candidate.get("skills", []),
+                        key=lambda s: s.get("points", 0), reverse=True)[:3]
+        skill_str = "  ".join(
+            f"{self.skill_domains.get(s['domain_id'], {}).get('label', '?')}:{s['points']}"
+            for s in skills)
+        field(y, "Skills", skill_str); y += 1
+        field(y, "Motto", f'"{profile.get("motto", "")}"', Colors.DIM); y += 1
+
+        self._draw_message(box_y + box_height + 1, width)
+        if self.editing:
+            self._draw_footer(height, width, "Type to edit | ENTER: Apply | ESC: Cancel")
+        else:
+            self._draw_footer(height, width,
+                              "ENTER: Hire (enrolls + badge) | R: Reroll | "
+                              "E: Edit Name | C: Edit Codename | Q: Cancel")
 
     def _draw_setup(self, height: int, width: int):
         """Draw setup/configuration view."""
@@ -1546,13 +1670,9 @@ class AgentBuilder:
 
         for i, (label, desc) in enumerate(setup_items):
             y = menu_y + 2 + i
-            if i == self.setup_index:
-                self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                self.stdscr.addstr(y, menu_x + 2, f" {label:<22} ")
-                self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-            else:
-                self.stdscr.addstr(y, menu_x + 2, f" {label:<22} ",
-                                   curses.color_pair(Colors.NORMAL))
+            color = Colors.HIGHLIGHT if i == self.setup_index else Colors.NORMAL
+            self._safe_addstr(y, menu_x + 2, f" {label:<22} ",
+                              curses.color_pair(color))
 
         # Right panel: details
         detail_x = menu_x + menu_width + 2
@@ -1584,10 +1704,7 @@ class AgentBuilder:
             self._draw_setup_data(content_y, content_x, detail_width - 6)
 
         # Show status message if any
-        if self.message:
-            msg_y = height - 4
-            self.stdscr.addstr(msg_y, (width - len(self.message)) // 2,
-                               self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
+        self._draw_message(height - 4, width)
 
         footer_text = "UP/DOWN: Navigate | ENTER: Edit/Action | Q: Back"
         if self.editing:
@@ -1651,16 +1768,24 @@ class AgentBuilder:
         self.stdscr.addstr(y, x, f"Role: ", curses.color_pair(Colors.STAT_LABEL))
         self.stdscr.addstr(role, curses.color_pair(Colors.STAT_VALUE))
 
+    def _refresh_setup_stats(self):
+        """Cache datastore counts shown by the setup panel - the draw loop
+        runs ~10x/sec and must not hit the filesystem every frame."""
+        try:
+            self._setup_stats = (self.ds.count("agent"),
+                                 self.ds.list_archives("agent"))
+        except Exception:
+            self._setup_stats = (len(self.roster), [])
+
     def _draw_setup_data(self, y: int, x: int, width: int):
         """Draw data management panel."""
-        # Agent count
-        agent_count = self.ds.count("agent")
+        if not hasattr(self, "_setup_stats"):
+            self._refresh_setup_stats()
+        agent_count, archives = self._setup_stats
+
         self.stdscr.addstr(y, x, f"Current Agents: ", curses.color_pair(Colors.STAT_LABEL))
         self.stdscr.addstr(str(agent_count), curses.color_pair(Colors.STAT_VALUE))
         y += 2
-
-        # Archives
-        archives = self.ds.list_archives("agent")
         self.stdscr.addstr(y, x, f"Archives: ", curses.color_pair(Colors.STAT_LABEL))
         self.stdscr.addstr(str(len(archives)), curses.color_pair(Colors.STAT_VALUE))
         y += 1
@@ -1741,29 +1866,52 @@ class AgentBuilder:
         """Get operator display name."""
         return self.config.get("operator", {}).get("display_name") or self.system_operator.get("username", "operator")
 
+    def _safe_addstr(self, y: int, x: int, text: str, attr: int = 0):
+        """Bounds-checked, cell-clipped addstr - the only safe way to draw.
+
+        curses raises on any write past the screen edge (including the
+        legal bottom-right cell), and len()-based layout drifts on wide
+        glyphs; clamp both here so callers can't crash a frame.
+        """
+        height, width = self.stdscr.getmaxyx()
+        if y < 0 or y >= height or x < 0 or x >= width:
+            return
+        try:
+            self.stdscr.addstr(y, x, clip(text, width - x, ellipsis=""), attr)
+        except curses.error:
+            pass
+
+    def _draw_message(self, y: int, width: int):
+        """Draw the centered status message line, clipped to fit."""
+        if not self.message:
+            return
+        msg = clip(self.message, max(0, width - 4))
+        x = max(0, (width - display_width(msg)) // 2)
+        self._safe_addstr(y, x, msg,
+                          curses.color_pair(self.message_color) | curses.A_BOLD)
+
     def _draw_footer(self, height: int, width: int, text: str):
         """Draw footer with help text."""
-        self.stdscr.addstr(height - 2, 0, "=" * width, curses.color_pair(Colors.BORDER))
-        self.stdscr.addstr(height - 1, (width - len(text)) // 2, text,
-                           curses.color_pair(Colors.DIM))
+        self._safe_addstr(height - 2, 0, "=" * width, curses.color_pair(Colors.BORDER))
+        text = clip(text, max(0, width - 2))
+        x = max(0, (width - display_width(text)) // 2)
+        self._safe_addstr(height - 1, x, text, curses.color_pair(Colors.DIM))
 
     def _draw_box(self, y: int, x: int, height: int, width: int, title: str = ""):
-        """Draw a box with optional title."""
-        # Top border
-        self.stdscr.addstr(y, x, "+" + "-" * (width - 2) + "+",
-                           curses.color_pair(Colors.BORDER))
+        """Draw a box with optional title (clamped to the box width)."""
+        if height < 2 or width < 2:
+            return
+        border = curses.color_pair(Colors.BORDER)
+        self._safe_addstr(y, x, "+" + "-" * (width - 2) + "+", border)
         if title:
-            self.stdscr.addstr(y, x + 2, f" {title} ",
-                               curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+            self._safe_addstr(y, x + 2, clip(f" {title} ", max(0, width - 4)),
+                              curses.color_pair(Colors.TITLE) | curses.A_BOLD)
 
-        # Sides
         for row in range(1, height - 1):
-            self.stdscr.addstr(y + row, x, "|", curses.color_pair(Colors.BORDER))
-            self.stdscr.addstr(y + row, x + width - 1, "|", curses.color_pair(Colors.BORDER))
+            self._safe_addstr(y + row, x, "|", border)
+            self._safe_addstr(y + row, x + width - 1, "|", border)
 
-        # Bottom border
-        self.stdscr.addstr(y + height - 1, x, "+" + "-" * (width - 2) + "+",
-                           curses.color_pair(Colors.BORDER))
+        self._safe_addstr(y + height - 1, x, "+" + "-" * (width - 2) + "+", border)
 
     def _progress_bar(self, width: int, pct: float) -> str:
         """Create a progress bar string."""
@@ -1813,10 +1961,36 @@ class AgentBuilder:
             self._handle_crue_edit_input(key)
         elif self.mode == "crue_create":
             self._handle_crue_create_input(key)
+        elif self.mode == "crue_member_select":
+            self._handle_crue_member_select_input(key)
+        elif self.mode == "create":
+            self._handle_create_input(key)
+        elif self.mode == "stats":
+            self._handle_stats_input(key)
+        elif self.mode == "dojo":
+            self._handle_dojo_input(key)
+        elif self.mode == "dispatch":
+            self._handle_dispatch_form_input(key)
+        elif self.mode == "dispatch_brief":
+            self._handle_dispatch_brief_input(key)
+        elif self.mode == "dispatch_run":
+            self._handle_dispatch_run_input(key)
+        elif self.mode == "viewer":
+            self._handle_viewer_input(key)
+        elif self.mode == "missions":
+            self._handle_missions_input(key)
+        elif self.mode == "agent_edit":
+            self._handle_agent_edit_input(key)
+        elif self.mode == "foundry":
+            self._handle_foundry_input(key)
+        elif self.mode == "foundry_list":
+            self._handle_foundry_list_input(key)
+        elif self.mode == "foundry_form":
+            self._handle_foundry_form_input(key)
 
     def _handle_menu_input(self, key: int):
         """Handle menu input."""
-        menu_count = 8  # Updated for Substations + Crues
+        menu_count = 11
 
         if key == curses.KEY_UP:
             self.menu_index = (self.menu_index - 1) % menu_count
@@ -1827,14 +2001,25 @@ class AgentBuilder:
         elif key == ord('r') or key == ord('R'):
             self.mode = "roster"
         elif key == ord('n') or key == ord('N'):
-            self.mode = "create"
+            self._enter_create_mode()
         elif key == ord('g') or key == ord('G'):
             self._generate_agent()
+        elif key == ord('d') or key == ord('D'):
+            self._enter_dispatch_mode()
+        elif key == ord('m') or key == ord('M'):
+            self._enter_missions_mode()
         elif key == ord('x') or key == ord('X'):
             self._enter_substations_mode()  # Will show error if unavailable
+        elif key == ord('c') or key == ord('C'):
+            self._enter_crues_mode()
+        elif key == ord('t') or key == ord('T'):
+            self._enter_stats_mode()
+        elif key == ord('f') or key == ord('F'):
+            self._enter_foundry_mode()
         elif key == ord('s') or key == ord('S'):
             self.mode = "setup"
             self.setup_index = 0
+            self._refresh_setup_stats()
 
     def _handle_roster_input(self, key: int):
         """Handle roster input."""
@@ -1885,6 +2070,8 @@ class AgentBuilder:
                     self.selected_agents.remove(agent["id"])
                 else:
                     self.selected_agents.append(agent["id"])
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "menu"
 
     def _show_bulk_ops_menu(self):
         """Show bulk operations menu for selected agents."""
@@ -1949,9 +2136,25 @@ class AgentBuilder:
         elif key == ord('p') or key == ord('P'):
             self._ping_agent()
 
-        # D: Deploy to substation
+        # D: Direct dispatch - this agent, prefilled mission form
         elif key == ord('d') or key == ord('D'):
-            self._deploy_agent_prompt()
+            if self.current_agent:
+                self.dispatch_crew_override = [self.current_agent]
+                self.dispatch_crew_label = (
+                    f"direct: {self.current_agent['identity']['codename']}")
+                self._enter_dispatch_mode()
+
+        # O: Operational profile (composed instructions/behavior)
+        elif key == ord('o') or key == ord('O'):
+            self._open_operational_profile()
+
+        # W: Work history / service record
+        elif key == ord('w') or key == ord('W'):
+            self._open_service_record()
+
+        # E: Edit agent form
+        elif key == ord('e') or key == ord('E'):
+            self._enter_agent_edit()
 
         # S: Skills/capabilities
         elif key == ord('s') or key == ord('S'):
@@ -1962,6 +2165,15 @@ class AgentBuilder:
         elif key == ord('t') or key == ord('T'):
             self.shop_index = 0
             self.mode = "shop"
+
+        # J: Dojo (skill domain training)
+        elif key == ord('j') or key == ord('J'):
+            self.dojo_index = 0
+            self.mode = "dojo"
+
+        # B: Badge (enroll identity)
+        elif key == ord('b') or key == ord('B'):
+            self._enroll_current_agent()
 
         # V: View full profile
         elif key == ord('v') or key == ord('V'):
@@ -2068,19 +2280,26 @@ class AgentBuilder:
         if self.menu_index == 0:  # Roster
             self.mode = "roster"
         elif self.menu_index == 1:  # New
-            self.mode = "create"
+            self._enter_create_mode()
         elif self.menu_index == 2:  # Generate
             self._generate_agent()
-        elif self.menu_index == 3:  # Substations
+        elif self.menu_index == 3:  # Dispatch
+            self._enter_dispatch_mode()
+        elif self.menu_index == 4:  # Missions
+            self._enter_missions_mode()
+        elif self.menu_index == 5:  # Substations
             self._enter_substations_mode()  # Will show error if unavailable
-        elif self.menu_index == 4:  # Crues
+        elif self.menu_index == 6:  # Crues
             self._enter_crues_mode()
-        elif self.menu_index == 5:  # Stats
-            pass  # TODO
-        elif self.menu_index == 6:  # Setup
+        elif self.menu_index == 7:  # Stats
+            self._enter_stats_mode()
+        elif self.menu_index == 8:  # Type Foundry
+            self._enter_foundry_mode()
+        elif self.menu_index == 9:  # Setup
             self.mode = "setup"
             self.setup_index = 0
-        elif self.menu_index == 7:  # Quit
+            self._refresh_setup_stats()
+        elif self.menu_index == 10:  # Quit
             raise KeyboardInterrupt
 
     def _handle_setup_input(self, key: int):
@@ -2107,6 +2326,8 @@ class AgentBuilder:
                 self.setup_index = (self.setup_index + 1) % setup_count
             elif key in (curses.KEY_ENTER, 10, 13):
                 self._setup_action()
+            elif key == ord('q') or key == ord('Q') or key == 27:
+                self.mode = "menu"
             # Data management shortcuts (when on index 4)
             elif self.setup_index == 4:
                 if key == ord('a') or key == ord('A'):
@@ -2167,11 +2388,13 @@ class AgentBuilder:
         else:
             self.message = "No agents to archive"
             self.message_color = Colors.DIM
+        self._refresh_setup_stats()
 
     def _reset_only(self):
         """Delete all agents without archiving."""
         _, count = self.ds.reset_collection("agent", archive_first=False)
         self._load_roster()
+        self._refresh_setup_stats()
         if count > 0:
             self.message = f"Deleted {count} agents"
             self.message_color = Colors.HEALTH
@@ -2242,19 +2465,15 @@ class AgentBuilder:
 
         for i, (label, desc) in enumerate(reroll_options):
             row_y = list_y + 2 + i
+            row = f" {pad(label, 30)} "
 
-            try:
-                if i == self.reroll_index:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(row_y, box_x + 2, f" {label:<30} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    # Highlight the warning option differently
-                    color = Colors.HEALTH if "Full" in label else Colors.STAT_VALUE
-                    self.stdscr.addstr(row_y, box_x + 2, f" {label:<30} ",
-                                       curses.color_pair(color))
-            except curses.error:
-                pass
+            if i == self.reroll_index:
+                self._safe_addstr(row_y, box_x + 2, row,
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                # Highlight the warning option differently
+                color = Colors.HEALTH if "Full" in label else Colors.STAT_VALUE
+                self._safe_addstr(row_y, box_x + 2, row, curses.color_pair(color))
 
         # Show description for selected option
         if 0 <= self.reroll_index < len(reroll_options):
@@ -2282,8 +2501,7 @@ class AgentBuilder:
 
             # Capabilities preview
             caps = agent.get("capabilities", [])
-            cap_refs = {c["id"]: c for c in self.ds.load_reference("capability")}
-            cap_str = ", ".join([f"{cap_refs.get(c['capability_id'], {}).get('icon', '?')}"
+            cap_str = ", ".join([f"{self.capability_refs.get(c['capability_id'], {}).get('icon', '?')}"
                                  for c in caps[:5]])
             self.stdscr.addstr(preview_y, box_x, f"Capabilities: {cap_str}",
                                curses.color_pair(Colors.DIM))
@@ -2297,14 +2515,7 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            msg_y = height - 4
-            try:
-                self.stdscr.addstr(msg_y, (width - len(self.message)) // 2,
-                                   self.message,
-                                   curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Roll | Q: Back to Agent")
 
@@ -2394,7 +2605,7 @@ class AgentBuilder:
 
             try:
                 self.stdscr.addstr(box_y + 2, box_x + 4,
-                                   f"{spinner} {label:<15} {dice_str} {spinner}",
+                                   f"{spinner} {pad(label, 15)} {dice_str} {spinner}",
                                    curses.color_pair(Colors.GOLD) | curses.A_BOLD)
             except curses.error:
                 pass
@@ -2634,6 +2845,7 @@ class AgentBuilder:
         for _ in range(5):
             gen.create_and_save(status_id=2)
         self._load_roster()
+        self._refresh_setup_stats()
         self.message = "Generated 5 new agents"
         self.message_color = Colors.STAT_VALUE
 
@@ -2770,24 +2982,13 @@ class AgentBuilder:
 
                 row = f"{name:<20} {hostname:<25} {state:<10} {agent_count:>6} {env:<12}"
 
-                try:
-                    if start_idx + i == self.substation_index:
-                        self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ")
-                        self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                    else:
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ",
-                                           curses.color_pair(Colors.NORMAL))
-                except curses.error:
-                    pass
+                color = (Colors.HIGHLIGHT if start_idx + i == self.substation_index
+                         else Colors.NORMAL)
+                self._safe_addstr(row_y, 4, f" {row[:width-10]} ",
+                                  curses.color_pair(color))
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "ENTER: View | N: New | E: Edit | C: Check | K: Keys | X: Delete | Q: Back")
 
@@ -2882,12 +3083,7 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "C: Check | E: Edit | P: Permissions | D: Deploy | X: Delete | Q: Back")
 
@@ -2928,16 +3124,14 @@ class AgentBuilder:
             else:
                 display_value = value
 
-            try:
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(y, 4, f" {label:12}: {display_value:<40} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(y, 4, f" {label:12}: ", curses.color_pair(Colors.STAT_LABEL))
-                    self.stdscr.addstr(f"{display_value:<40}", curses.color_pair(Colors.STAT_VALUE))
-            except curses.error:
-                pass
+            if is_selected:
+                self._safe_addstr(y, 4, f" {label:12}: {display_value:<40} ",
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(y, 4, f" {label:12}: ",
+                                  curses.color_pair(Colors.STAT_LABEL))
+                self._safe_addstr(y, 4 + 16, f"{display_value:<40}",
+                                  curses.color_pair(Colors.STAT_VALUE))
             y += 1
 
         # Help text
@@ -2951,12 +3145,7 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "ENTER: Edit | Q: Back to View")
 
@@ -3001,20 +3190,14 @@ class AgentBuilder:
             else:
                 value_color = Colors.STAT_VALUE if is_enabled else Colors.DIM
 
-            try:
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(y, 4, f" {checkbox} {label:<25} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(y, 4, f" {checkbox} ", curses.color_pair(value_color))
-                    self.stdscr.addstr(f"{label:<25}", curses.color_pair(Colors.STAT_LABEL))
-
-                # Description on next line if selected
-                if is_selected:
-                    self.stdscr.addstr(y + 1, 8, desc, curses.color_pair(Colors.DIM))
-            except curses.error:
-                pass
+            if is_selected:
+                self._safe_addstr(y, 4, f" {checkbox} {label:<25} ",
+                                  curses.color_pair(Colors.HIGHLIGHT))
+                self._safe_addstr(y + 1, 8, desc, curses.color_pair(Colors.DIM))
+            else:
+                self._safe_addstr(y, 4, f" {checkbox} ", curses.color_pair(value_color))
+                self._safe_addstr(y, 4 + len(checkbox) + 2, f"{label:<25}",
+                                  curses.color_pair(Colors.STAT_LABEL))
             y += 2
 
         # Safety warning
@@ -3025,12 +3208,7 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER/SPACE: Toggle | Q: Back to View")
 
@@ -3092,24 +3270,12 @@ class AgentBuilder:
 
                 row = f"{name:<30} {key_type:<10} {bits:>6} {status:<15} {fp:<30}"
 
-                try:
-                    if i == self.ssh_key_index:
-                        self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ")
-                        self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                    else:
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ",
-                                           curses.color_pair(status_color))
-                except curses.error:
-                    pass
+                color = Colors.HIGHLIGHT if i == self.ssh_key_index else status_color
+                self._safe_addstr(row_y, 4, f" {row[:width-10]} ",
+                                  curses.color_pair(color))
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Import | R: Rescan | G: Generate | Q: Back")
 
@@ -3598,26 +3764,18 @@ class AgentBuilder:
 
                 icon = crue_type_data.get("icon", "👥") if crue_type_data else "👥"
 
-                row = f"{icon} {name:<23} {crue_type:<18} {member_count:>8} {status:<10}"
+                row = f"{pad(icon, 2)} {pad(name, 23)} {crue_type:<18} {member_count:>8} {status:<10}"
+                row = f" {clip(row, width - 10)} "
 
-                try:
-                    if start_idx + i == self.crue_index:
-                        self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ")
-                        self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                    else:
-                        self.stdscr.addstr(row_y, 4, f" {row[:width-10]} ",
-                                           curses.color_pair(Colors.NORMAL))
-                except curses.error:
-                    pass
+                if start_idx + i == self.crue_index:
+                    self._safe_addstr(row_y, 4, row,
+                                      curses.color_pair(Colors.HIGHLIGHT))
+                else:
+                    self._safe_addstr(row_y, 4, row,
+                                      curses.color_pair(Colors.NORMAL))
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "ENTER: View | N: New | E: Edit | X: Delete | Q: Back")
 
@@ -3704,14 +3862,11 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
-        self._draw_footer(height, width, "E: Edit | A: Add Member | R: Remove Member | X: Delete | Q: Back")
+        self._draw_footer(height, width,
+                          "E: Edit | A: Add Member | R: Remove Member | "
+                          "D: Dispatch Crue | X: Delete | Q: Back")
 
     def _draw_crue_edit(self, height: int, width: int):
         """Draw crue edit view."""
@@ -3747,16 +3902,14 @@ class AgentBuilder:
             else:
                 display_value = value
 
-            try:
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(y, 4, f" {label:15}: {display_value:<45} ")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(y, 4, f" {label:15}: ", curses.color_pair(Colors.STAT_LABEL))
-                    self.stdscr.addstr(f"{display_value:<45}", curses.color_pair(Colors.STAT_VALUE))
-            except curses.error:
-                pass
+            if is_selected:
+                self._safe_addstr(y, 4, f" {label:15}: {display_value:<45} ",
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(y, 4, f" {label:15}: ",
+                                  curses.color_pair(Colors.STAT_LABEL))
+                self._safe_addstr(y, 4 + 19, f"{display_value:<45}",
+                                  curses.color_pair(Colors.STAT_VALUE))
             y += 1
 
         # Help text
@@ -3770,12 +3923,7 @@ class AgentBuilder:
             pass
 
         # Status message
-        if self.message:
-            try:
-                self.stdscr.addstr(height - 4, (width - len(self.message)) // 2,
-                                   self.message, curses.color_pair(self.message_color) | curses.A_BOLD)
-            except curses.error:
-                pass
+        self._draw_message(height - 4, width)
 
         self._draw_footer(height, width, "ENTER: Edit | Q: Back to View")
 
@@ -3802,19 +3950,17 @@ class AgentBuilder:
 
             icon = ct.get("icon", "👥")
             label = ct.get("label", "?")
-            desc = ct.get("description", "")[:40]
+            desc = clip(ct.get("description", ""), box_width - 30)
+            lead = f" {pad(icon, 2)} {pad(label, 20)}"
 
-            try:
-                if is_selected:
-                    self.stdscr.attron(curses.color_pair(Colors.HIGHLIGHT))
-                    self.stdscr.addstr(y + i, box_x + 2, f" {icon} {label:<20} {desc}")
-                    self.stdscr.attroff(curses.color_pair(Colors.HIGHLIGHT))
-                else:
-                    self.stdscr.addstr(y + i, box_x + 2, f" {icon} {label:<20}",
-                                       curses.color_pair(Colors.STAT_VALUE))
-                    self.stdscr.addstr(f" {desc}", curses.color_pair(Colors.DIM))
-            except curses.error:
-                pass
+            if is_selected:
+                self._safe_addstr(y + i, box_x + 2, clip(f"{lead} {desc}", box_width - 4),
+                                  curses.color_pair(Colors.HIGHLIGHT))
+            else:
+                self._safe_addstr(y + i, box_x + 2, lead,
+                                  curses.color_pair(Colors.STAT_VALUE))
+                self._safe_addstr(y + i, box_x + 2 + display_width(lead), f" {desc}",
+                                  curses.color_pair(Colors.DIM))
 
         self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Create | Q: Cancel")
 
@@ -3865,11 +4011,23 @@ class AgentBuilder:
             self.edit_buffer = ""
             self.mode = "crue_edit"
         elif key == ord('a') or key == ord('A'):
-            # Add member - show agent selection
-            self._add_member_to_crue()
+            # Add member - open the selection picker
+            self._enter_crue_member_select("add")
         elif key == ord('r') or key == ord('R'):
-            # Remove member
-            self._remove_member_from_crue()
+            # Remove member - open the selection picker
+            self._enter_crue_member_select("remove")
+        elif key == ord('d') or key == ord('D'):
+            # Direct dispatch - crew is this crue's members
+            members = self._get_crue_members((self.current_crue or {}).get("id"))
+            if not members:
+                self.message = "No members to dispatch"
+                self.message_color = Colors.DIM
+            else:
+                self.dispatch_crew_override = members
+                self.dispatch_crew_label = (
+                    f"crue: {self.current_crue.get('name', '?')} "
+                    f"({len(members)} member(s))")
+                self._enter_dispatch_mode()
         elif key == ord('x') or key == ord('X'):
             self._delete_crue(self.current_crue)
             self.mode = "crues"
@@ -4045,76 +4203,1583 @@ class AgentBuilder:
             self.message = f"Delete error: {str(e)[:30]}"
             self.message_color = Colors.HEALTH
 
-    def _add_member_to_crue(self):
-        """Add an agent to the current crue."""
-        if not self.current_crue or not self.roster:
-            self.message = "No agents available"
-            self.message_color = Colors.DIM
-            return
-
-        # For now, add the first unassigned agent
-        # TODO: Show selection UI
-        crue_id = self.current_crue["id"]
-        for agent in self.roster:
-            groups = agent.get("groups", [])
-            already_member = any(g.get("group_id") == crue_id for g in groups)
-            if not already_member:
-                from datetime import datetime, timezone
-                groups.append({
-                    "group_id": crue_id,
-                    "role": "member",
-                    "joined_at": datetime.now(timezone.utc).isoformat()
-                })
-                agent["groups"] = groups
-                try:
-                    self.ds.update("agent", agent["id"], agent)
-                    # Update crue member count
-                    capacity = self.current_crue.get("capacity", {})
-                    capacity["current_members"] = capacity.get("current_members", 0) + 1
-                    self.current_crue["capacity"] = capacity
-                    self.ds.update("group", crue_id, self.current_crue)
-                    self._load_roster()
-                    self.message = f"Added {agent['identity']['name']}"
-                    self.message_color = Colors.STAT_VALUE
-                except Exception as e:
-                    self.message = f"Error: {str(e)[:30]}"
-                    self.message_color = Colors.HEALTH
-                return
-
-        self.message = "All agents already assigned"
-        self.message_color = Colors.DIM
-
-    def _remove_member_from_crue(self):
-        """Remove an agent from the current crue."""
+    def _enter_crue_member_select(self, intent: str):
+        """Open the member picker for add/remove on the current crue."""
         if not self.current_crue:
             return
-
         crue_id = self.current_crue["id"]
-        members = self._get_crue_members(crue_id)
 
-        if not members:
-            self.message = "No members to remove"
+        if intent == "add":
+            candidates = [
+                a for a in self.roster
+                if not any(g.get("group_id") == crue_id for g in a.get("groups", []))
+            ]
+            empty_msg = "All agents already assigned"
+        else:
+            candidates = self._get_crue_members(crue_id)
+            empty_msg = "No members to remove"
+
+        if not candidates:
+            self.message = empty_msg
             self.message_color = Colors.DIM
             return
 
-        # Remove the first member (TODO: selection UI)
-        agent = members[0]
+        self.crue_member_intent = intent
+        self.crue_member_candidates = candidates
+        self.crue_member_index = 0
+        self.mode = "crue_member_select"
+
+    def _draw_crue_member_select(self, height: int, width: int):
+        """Draw the crue member picker modal."""
+        self._draw_header(width)
+
+        crue_name = (self.current_crue or {}).get("name", "?")
+        verb = "ADD TO" if self.crue_member_intent == "add" else "REMOVE FROM"
+
+        box_width = min(64, width - 4)
+        box_height = min(len(self.crue_member_candidates) + 4, height - 10)
+        box_y = 6
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width,
+                       f"{verb}: {crue_name}")
+
+        visible = box_height - 4
+        start = max(0, self.crue_member_index - visible + 1)
+        for i, agent in enumerate(
+                self.crue_member_candidates[start:start + visible]):
+            ident = agent.get("identity", {})
+            arch = self.archetypes.get(
+                agent.get("classification", {}).get("archetype_id"), {})
+            tag = ident.get("tag", 0)
+            row = (f" #{tag:04d} {pad(ident.get('name', '?'), 24)} "
+                   f"{pad(arch.get('label', '?'), 18)}")
+            color = (Colors.HIGHLIGHT if start + i == self.crue_member_index
+                     else Colors.NORMAL)
+            self._safe_addstr(box_y + 2 + i, box_x + 2,
+                              clip(row, box_width - 4), curses.color_pair(color))
+
+        self._draw_message(box_y + box_height + 1, width)
+        self._draw_footer(height, width, "UP/DOWN: Navigate | ENTER: Confirm | Q: Cancel")
+
+    def _handle_crue_member_select_input(self, key: int):
+        """Handle member picker input."""
+        count = len(self.crue_member_candidates)
+        if not count:
+            self.mode = "crue_view"
+            return
+
+        if key == curses.KEY_UP:
+            self.crue_member_index = (self.crue_member_index - 1) % count
+        elif key == curses.KEY_DOWN:
+            self.crue_member_index = (self.crue_member_index + 1) % count
+        elif key in (curses.KEY_ENTER, 10, 13):
+            agent = self.crue_member_candidates[self.crue_member_index]
+            self._commit_crue_member(agent, self.crue_member_intent)
+            self.mode = "crue_view"
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "crue_view"
+
+    def _commit_crue_member(self, agent: dict, intent: str):
+        """Apply an add/remove membership change: dual write (agent.groups
+        + crue capacity counter), then reload the roster."""
+        if not self.current_crue:
+            return
+        crue_id = self.current_crue["id"]
+        from datetime import datetime, timezone
+
         groups = agent.get("groups", [])
-        agent["groups"] = [g for g in groups if g.get("group_id") != crue_id]
+        if intent == "add":
+            groups.append({
+                "group_id": crue_id,
+                "role": "member",
+                "joined_at": datetime.now(timezone.utc).isoformat()
+            })
+            agent["groups"] = groups
+            delta, verb = 1, "Added"
+        else:
+            agent["groups"] = [g for g in groups if g.get("group_id") != crue_id]
+            delta, verb = -1, "Removed"
 
         try:
             self.ds.update("agent", agent["id"], agent)
-            # Update crue member count
             capacity = self.current_crue.get("capacity", {})
-            capacity["current_members"] = max(0, capacity.get("current_members", 0) - 1)
+            capacity["current_members"] = max(
+                0, capacity.get("current_members", 0) + delta)
             self.current_crue["capacity"] = capacity
             self.ds.update("group", crue_id, self.current_crue)
             self._load_roster()
-            self.message = f"Removed {agent['identity']['name']}"
+            self.message = f"{verb} {agent['identity']['name']}"
             self.message_color = Colors.STAT_VALUE
         except Exception as e:
             self.message = f"Error: {str(e)[:30]}"
             self.message_color = Colors.HEALTH
+
+    # ==========================================================================
+    # New Agent Creation
+    # ==========================================================================
+
+    def _enter_create_mode(self):
+        """Roll a candidate and open the creation screen (nothing saved yet)."""
+        self.create_candidate = self.gen.generate(status_id=2)
+        self.create_edit_field = None
+        self.editing = False
+        self.edit_buffer = ""
+        self.mode = "create"
+
+    def _handle_create_input(self, key: int):
+        """Handle new-agent creation input."""
+        if self.editing:
+            if key == 27:  # ESC
+                self.editing = False
+                self.edit_buffer = ""
+                self.create_edit_field = None
+            elif key in (curses.KEY_ENTER, 10, 13):
+                self._apply_create_edit()
+                self.editing = False
+                self.create_edit_field = None
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                self.edit_buffer = self.edit_buffer[:-1]
+            elif 32 <= key <= 126:
+                self.edit_buffer += chr(key)
+            return
+
+        if key == ord('r') or key == ord('R'):
+            self._enter_create_mode()
+            self.message = "New candidate rolled"
+            self.message_color = Colors.DIM
+        elif key == ord('e') or key == ord('E'):
+            self.create_edit_field = "name"
+            self.edit_buffer = self.create_candidate["identity"].get("name", "")
+            self.editing = True
+        elif key == ord('c') or key == ord('C'):
+            self.create_edit_field = "codename"
+            self.edit_buffer = self.create_candidate["identity"].get("codename", "")
+            self.editing = True
+        elif key in (curses.KEY_ENTER, 10, 13):
+            self._hire_candidate()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.create_candidate = None
+            self.mode = "menu"
+
+    def _apply_create_edit(self):
+        """Apply a name/codename edit to the candidate, keeping the derived
+        identity fields (dogtag) consistent."""
+        value = self.edit_buffer.strip()
+        if not value or not self.create_candidate:
+            return
+        ident = self.create_candidate["identity"]
+
+        if self.create_edit_field == "codename":
+            ident["codename"] = value.lower().replace(" ", ".")
+            return
+
+        parts = value.split(None, 2)
+        if len(parts) >= 3:
+            title, first, last = parts[0], parts[1], parts[2]
+        elif len(parts) == 2:
+            title, first, last = ident.get("title", "Agt."), parts[0], parts[1]
+        else:
+            title, first, last = ident.get("title", "Agt."), parts[0], "Unknown"
+        ident["name"] = f"{title} {first} {last}"
+        ident["title"] = title
+        ident["dogtag"] = self.gen.compute_dogtag(title, first, last)
+
+    def _hire_candidate(self):
+        """Persist the candidate and enroll it (badge + keypair)."""
+        if not self.create_candidate:
+            return
+        try:
+            agent = self.ds.create("agent", self.create_candidate, validate=False)
+        except Exception as e:
+            self.message = f"Hire failed: {str(e)[:40]}"
+            self.message_color = Colors.HEALTH
+            return
+
+        from lib.data.identity import try_enroll
+        enrollment = try_enroll(self.ds, agent)
+        if enrollment:
+            agent = enrollment.agent
+            self.message = (f"Hired {agent['identity']['name']} - "
+                            f"badge {org_id(agent)} {enrollment.fingerprint[:19]}...")
+        else:
+            self.message = f"Hired {agent['identity']['name']} (enrollment deferred)"
+        self.message_color = Colors.GOLD
+
+        self._load_roster()
+        self.current_agent = next(
+            (a for a in self.roster if a["id"] == agent["id"]), agent)
+        self.create_candidate = None
+        self.mode = "view"
+
+    # ==========================================================================
+    # Identity (badge enrollment)
+    # ==========================================================================
+
+    def _enroll_current_agent(self):
+        """Issue the current agent's badge + primary keypair."""
+        if not self.current_agent:
+            return
+        if is_enrolled(self.current_agent):
+            crypto = self.current_agent.get("crypto", {})
+            self.message = (f"Badge on file: {org_id(self.current_agent)} "
+                            f"{crypto.get('fingerprint', '')[:19]}...")
+            self.message_color = Colors.DIM
+            return
+        try:
+            enrollment = issue_badge(self.ds, self.current_agent)
+        except Exception as e:
+            self.message = f"Enrollment failed: {str(e)[:40]}"
+            self.message_color = Colors.HEALTH
+            return
+        self._load_roster()
+        self.current_agent = next(
+            (a for a in self.roster if a["id"] == enrollment.agent["id"]),
+            enrollment.agent)
+        self.message = (f"BADGE ISSUED {org_id(self.current_agent)} - "
+                        f"{enrollment.fingerprint[:26]}...")
+        self.message_color = Colors.GOLD
+
+    # ==========================================================================
+    # Dojo (skill domain training)
+    # ==========================================================================
+
+    def _draw_dojo(self, height: int, width: int):
+        """Draw the dojo - spend unassigned skill points on skill domains."""
+        if not self.current_agent:
+            self.mode = "roster"
+            return
+
+        agent = self.current_agent
+        ident = agent["identity"]
+        sp = agent.get("economy", {}).get("skill_points", {})
+        unassigned = sp.get("total", 0) - sp.get("assigned", 0)
+
+        self._draw_header(width)
+        self._safe_addstr(5, 2, f"DOJO - {ident['name']}",
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+        self._safe_addstr(5, max(0, width - 26), "UNASSIGNED SP: ",
+                          curses.color_pair(Colors.STAT_LABEL))
+        self._safe_addstr(5, max(0, width - 11), str(unassigned),
+                          curses.color_pair(Colors.STAT_VALUE) | curses.A_BOLD)
+
+        skills = {s["domain_id"]: s for s in agent.get("skills", [])}
+        domains = sorted(self.skill_domains.values(), key=lambda d: d["id"])
+
+        list_y = 7
+        header = f"{'DOMAIN':<24} {'POINTS':<20} {'STATUS':<12}"
+        self._safe_addstr(list_y, 4, header,
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+        self._safe_addstr(list_y + 1, 4, "-" * min(width - 8, 60),
+                          curses.color_pair(Colors.DIM))
+
+        for i, domain in enumerate(domains):
+            row_y = list_y + 2 + i
+            points = skills.get(domain["id"], {}).get("points", 0)
+            cap = domain.get("max_points", 20)
+            bar = self._progress_bar(10, points / max(1, cap))
+            if points >= cap:
+                status = "MASTERED"
+            elif unassigned > 0:
+                status = "TRAINABLE"
+            else:
+                status = "NO SP"
+            lead = pad(f"{domain.get('icon', '')} {domain.get('label', '?')}", 24)
+            row = f" {lead} [{bar}] {points:>2}/{cap}  {status:<10} "
+
+            color = Colors.HIGHLIGHT if i == self.dojo_index else Colors.STAT_VALUE
+            self._safe_addstr(row_y, 4, clip(row, width - 8),
+                              curses.color_pair(color))
+
+        self._draw_message(height - 4, width)
+        self._draw_footer(height, width,
+                          "UP/DOWN: Navigate | ENTER: Train +1 | Q: Back to Agent")
+
+    def _handle_dojo_input(self, key: int):
+        """Handle dojo input."""
+        if not self.current_agent:
+            self.mode = "roster"
+            return
+
+        domains = sorted(self.skill_domains.values(), key=lambda d: d["id"])
+
+        if key == curses.KEY_UP:
+            self.dojo_index = (self.dojo_index - 1) % len(domains)
+        elif key == curses.KEY_DOWN:
+            self.dojo_index = (self.dojo_index + 1) % len(domains)
+        elif key in (curses.KEY_ENTER, 10, 13):
+            domain = domains[self.dojo_index]
+            try:
+                payout = dojo_train(self.ds, self.current_agent,
+                                    domain["slug"], 1)
+            except ValueError as e:
+                self.message = str(e)
+                self.message_color = Colors.HEALTH
+                return
+            self.current_agent = payout.agent
+            self._load_roster()
+            self.message = "; ".join(payout.notes) or "Trained"
+            self.message_color = Colors.STAT_VALUE
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "view"
+
+    # ==========================================================================
+    # Statistics
+    # ==========================================================================
+
+    def _enter_stats_mode(self):
+        """Compute agency statistics once and open the stats screen."""
+        self._load_roster()
+        self.stats_data = self._compute_stats()
+        self.mode = "stats"
+
+    def _compute_stats(self) -> dict:
+        """Aggregate roster + ledger statistics."""
+        roster = self.roster
+        rank_dist = []
+        for rank in sorted(self.ranks.values(), key=lambda r: r["id"]):
+            count = sum(1 for a in roster
+                        if a.get("classification", {}).get("rank_id") == rank["id"])
+            rank_dist.append((rank.get("label", "?"), count))
+
+        leaders = sorted(roster, key=lambda a: a.get("economy", {}).get("xp", 0),
+                         reverse=True)[:5]
+
+        ledger_in = ledger_out = ledger_count = 0
+        try:
+            for tx in self.ds.query("transaction", include_retired=True).data:
+                amount = tx.get("amount", 0)
+                ledger_count += 1
+                if tx.get("from_agent_id"):
+                    ledger_out += amount
+                else:
+                    ledger_in += amount
+        except Exception:
+            pass
+
+        return {
+            "total": len(roster),
+            "enrolled": sum(1 for a in roster
+                            if (a.get("crypto") or {}).get("fingerprint")),
+            "violations": sum((a.get("conduct") or {}).get("violations", 0)
+                              for a in roster),
+            "missions": sum(a.get("ratings", {}).get("missions_completed", 0)
+                            for a in roster),
+            "total_xp": sum(a.get("economy", {}).get("xp", 0) for a in roster),
+            "total_gold": sum(a.get("economy", {}).get("gold", 0) for a in roster),
+            "rank_dist": rank_dist,
+            "leaders": leaders,
+            "ledger": (ledger_count, ledger_in, ledger_out),
+        }
+
+    def _draw_stats(self, height: int, width: int):
+        """Draw agency statistics."""
+        self._draw_header(width)
+        stats = self.stats_data or {}
+
+        col_width = (width - 6) // 2
+        box_height = height - 10
+
+        # Left: rank distribution
+        self._draw_box(6, 2, box_height, col_width, "RANK DISTRIBUTION")
+        rank_dist = stats.get("rank_dist", [])
+        max_count = max((c for _, c in rank_dist), default=1) or 1
+        bar_width = max(6, col_width - 26)
+        for i, (label, count) in enumerate(rank_dist):
+            y = 8 + i
+            if y >= 6 + box_height - 1:
+                break
+            bar = self._progress_bar(bar_width, count / max_count)
+            self._safe_addstr(y, 4, f"{label:<12} [{bar}] {count:>3}",
+                              curses.color_pair(Colors.STAT_VALUE))
+
+        summary_y = 8 + len(rank_dist) + 1
+        for line, color in [
+            (f"Agents:    {stats.get('total', 0)}  "
+             f"(badged: {stats.get('enrolled', 0)})", Colors.NORMAL),
+            (f"Missions:  {stats.get('missions', 0)} completed", Colors.NORMAL),
+            (f"Conduct:   {stats.get('violations', 0)} violation(s)",
+             Colors.HEALTH if stats.get("violations") else Colors.DIM),
+        ]:
+            if summary_y < 6 + box_height - 1:
+                self._safe_addstr(summary_y, 4, clip(line, col_width - 4),
+                                  curses.color_pair(color))
+                summary_y += 1
+
+        # Right: economy + XP leaders
+        right_x = col_width + 4
+        self._draw_box(6, right_x, box_height, col_width, "ECONOMY")
+        ledger_count, ledger_in, ledger_out = stats.get("ledger", (0, 0, 0))
+        y = 8
+        for line, color in [
+            (f"XP in circulation:   {stats.get('total_xp', 0):,}", Colors.XP),
+            (f"Gold in circulation: {stats.get('total_gold', 0):,}g", Colors.GOLD),
+            (f"Ledger: {ledger_count} entries  "
+             f"(+{ledger_in}g / -{ledger_out}g)", Colors.DIM),
+        ]:
+            self._safe_addstr(y, right_x + 2, clip(line, col_width - 4),
+                              curses.color_pair(color))
+            y += 1
+        y += 1
+
+        self._safe_addstr(y, right_x + 2, "XP LEADERS",
+                          curses.color_pair(Colors.TITLE))
+        y += 1
+        for agent in stats.get("leaders", []):
+            if y >= 6 + box_height - 1:
+                break
+            ident = agent.get("identity", {})
+            eco = agent.get("economy", {})
+            rank = self.ranks.get(
+                agent.get("classification", {}).get("rank_id"), {})
+            line = (f"{pad(ident.get('codename', '?'), 24)} "
+                    f"{eco.get('xp', 0):>6,}xp  {rank.get('label', '?')}")
+            self._safe_addstr(y, right_x + 2, clip(line, col_width - 4),
+                              curses.color_pair(Colors.STAT_VALUE))
+            y += 1
+
+        self._draw_footer(height, width, "L: Ledger | R: Refresh | Q: Back")
+
+    def _handle_stats_input(self, key: int):
+        """Handle stats screen input."""
+        if key == ord('r') or key == ord('R'):
+            self._enter_stats_mode()
+            self.message = "Statistics refreshed"
+            self.message_color = Colors.DIM
+        elif key == ord('l') or key == ord('L'):
+            self._open_ledger_viewer()
+        elif key in (curses.KEY_ENTER, 10, 13) or key in (ord('q'), ord('Q'), 27):
+            self.mode = "menu"
+
+    # ==========================================================================
+    # Dispatch (mission form -> briefing -> live run)
+    # ==========================================================================
+
+    DISPATCH_FIELDS = [
+        ("task", "Task", "What the agent(s) should do (required)"),
+        ("skill", "Skill terms", "Comma-separated competency terms for crew matching"),
+        ("target", "Target dir", "Working directory for the mission"),
+        ("count", "Crew size", "Agents to assign when matching by skill"),
+    ]
+
+    def _enter_dispatch_mode(self):
+        """Open the dispatch mission form."""
+        if self.dispatch_running:
+            self.mode = "dispatch_run"
+            return
+        self.dispatch_field_index = 0
+        self.dispatch_brief = None
+        self.mode = "dispatch"
+
+    def _draw_dispatch_form(self, height: int, width: int):
+        """Draw the ad-hoc mission form."""
+        self._draw_header(width)
+
+        box_width = min(72, width - 4)
+        box_height = 14
+        box_y = 6
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width, "DISPATCH - MISSION FORM")
+
+        y = box_y + 2
+        for i, (field_key, label, hint) in enumerate(self.DISPATCH_FIELDS):
+            is_selected = (i == self.dispatch_field_index)
+            value = self.dispatch_form.get(field_key, "")
+            if is_selected and self.editing:
+                display = f"[{self.edit_buffer}_]"
+                color = Colors.HIGHLIGHT
+            else:
+                display = value or "(unset)" if field_key == "task" else value
+                color = Colors.HIGHLIGHT if is_selected else Colors.STAT_VALUE
+            self._safe_addstr(y, box_x + 2, f"{label:<12}",
+                              curses.color_pair(Colors.STAT_LABEL))
+            self._safe_addstr(y, box_x + 15, clip(display, box_width - 18),
+                              curses.color_pair(color))
+            y += 1
+            if is_selected:
+                self._safe_addstr(y, box_x + 15, clip(hint, box_width - 18),
+                                  curses.color_pair(Colors.DIM))
+            y += 1
+
+        # Crew source disclosure
+        y += 1
+        if self.dispatch_crew_override:
+            crew_note = f"Crew: {self.dispatch_crew_label}"
+        elif self.selected_agents:
+            crew_note = f"Crew: operator shortlist ({len(self.selected_agents)} agent(s))"
+        elif self.dispatch_form.get("skill"):
+            crew_note = "Crew: competency-matched from roster (draft-hire fallback)"
+        else:
+            crew_note = "Crew: first available from roster"
+        self._safe_addstr(y, box_x + 2, clip(crew_note, box_width - 4),
+                          curses.color_pair(Colors.GOLD))
+
+        self._draw_message(box_y + box_height + 1, width)
+        if self.editing:
+            self._draw_footer(height, width, "Type to edit | ENTER: Apply | ESC: Cancel")
+        else:
+            self._draw_footer(height, width,
+                              "UP/DOWN: Field | ENTER: Edit | P: Plan Briefing | Q: Back")
+
+    def _handle_dispatch_form_input(self, key: int):
+        """Handle dispatch form input."""
+        if self.editing:
+            if key == 27:
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_ENTER, 10, 13):
+                field_key = self.DISPATCH_FIELDS[self.dispatch_field_index][0]
+                self.dispatch_form[field_key] = self.edit_buffer.strip()
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                self.edit_buffer = self.edit_buffer[:-1]
+            elif 32 <= key <= 126:
+                self.edit_buffer += chr(key)
+            return
+
+        field_count = len(self.DISPATCH_FIELDS)
+        if key == curses.KEY_UP:
+            self.dispatch_field_index = (self.dispatch_field_index - 1) % field_count
+        elif key == curses.KEY_DOWN:
+            self.dispatch_field_index = (self.dispatch_field_index + 1) % field_count
+        elif key in (curses.KEY_ENTER, 10, 13):
+            field_key = self.DISPATCH_FIELDS[self.dispatch_field_index][0]
+            self.edit_buffer = self.dispatch_form.get(field_key, "")
+            self.editing = True
+        elif key == ord('p') or key == ord('P'):
+            self._prepare_dispatch_brief()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.dispatch_crew_override = []
+            self.dispatch_crew_label = ""
+            self.mode = "menu"
+
+    def _prepare_dispatch_brief(self):
+        """Resolve crew + build the mission; open the briefing gate."""
+        task = self.dispatch_form.get("task", "").strip()
+        if not task:
+            self.message = "Task prompt is required"
+            self.message_color = Colors.HEALTH
+            return
+
+        target = Path(self.dispatch_form.get("target", ".") or ".").expanduser().resolve()
+        if not target.is_dir():
+            self.message = f"Target not found: {target}"
+            self.message_color = Colors.HEALTH
+            return
+
+        try:
+            count = max(1, int(self.dispatch_form.get("count") or "1"))
+        except ValueError:
+            count = 1
+
+        provider = get_provider("claude-cli")
+        if not provider.is_available():
+            self.message = "claude CLI not found - install it first"
+            self.message_color = Colors.HEALTH
+            return
+
+        # Crew resolution, fully disclosed
+        crew, reasons = [], []
+        if self.dispatch_crew_override:
+            crew = self.dispatch_crew_override
+            reasons = [(a["identity"]["codename"], self.dispatch_crew_label)
+                       for a in crew]
+        elif self.selected_agents:
+            crew = [a for a in self.roster if a["id"] in self.selected_agents]
+            reasons = [(a["identity"]["codename"], "operator shortlist")
+                       for a in crew]
+        elif self.dispatch_form.get("skill", "").strip():
+            terms = [t.strip() for t in self.dispatch_form["skill"].split(",")
+                     if t.strip()]
+            matches = match_agents(terms, count=count, ds=self.ds)
+            if matches:
+                crew = [m.agent for m in matches]
+                reasons = [(m.codename,
+                            f"score:{m.score} " + "; ".join(m.reasons[:3]))
+                           for m in matches]
+            else:
+                hire = draft_hire(self.ds)
+                self._load_roster()
+                crew = [hire]
+                reasons = [(hire["identity"]["codename"],
+                            "drafted - no qualified agent on roster")]
+        else:
+            crew = self.roster[:count]
+            reasons = [(a["identity"]["codename"], "first available")
+                       for a in crew]
+
+        if not crew:
+            self.message = "No agents available - generate some first"
+            self.message_color = Colors.HEALTH
+            return
+
+        mission = adhoc_task_mission(crew, str(target), task)
+        self.dispatch_brief = {
+            "mission": mission,
+            "crew": crew,
+            "reasons": reasons,
+            "provider": provider,
+        }
+        self.mode = "dispatch_brief"
+
+    def _draw_dispatch_brief(self, height: int, width: int):
+        """Draw the briefing gate - full disclosure before any agent work."""
+        self._draw_header(width)
+        brief = self.dispatch_brief
+        if not brief:
+            self.mode = "dispatch"
+            return
+
+        mission = brief["mission"]
+        box_width = min(76, width - 4)
+        box_height = min(11 + len(brief["crew"]) + len(mission.tasks), height - 9)
+        box_y = 5
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width,
+                       f"MISSION BRIEFING [{mission.id}]")
+
+        y = box_y + 1
+        inner = box_width - 4
+
+        def line(label, value, color=Colors.STAT_VALUE):
+            nonlocal y
+            self._safe_addstr(y, box_x + 2, f"{label:<10}",
+                              curses.color_pair(Colors.STAT_LABEL))
+            self._safe_addstr(y, box_x + 12, clip(str(value), inner - 10),
+                              curses.color_pair(color))
+            y += 1
+
+        line("OBJECTIVE", mission.objective)
+        line("TARGET", mission.constraints.working_directory)
+        scope = "READ-ONLY" if mission.constraints.read_only else "READ/WRITE"
+        scope += " | LOCAL" if mission.constraints.local_only else " | REMOTE OK"
+        line("SCOPE", scope, Colors.GOLD)
+        line("PROVIDER", f"{brief['provider'].binary_path} "
+             f"(--print --dangerously-skip-permissions)", Colors.DIM)
+        line("TIMEOUT", f"{mission.constraints.timeout_seconds}s per task")
+        y += 1
+
+        self._safe_addstr(y, box_x + 2, f"CREW ({len(brief['crew'])}):",
+                          curses.color_pair(Colors.TITLE))
+        y += 1
+        for codename, reason in brief["reasons"]:
+            if y >= box_y + box_height - 2:
+                break
+            self._safe_addstr(y, box_x + 4,
+                              clip(f"~ {pad(codename, 24)} {reason}", inner - 2),
+                              curses.color_pair(Colors.STAT_VALUE))
+            y += 1
+
+        self._draw_message(box_y + box_height + 1, width)
+        self._draw_footer(height, width,
+                          "Y/ENTER: DISPATCH | Q: Back to Form")
+
+    def _handle_dispatch_brief_input(self, key: int):
+        """Handle briefing gate input."""
+        if key in (curses.KEY_ENTER, 10, 13, ord('y'), ord('Y')):
+            self._launch_dispatch()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "dispatch"
+
+    def _launch_dispatch(self):
+        """Start the dispatcher on a worker thread; the draw loop streams
+        events as they land."""
+        brief = self.dispatch_brief
+        if not brief or self.dispatch_running:
+            return
+
+        self.dispatch_events = []
+        self.dispatch_result = None
+        self.dispatch_running = True
+        self.dispatch_crew_override = []
+        self.dispatch_crew_label = ""
+        self.dispatch_thread = threading.Thread(
+            target=self._dispatch_worker, args=(brief["mission"],), daemon=True)
+        self.dispatch_thread.start()
+        self.mode = "dispatch_run"
+
+    def _dispatch_worker(self, mission):
+        """Worker thread: run the mission, save reports, settle payroll."""
+        import asyncio
+        from datetime import datetime as _dt
+
+        def on_event(event):
+            stamp = _dt.now().strftime("%H:%M:%S")
+            self.dispatch_events.append(
+                f"{stamp} [{event.event_type}] {event.message}")
+
+        try:
+            dispatcher = Dispatcher(datastore=self.ds)
+            result = asyncio.run(dispatcher.execute(
+                mission, on_event=on_event,
+                max_concurrent=agency_config()["dispatch"]["max_concurrent"]))
+
+            rdir = report_dir()
+            rdir.mkdir(parents=True, exist_ok=True)
+            report_path = rdir / f"mission-{mission.id}-report.md"
+            if result.final_report:
+                report_path.write_text(result.final_report)
+            result.save(report_path.with_suffix(".json"))
+            self.dispatch_events.append(f"         report: {report_path}")
+            self.dispatch_result = result
+            self._load_roster()
+        except Exception as e:
+            self.dispatch_events.append(f"         [error] {e}")
+        finally:
+            self.dispatch_running = False
+
+    def _draw_dispatch_run(self, height: int, width: int):
+        """Draw the live dispatch event stream."""
+        self._draw_header(width)
+
+        result = self.dispatch_result
+        if self.dispatch_running:
+            status, color = "DISPATCHED - agents in the field...", Colors.XP
+        elif result is not None:
+            status_value = result.status.value
+            if status_value == "complete":
+                status, color = "MISSION COMPLETE", Colors.STAT_VALUE
+            else:
+                status, color = f"MISSION {status_value.upper()}", Colors.HEALTH
+        else:
+            status, color = "MISSION ERROR - see events", Colors.HEALTH
+        self._safe_addstr(5, 2, status, curses.color_pair(color) | curses.A_BOLD)
+
+        box_y = 7
+        box_height = height - 10
+        box_width = width - 4
+        self._draw_box(box_y, 2, box_height, box_width, "EVENT LOG")
+
+        visible = box_height - 2
+        events = self.dispatch_events[-visible:]
+        for i, event in enumerate(events):
+            if "payroll" in event:
+                ecolor = Colors.GOLD
+            elif "complete" in event:
+                ecolor = Colors.STAT_VALUE
+            elif "fail" in event or "error" in event:
+                ecolor = Colors.HEALTH
+            else:
+                ecolor = Colors.NORMAL
+            self._safe_addstr(box_y + 1 + i, 4, clip(event, box_width - 4),
+                              curses.color_pair(ecolor))
+
+        if self.dispatch_running:
+            self._draw_footer(height, width,
+                              "Mission running - events stream live | Q: Background it")
+        else:
+            self._draw_footer(height, width, "ENTER/Q: Back to Menu")
+
+    def _handle_dispatch_run_input(self, key: int):
+        """Handle live-run screen input."""
+        if key in (curses.KEY_ENTER, 10, 13) and not self.dispatch_running:
+            self.mode = "menu"
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            if self.dispatch_running:
+                self.message = "Mission continues in background - check Dispatch later"
+                self.message_color = Colors.XP
+            self.mode = "menu"
+
+    # ==========================================================================
+    # Generic text viewer (scrolling, markdown-ish coloring)
+    # ==========================================================================
+
+    def _open_viewer(self, title: str, lines: list[str], return_mode: str):
+        """Open the scrolling text viewer over prepared content lines."""
+        self.viewer_title = title
+        self.viewer_lines = lines
+        self.viewer_scroll = 0
+        self.viewer_return_mode = return_mode
+        self.mode = "viewer"
+
+    def _draw_viewer(self, height: int, width: int):
+        """Draw the generic text viewer."""
+        self._draw_header(width)
+        self._safe_addstr(5, 2, clip(self.viewer_title, width - 4),
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+
+        content_y = 7
+        content_height = height - 10
+        content_width = width - 4
+        self._draw_box(content_y - 1, 2, content_height + 2, content_width, "")
+
+        total = len(self.viewer_lines)
+        max_scroll = max(0, total - content_height)
+        self.viewer_scroll = max(0, min(self.viewer_scroll, max_scroll))
+
+        for i, line in enumerate(
+                self.viewer_lines[self.viewer_scroll:
+                                  self.viewer_scroll + content_height]):
+            color = Colors.DIM
+            if line.startswith("##"):
+                color = Colors.TITLE
+                line = line[2:].strip()
+            elif line.startswith("#"):
+                color = Colors.STAT_LABEL
+                line = line[1:].strip()
+            elif line.strip().startswith("*"):
+                color = Colors.STAT_VALUE
+            elif line.startswith('"'):
+                color = Colors.STAT_VALUE
+            self._safe_addstr(content_y + i, 4, clip(line, content_width - 4),
+                              curses.color_pair(color))
+
+        if total > content_height:
+            pct = self.viewer_scroll / max(1, max_scroll)
+            indicator_y = content_y + int(pct * (content_height - 1))
+            self._safe_addstr(indicator_y, content_width - 1, "█",
+                              curses.color_pair(Colors.STAT_VALUE))
+            range_str = (f" {self.viewer_scroll + 1}-"
+                         f"{min(self.viewer_scroll + content_height, total)}/{total} ")
+            self._safe_addstr(content_y - 1,
+                              max(4, content_width - len(range_str) - 2),
+                              range_str, curses.color_pair(Colors.DIM))
+
+        self._draw_footer(height, width, "UP/DOWN/PgUp/PgDn/HOME/END: Scroll | Q: Back")
+
+    def _handle_viewer_input(self, key: int):
+        """Handle viewer scrolling."""
+        page = 20
+        total = len(self.viewer_lines)
+        if key == curses.KEY_UP:
+            self.viewer_scroll = max(0, self.viewer_scroll - 1)
+        elif key == curses.KEY_DOWN:
+            self.viewer_scroll = min(max(0, total - 1), self.viewer_scroll + 1)
+        elif key == curses.KEY_PPAGE:
+            self.viewer_scroll = max(0, self.viewer_scroll - page)
+        elif key == curses.KEY_NPAGE:
+            self.viewer_scroll = min(max(0, total - 1), self.viewer_scroll + page)
+        elif key == curses.KEY_HOME:
+            self.viewer_scroll = 0
+        elif key == curses.KEY_END:
+            self.viewer_scroll = max(0, total - 1)
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = self.viewer_return_mode
+
+    # ==========================================================================
+    # Dossier depth views: operational profile + service record
+    # ==========================================================================
+
+    def _open_operational_profile(self):
+        """Compose and display the agent's full operational profile - the
+        canonical role/behavior/constraints bundle the provider receives."""
+        if not self.current_agent:
+            return
+        agent = self.current_agent
+        try:
+            profile = get_composer().compose(agent, scope="read_only")
+        except Exception as e:
+            self.message = f"Compose failed: {str(e)[:40]}"
+            self.message_color = Colors.HEALTH
+            return
+
+        ident = agent["identity"]
+        lines = [
+            f"## OPERATIONAL PROFILE - {ident['name']} ({ident['codename']})",
+            f"#Archetype: {profile.archetype_label} ({profile.archetype_slug})",
+            f"#Role: {profile.role_title}",
+            "",
+            "## COMPOSED SYSTEM PROMPT (what the provider receives, verbatim)",
+            "",
+        ]
+        lines.extend(profile.render_system_prompt().split("\n"))
+        sources = getattr(profile, "sources", None)
+        if sources:
+            lines.extend(["", "## PROVENANCE (instruction sources)", ""])
+            for source in sources:
+                lines.append(f"  * {source}")
+        self._open_viewer(f"OPERATIONAL PROFILE - {ident['codename']}",
+                          lines, "view")
+
+    def _open_service_record(self):
+        """Build the agent's work history from saved missions + the ledger."""
+        if not self.current_agent:
+            return
+        agent = self.current_agent
+        ident = agent["identity"]
+        agent_id = agent["id"]
+
+        # Mission participation from saved mission records
+        entries = []
+        for path in sorted(report_dir().glob("mission-*-report.json")):
+            try:
+                with open(path) as f:
+                    record = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                continue
+            if agent_id not in record.get("crew_ids", []):
+                continue
+            my_tasks = [t for t in record.get("tasks", [])
+                        if t.get("agent_id") == agent_id]
+            entries.append({
+                "id": record.get("id", "?"),
+                "created": (record.get("created_at") or "")[:16].replace("T", " "),
+                "status": record.get("status", "?"),
+                "title": record.get("title", ""),
+                "tasks": [(t.get("role", "?"), t.get("status", "?"))
+                          for t in my_tasks],
+            })
+        entries.sort(key=lambda e: e["created"], reverse=True)
+
+        # Gold movements from the ledger
+        earned = spent = tx_count = 0
+        by_mission = {}
+        try:
+            for tx in self.ds.query("transaction", include_retired=True).data:
+                if tx.get("to_agent_id") == agent_id:
+                    earned += tx.get("amount", 0)
+                    tx_count += 1
+                    ref = tx.get("reference") or {}
+                    if ref.get("type") == "mission":
+                        by_mission[ref.get("id")] = (
+                            by_mission.get(ref.get("id"), 0) + tx.get("amount", 0))
+                elif tx.get("from_agent_id") == agent_id:
+                    spent += tx.get("amount", 0)
+                    tx_count += 1
+        except Exception:
+            pass
+
+        eco = agent.get("economy", {})
+        conduct = agent.get("conduct") or {}
+        lines = [
+            f"## SERVICE RECORD - {ident['name']} ({ident['codename']})",
+            "",
+            "#Summary",
+            f"  Missions completed: "
+            f"{agent.get('ratings', {}).get('missions_completed', 0)}",
+            f"  Current: {eco.get('xp', 0):,} XP, {eco.get('gold', 0):,}g",
+            f"  Ledger: +{earned}g earned / -{spent}g spent "
+            f"({tx_count} transaction(s))",
+        ]
+        if conduct.get("violations"):
+            lines.append(f"  Conduct: {conduct['violations']} policy violation(s)")
+        lines.extend(["", "#Mission History", ""])
+
+        if not entries:
+            lines.append("  No missions on record. Send them somewhere.")
+        for entry in entries:
+            pay = by_mission.get(entry["id"])
+            pay_str = f"  pay: +{pay}g" if pay else ""
+            lines.append(f"  * {entry['created']}  [{entry['id']}]  "
+                         f"{entry['status'].upper()}{pay_str}")
+            lines.append(f"    {entry['title']}")
+            for role, status in entry["tasks"]:
+                lines.append(f"      {role} -> {status}")
+            lines.append("")
+        self._open_viewer(f"SERVICE RECORD - {ident['codename']}", lines, "view")
+
+    def _open_ledger_viewer(self):
+        """Display the gold ledger, newest first."""
+        codenames = {a["id"]: a["identity"]["codename"] for a in self.roster}
+        lines = ["## GOLD LEDGER (immutable, newest first)", ""]
+        try:
+            entries = self.ds.query("transaction", include_retired=True).data
+        except Exception:
+            entries = []
+        for tx in sorted(entries, key=lambda t: t.get("id", 0), reverse=True)[:200]:
+            if tx.get("from_agent_id"):
+                who = codenames.get(tx["from_agent_id"], "?")
+                direction = f"{who} -"
+            else:
+                who = codenames.get(tx.get("to_agent_id"), "?")
+                direction = f"{who} +"
+            lines.append(f"  * #{tx.get('id', '?'):>3}  {direction}"
+                         f"{tx.get('amount', 0)}g  {tx.get('type', '?')}  "
+                         f"{tx.get('notes', '')}")
+        if len(lines) == 2:
+            lines.append("  No transactions yet - nobody has been paid.")
+        self._open_viewer("GOLD LEDGER", lines, "stats")
+
+    # ==========================================================================
+    # Missions browser
+    # ==========================================================================
+
+    def _enter_missions_mode(self):
+        """Load saved mission records and open the browser."""
+        self.mission_list = []
+        for path in sorted(report_dir().glob("mission-*-report.json"),
+                           reverse=True):
+            try:
+                with open(path) as f:
+                    record = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                continue
+            tasks = record.get("tasks", [])
+            self.mission_list.append({
+                "id": record.get("id", "?"),
+                "status": record.get("status", "?"),
+                "created": (record.get("created_at") or "")[:16].replace("T", " "),
+                "title": record.get("title", ""),
+                "crew": len(record.get("crew_ids", [])),
+                "done": sum(1 for t in tasks if t.get("status") == "complete"),
+                "total": len(tasks),
+                "report": record.get("final_report"),
+                "path": path,
+            })
+        self.mission_index = 0
+        self.mode = "missions"
+
+    def _draw_missions(self, height: int, width: int):
+        """Draw the mission history browser."""
+        self._draw_header(width)
+        self._safe_addstr(5, 2, f"MISSIONS ({len(self.mission_list)} on file)",
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+
+        if not self.mission_list:
+            self._safe_addstr(10, max(0, (width - 40) // 2),
+                              "No missions on file. Dispatch something.",
+                              curses.color_pair(Colors.DIM))
+            self._draw_footer(height, width, "Q: Back")
+            return
+
+        list_y = 7
+        header = f"{'ID':<10} {'STATUS':<10} {'TASKS':<7} {'CREW':<5} {'DATE':<17} TITLE"
+        self._safe_addstr(list_y, 4, clip(header, width - 8),
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+        self._safe_addstr(list_y + 1, 4, "-" * min(width - 8, 90),
+                          curses.color_pair(Colors.DIM))
+
+        list_height = height - 12
+        visible = list_height - 2
+        start = max(0, self.mission_index - visible + 3)
+        for i, m in enumerate(self.mission_list[start:start + visible]):
+            row_y = list_y + 2 + i
+            if row_y >= list_y + list_height:
+                break
+            row = (f"{m['id']:<10} {m['status']:<10} "
+                   f"{m['done']}/{m['total']:<5} {m['crew']:<5} "
+                   f"{m['created']:<17} {m['title']}")
+            if start + i == self.mission_index:
+                color = Colors.HIGHLIGHT
+            elif m["status"] == "complete":
+                color = Colors.NORMAL
+            else:
+                color = Colors.HEALTH
+            self._safe_addstr(row_y, 4, f" {clip(row, width - 10)} ",
+                              curses.color_pair(color))
+
+        self._draw_message(height - 4, width)
+        self._draw_footer(height, width, "ENTER: Read Report | R: Refresh | Q: Back")
+
+    def _handle_missions_input(self, key: int):
+        """Handle missions browser input."""
+        count = len(self.mission_list)
+        if key == curses.KEY_UP and count:
+            self.mission_index = max(0, self.mission_index - 1)
+        elif key == curses.KEY_DOWN and count:
+            self.mission_index = min(count - 1, self.mission_index + 1)
+        elif key in (curses.KEY_ENTER, 10, 13) and count:
+            m = self.mission_list[self.mission_index]
+            md_path = m["path"].with_suffix(".md")
+            if md_path.exists():
+                lines = md_path.read_text().split("\n")
+            elif m["report"]:
+                lines = m["report"].split("\n")
+            else:
+                lines = ["(no report captured for this mission)"]
+            self._open_viewer(f"MISSION {m['id']} - {m['status'].upper()}",
+                              lines, "missions")
+        elif key == ord('r') or key == ord('R'):
+            self._enter_missions_mode()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "menu"
+
+    # ==========================================================================
+    # Agent edit form
+    # ==========================================================================
+
+    AGENT_EDIT_FIELDS = [
+        ("name", "Name", "text"),
+        ("codename", "Codename", "text"),
+        ("specialty_id", "Specialty", "choice:specialty"),
+        ("status_id", "Status", "choice:status"),
+        ("motto", "Motto", "text"),
+    ]
+
+    def _enter_agent_edit(self):
+        """Open the edit form primed with the current agent's fields."""
+        if not self.current_agent:
+            return
+        agent = self.current_agent
+        self.agent_edit_form = {
+            "name": agent["identity"].get("name", ""),
+            "codename": agent["identity"].get("codename", ""),
+            "specialty_id": agent["classification"].get("specialty_id"),
+            "status_id": agent["classification"].get("status_id", 1),
+            "motto": agent.get("profile", {}).get("motto", ""),
+        }
+        self.agent_edit_index = 0
+        self.editing = False
+        self.edit_buffer = ""
+        self.mode = "agent_edit"
+
+    def _agent_edit_choice_display(self, field_key) -> str:
+        """Label for a choice field's current value."""
+        value = self.agent_edit_form.get(field_key)
+        if field_key == "specialty_id":
+            if value is None:
+                return "(none - not everyone gets to be special)"
+            entry = self.ds.get_reference_by_id("specialty", value)
+            return entry.get("label", "?") if entry else "?"
+        if field_key == "status_id":
+            entry = self.ds.get_reference_by_id("status", value)
+            return entry.get("label", "?") if entry else "?"
+        return str(value)
+
+    def _agent_edit_cycle(self, field_key, direction=1):
+        """Cycle a choice field through its reference table."""
+        if field_key == "specialty_id":
+            options = [None] + [s["id"] for s in sorted(
+                self.ds.load_reference("specialty"), key=lambda s: s["id"])]
+        elif field_key == "status_id":
+            options = [s["id"] for s in sorted(
+                self.ds.load_reference("status"), key=lambda s: s["id"])]
+        else:
+            return
+        current = self.agent_edit_form.get(field_key)
+        idx = options.index(current) if current in options else 0
+        self.agent_edit_form[field_key] = options[(idx + direction) % len(options)]
+
+    def _draw_agent_edit(self, height: int, width: int):
+        """Draw the agent edit form."""
+        if not self.current_agent:
+            self.mode = "roster"
+            return
+        self._draw_header(width)
+        ident = self.current_agent["identity"]
+
+        box_width = min(72, width - 4)
+        box_height = len(self.AGENT_EDIT_FIELDS) * 2 + 4
+        box_y = 6
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width,
+                       f"EDIT AGENT - {ident['codename']}")
+
+        y = box_y + 2
+        for i, (field_key, label, kind) in enumerate(self.AGENT_EDIT_FIELDS):
+            is_selected = (i == self.agent_edit_index)
+            if kind.startswith("choice"):
+                display = self._agent_edit_choice_display(field_key)
+                if is_selected:
+                    display = f"< {display} >"
+            elif is_selected and self.editing:
+                display = f"[{self.edit_buffer}_]"
+            else:
+                display = str(self.agent_edit_form.get(field_key, ""))
+
+            color = Colors.HIGHLIGHT if is_selected else Colors.STAT_VALUE
+            self._safe_addstr(y, box_x + 2, f"{label:<12}",
+                              curses.color_pair(Colors.STAT_LABEL))
+            self._safe_addstr(y, box_x + 15, clip(display, box_width - 18),
+                              curses.color_pair(color))
+            y += 2
+
+        self._draw_message(box_y + box_height + 1, width)
+        if self.editing:
+            self._draw_footer(height, width, "Type to edit | ENTER: Apply | ESC: Cancel")
+        else:
+            self._draw_footer(height, width,
+                              "UP/DOWN: Field | ENTER: Edit/Cycle | "
+                              "LEFT/RIGHT: Cycle | S: Save | Q: Cancel")
+
+    def _handle_agent_edit_input(self, key: int):
+        """Handle agent edit form input."""
+        fields = self.AGENT_EDIT_FIELDS
+        field_key, _, kind = fields[self.agent_edit_index]
+
+        if self.editing:
+            if key == 27:
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_ENTER, 10, 13):
+                self.agent_edit_form[field_key] = self.edit_buffer.strip()
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                self.edit_buffer = self.edit_buffer[:-1]
+            elif 32 <= key <= 126:
+                self.edit_buffer += chr(key)
+            return
+
+        if key == curses.KEY_UP:
+            self.agent_edit_index = (self.agent_edit_index - 1) % len(fields)
+        elif key == curses.KEY_DOWN:
+            self.agent_edit_index = (self.agent_edit_index + 1) % len(fields)
+        elif key == curses.KEY_LEFT and kind.startswith("choice"):
+            self._agent_edit_cycle(field_key, -1)
+        elif key == curses.KEY_RIGHT and kind.startswith("choice"):
+            self._agent_edit_cycle(field_key, 1)
+        elif key in (curses.KEY_ENTER, 10, 13):
+            if kind.startswith("choice"):
+                self._agent_edit_cycle(field_key, 1)
+            else:
+                self.edit_buffer = str(self.agent_edit_form.get(field_key, ""))
+                self.editing = True
+        elif key == ord('s') or key == ord('S'):
+            self._save_agent_edit()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "view"
+
+    def _save_agent_edit(self):
+        """Persist the edit form to the agent record, keeping derived
+        fields (dogtag, specialty label) consistent."""
+        agent = self.current_agent
+        form = self.agent_edit_form
+
+        name = form.get("name", "").strip() or agent["identity"]["name"]
+        parts = name.split(None, 2)
+        if len(parts) >= 3:
+            title, first, last = parts[0], parts[1], parts[2]
+        elif len(parts) == 2:
+            title, first, last = agent["identity"].get("title", "Agt."), parts[0], parts[1]
+        else:
+            title, first, last = agent["identity"].get("title", "Agt."), parts[0], "Unknown"
+
+        specialty_id = form.get("specialty_id")
+        specialty = (self.ds.get_reference_by_id("specialty", specialty_id)
+                     if specialty_id else None)
+
+        updates = {
+            "identity": {
+                "name": f"{title} {first} {last}",
+                "title": title,
+                "dogtag": self.gen.compute_dogtag(title, first, last),
+                "codename": (form.get("codename", "").strip().lower()
+                             or agent["identity"]["codename"]),
+                "specialty": specialty.get("label") if specialty else None,
+            },
+            "classification": {
+                "specialty_id": specialty_id,
+                "status_id": form.get("status_id", 1),
+            },
+            "profile": {"motto": form.get("motto", "")},
+        }
+        updated = self.ds.update("agent", agent["id"], updates)
+        self._load_roster()
+        self.current_agent = next(
+            (a for a in self.roster if a["id"] == agent["id"]), updated or agent)
+        self.message = f"Saved {self.current_agent['identity']['codename']}"
+        self.message_color = Colors.STAT_VALUE
+        self.mode = "view"
+
+    # ==========================================================================
+    # Type Foundry - operator-defined reference types
+    # ==========================================================================
+
+    FOUNDRY_TABLES = [
+        ("specialty", "Specialties", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("ops_domain_id", "Ops Domain", "choice:ops_domain"),
+            ("category", "Category", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("focus", "Foci", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("ops_domain_id", "Ops Domain", "choice:ops_domain"),
+            ("abbrev", "Abbrev", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("tool", "Tools", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("category_id", "Category", "choice:tool_category"),
+            ("cost", "Cost (gold)", "int"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("crue_type", "Crue Types", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("mission_profile", "Mission Profile", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+    ]
+
+    # Structural defaults injected on create so new entries satisfy what
+    # the generator/economy expect from each table
+    FOUNDRY_DEFAULTS = {
+        "specialty": {"category": "platform"},
+        "focus": {},
+        "tool": {
+            "is_active": True,
+            "risk": {"level": "safe", "reversibility": "varies",
+                     "scope": "local", "requires_confirmation": False},
+            "usage": {"syntax": "", "examples": [], "whispers": []},
+        },
+        "crue_type": {
+            "composition": {"max_size": 10},
+            "primary_archetypes": [],
+            "support_archetypes": [],
+            "coordination": "",
+        },
+    }
+
+    def _refresh_reference_caches(self):
+        """Rebuild in-memory reference caches after a foundry write so the
+        generator and every screen see the new types immediately."""
+        self.focuses = {f["id"]: f for f in self.ds.load_reference("focus")}
+        self.crue_types = {c["id"]: c for c in self.ds.load_reference("crue_type")}
+        self.tool_refs = {t["id"]: t for t in self.ds.load_reference("tool")}
+        self.gen = AgentGenerator(datastore=self.ds)
+
+    def _enter_foundry_mode(self):
+        """Open the type foundry table picker."""
+        self.foundry_table_index = 0
+        self.mode = "foundry"
+
+    def _foundry_spec(self):
+        return self.FOUNDRY_TABLES[self.foundry_table_index]
+
+    def _draw_foundry(self, height: int, width: int):
+        """Draw the foundry table picker."""
+        self._draw_header(width)
+
+        box_width = 56
+        box_height = len(self.FOUNDRY_TABLES) + 6
+        box_y = 7
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width, "TYPE FOUNDRY")
+
+        self._safe_addstr(box_y + 1, box_x + 2,
+                          "Operator-defined types for agent generation",
+                          curses.color_pair(Colors.DIM))
+        for i, (table, label, _) in enumerate(self.FOUNDRY_TABLES):
+            count = len(self.ds.load_reference(table))
+            row = f" {label:<20} {count:>3} defined "
+            color = (Colors.HIGHLIGHT if i == self.foundry_table_index
+                     else Colors.NORMAL)
+            self._safe_addstr(box_y + 3 + i, box_x + 2, row,
+                              curses.color_pair(color))
+
+        self._draw_message(box_y + box_height + 1, width)
+        self._draw_footer(height, width, "UP/DOWN: Table | ENTER: Open | Q: Back")
+
+    def _handle_foundry_input(self, key: int):
+        """Handle foundry table picker input."""
+        count = len(self.FOUNDRY_TABLES)
+        if key == curses.KEY_UP:
+            self.foundry_table_index = (self.foundry_table_index - 1) % count
+        elif key == curses.KEY_DOWN:
+            self.foundry_table_index = (self.foundry_table_index + 1) % count
+        elif key in (curses.KEY_ENTER, 10, 13):
+            self._load_foundry_entries()
+            self.mode = "foundry_list"
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "menu"
+
+    def _load_foundry_entries(self):
+        table, _, _ = self._foundry_spec()
+        self.foundry_entries = sorted(
+            self.ds.load_reference(table, force_reload=True),
+            key=lambda e: e.get("id", 0))
+        self.foundry_index = 0
+
+    def _draw_foundry_list(self, height: int, width: int):
+        """Draw the entries of the selected reference table."""
+        self._draw_header(width)
+        table, label, _ = self._foundry_spec()
+        self._safe_addstr(5, 2, f"TYPE FOUNDRY / {label.upper()} "
+                          f"({len(self.foundry_entries)} entries)",
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+
+        list_y = 7
+        header = f"{'ID':>4} {'SLUG':<26} {'LABEL':<26} DESCRIPTION"
+        self._safe_addstr(list_y, 4, clip(header, width - 8),
+                          curses.color_pair(Colors.TITLE) | curses.A_BOLD)
+        self._safe_addstr(list_y + 1, 4, "-" * min(width - 8, 90),
+                          curses.color_pair(Colors.DIM))
+
+        list_height = height - 12
+        visible = list_height - 2
+        start = max(0, self.foundry_index - visible + 3)
+        for i, entry in enumerate(self.foundry_entries[start:start + visible]):
+            row_y = list_y + 2 + i
+            if row_y >= list_y + list_height:
+                break
+            row = (f"{entry.get('id', '?'):>4} {pad(entry.get('slug', ''), 26)} "
+                   f"{pad(entry.get('label', ''), 26)} "
+                   f"{entry.get('description', '')}")
+            color = (Colors.HIGHLIGHT if start + i == self.foundry_index
+                     else Colors.NORMAL)
+            self._safe_addstr(row_y, 4, f" {clip(row, width - 10)} ",
+                              curses.color_pair(color))
+
+        self._draw_message(height - 4, width)
+        self._draw_footer(height, width,
+                          "N: New Type | ENTER/E: Edit | Q: Back "
+                          "(no delete - agents reference these)")
+
+    def _handle_foundry_list_input(self, key: int):
+        """Handle foundry entry list input."""
+        count = len(self.foundry_entries)
+        if key == curses.KEY_UP and count:
+            self.foundry_index = max(0, self.foundry_index - 1)
+        elif key == curses.KEY_DOWN and count:
+            self.foundry_index = min(count - 1, self.foundry_index + 1)
+        elif key == ord('n') or key == ord('N'):
+            self._open_foundry_form(None)
+        elif (key in (curses.KEY_ENTER, 10, 13) or key in (ord('e'), ord('E'))) and count:
+            self._open_foundry_form(self.foundry_entries[self.foundry_index])
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "foundry"
+
+    def _open_foundry_form(self, entry):
+        """Prime the add/edit form. entry=None means creating a new type."""
+        table, _, fields = self._foundry_spec()
+        self.foundry_entry_id = entry.get("id") if entry else None
+        self.foundry_form = {}
+        for field_key, _, kind in fields:
+            if entry:
+                self.foundry_form[field_key] = entry.get(field_key, "")
+            elif kind.startswith("choice"):
+                ref = kind.split(":")[1]
+                options = self.ds.load_reference(ref)
+                self.foundry_form[field_key] = options[0]["id"] if options else 1
+            elif kind == "int":
+                self.foundry_form[field_key] = 0
+            else:
+                self.foundry_form[field_key] = ""
+        self.foundry_field_index = 0
+        self.editing = False
+        self.edit_buffer = ""
+        self.mode = "foundry_form"
+
+    def _foundry_choice_display(self, kind: str, value) -> str:
+        ref = kind.split(":")[1]
+        entry = self.ds.get_reference_by_id(ref, value)
+        return entry.get("label", str(value)) if entry else str(value)
+
+    def _foundry_cycle(self, field_key: str, kind: str, direction: int = 1):
+        ref = kind.split(":")[1]
+        options = [e["id"] for e in sorted(self.ds.load_reference(ref),
+                                           key=lambda e: e["id"])]
+        if not options:
+            return
+        current = self.foundry_form.get(field_key)
+        idx = options.index(current) if current in options else 0
+        self.foundry_form[field_key] = options[(idx + direction) % len(options)]
+
+    def _draw_foundry_form(self, height: int, width: int):
+        """Draw the add/edit form for a reference entry."""
+        self._draw_header(width)
+        table, label, fields = self._foundry_spec()
+        verb = "EDIT" if self.foundry_entry_id else "NEW"
+
+        box_width = min(74, width - 4)
+        box_height = len(fields) * 2 + 5
+        box_y = 6
+        box_x = (width - box_width) // 2
+        self._draw_box(box_y, box_x, box_height, box_width,
+                       f"{verb} {label.upper().rstrip('S')} TYPE")
+
+        if self.foundry_entry_id:
+            entry = next((e for e in self.foundry_entries
+                          if e.get("id") == self.foundry_entry_id), {})
+            self._safe_addstr(box_y + 1, box_x + 2,
+                              f"id:{self.foundry_entry_id}  slug:{entry.get('slug', '?')} "
+                              "(immutable - agents reference them)",
+                              curses.color_pair(Colors.DIM))
+
+        y = box_y + 3
+        for i, (field_key, flabel, kind) in enumerate(fields):
+            is_selected = (i == self.foundry_field_index)
+            value = self.foundry_form.get(field_key, "")
+            if kind.startswith("choice"):
+                display = self._foundry_choice_display(kind, value)
+                if is_selected:
+                    display = f"< {display} >"
+            elif is_selected and self.editing:
+                display = f"[{self.edit_buffer}_]"
+            else:
+                display = str(value)
+            color = Colors.HIGHLIGHT if is_selected else Colors.STAT_VALUE
+            self._safe_addstr(y, box_x + 2, f"{flabel:<16}",
+                              curses.color_pair(Colors.STAT_LABEL))
+            self._safe_addstr(y, box_x + 19, clip(display, box_width - 22),
+                              curses.color_pair(color))
+            y += 2
+
+        self._draw_message(box_y + box_height + 1, width)
+        if self.editing:
+            self._draw_footer(height, width, "Type to edit | ENTER: Apply | ESC: Cancel")
+        else:
+            self._draw_footer(height, width,
+                              "UP/DOWN: Field | ENTER: Edit/Cycle | S: Save | Q: Cancel")
+
+    def _handle_foundry_form_input(self, key: int):
+        """Handle foundry form input."""
+        table, _, fields = self._foundry_spec()
+        field_key, _, kind = fields[self.foundry_field_index]
+
+        if self.editing:
+            if key == 27:
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_ENTER, 10, 13):
+                value = self.edit_buffer.strip()
+                if kind == "int":
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
+                self.foundry_form[field_key] = value
+                self.editing = False
+                self.edit_buffer = ""
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                self.edit_buffer = self.edit_buffer[:-1]
+            elif 32 <= key <= 126:
+                self.edit_buffer += chr(key)
+            return
+
+        if key == curses.KEY_UP:
+            self.foundry_field_index = (self.foundry_field_index - 1) % len(fields)
+        elif key == curses.KEY_DOWN:
+            self.foundry_field_index = (self.foundry_field_index + 1) % len(fields)
+        elif key == curses.KEY_LEFT and kind.startswith("choice"):
+            self._foundry_cycle(field_key, kind, -1)
+        elif key == curses.KEY_RIGHT and kind.startswith("choice"):
+            self._foundry_cycle(field_key, kind, 1)
+        elif key in (curses.KEY_ENTER, 10, 13):
+            if kind.startswith("choice"):
+                self._foundry_cycle(field_key, kind, 1)
+            else:
+                self.edit_buffer = str(self.foundry_form.get(field_key, ""))
+                self.editing = True
+        elif key == ord('s') or key == ord('S'):
+            self._save_foundry_form()
+        elif key == ord('q') or key == ord('Q') or key == 27:
+            self.mode = "foundry_list"
+
+    def _save_foundry_form(self):
+        """Create or update the reference entry, then refresh caches."""
+        table, _, fields = self._foundry_spec()
+
+        if not str(self.foundry_form.get("label", "")).strip():
+            self.message = "Label is required"
+            self.message_color = Colors.HEALTH
+            return
+
+        try:
+            if self.foundry_entry_id:
+                self.ds.update_reference_entry(
+                    table, self.foundry_entry_id, dict(self.foundry_form))
+                self.message = f"Updated {self.foundry_form['label']}"
+            else:
+                entry = dict(self.FOUNDRY_DEFAULTS.get(table, {}))
+                entry.update(self.foundry_form)
+                saved = self.ds.add_reference_entry(table, entry)
+                self.message = (f"Forged {saved['label']} "
+                                f"(id:{saved['id']} slug:{saved['slug']})")
+        except ValueError as e:
+            self.message = str(e)
+            self.message_color = Colors.HEALTH
+            return
+
+        self.message_color = Colors.GOLD
+        self._refresh_reference_caches()
+        self._load_foundry_entries()
+        self.mode = "foundry_list"
 
 
 def main():

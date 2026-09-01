@@ -57,6 +57,7 @@ class SchemaManager:
         self._schemas: dict[str, dict] = {}
         self._index: Optional[dict] = None
         self._loaded = False
+        self._ref_store: Optional[dict[str, dict]] = None
 
     def load_all(self) -> "SchemaManager":
         """Load all schemas from the schema directory."""
@@ -112,6 +113,30 @@ class SchemaManager:
             self._load_index()
         return self._index
 
+    def can_validate(self) -> bool:
+        """Whether real validation is available (jsonschema installed)."""
+        return HAS_JSONSCHEMA
+
+    def _resolver_store(self) -> dict[str, dict]:
+        """Map schema $ids to their local documents so the https:// $refs
+        resolve offline. The metaschema doesn't match the *.schema.json
+        glob, so it is loaded here explicitly."""
+        if self._ref_store is None:
+            if not self._loaded:
+                self.load_all()
+            store = {}
+            meta_path = self.schema_path / "meta" / "agency.metaschema.json"
+            if meta_path.exists():
+                with open(meta_path, "r") as f:
+                    meta = json.load(f)
+                if meta.get("$id"):
+                    store[meta["$id"]] = meta
+            for schema in self._schemas.values():
+                if schema.get("$id"):
+                    store[schema["$id"]] = schema
+            self._ref_store = store
+        return self._ref_store
+
     def validate(self, schema_name: str, data: dict) -> list[str]:
         """
         Validate data against a schema.
@@ -132,10 +157,12 @@ class SchemaManager:
 
         errors = []
         try:
-            # Create resolver for $ref handling
+            # Create resolver for $ref handling; the store keeps
+            # https://nim.agency $refs local instead of fetching
             resolver = RefResolver(
                 base_uri=f"file://{self.schema_path}/",
-                referrer=schema
+                referrer=schema,
+                store=self._resolver_store()
             )
             validator = Draft202012Validator(schema, resolver=resolver)
 

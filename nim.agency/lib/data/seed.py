@@ -23,7 +23,8 @@ def verify_reference_data(ds: DataStore) -> dict:
 
     reference_types = [
         "status", "rank", "class", "skill_domain",
-        "tool_category", "achievement", "mission_status", "tool"
+        "tool_category", "achievement", "mission_status", "tool",
+        "assignment_status", "project_status"
     ]
 
     for ref_type in reference_types:

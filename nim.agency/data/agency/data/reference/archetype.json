@@ -7,17 +7,57 @@
       "slug": "linux_admin",
       "label": "Linux Administrator",
       "description": "System administration, maintenance, and troubleshooting for Linux environments",
-      "focus_ids": [20, 21, 26],
-      "core_capabilities": [
-        {"capability_id": 11, "min_proficiency": 3},
-        {"capability_id": 1, "min_proficiency": 3},
-        {"capability_id": 8, "min_proficiency": 2},
-        {"capability_id": 14, "min_proficiency": 3}
+      "focus_ids": [
+        20,
+        21,
+        26,
+        1,
+        2,
+        3,
+        4,
+        23
       ],
-      "tool_access": ["bash", "systemctl", "journalctl", "apt", "yum", "useradd", "chmod", "top", "htop", "lsof", "strace"],
-      "team_size": {"min": 1, "max": 3},
-      "pairs_well_with": ["network_engineer", "security_analyst", "dba"],
-      "icon": "🐧",
+      "core_capabilities": [
+        {
+          "capability_id": 11,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 1,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 8,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 14,
+          "min_proficiency": 3
+        }
+      ],
+      "tool_access": [
+        "bash",
+        "systemctl",
+        "journalctl",
+        "apt",
+        "yum",
+        "useradd",
+        "chmod",
+        "top",
+        "htop",
+        "lsof",
+        "strace"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 3
+      },
+      "pairs_well_with": [
+        "network_engineer",
+        "security_analyst",
+        "dba"
+      ],
+      "icon": "\ud83d\udc27",
       "instruction_template": "linux_admin",
       "sort_order": 1
     },
@@ -26,17 +66,52 @@
       "slug": "devops_engineer",
       "label": "DevOps Engineer",
       "description": "CI/CD pipelines, infrastructure automation, and deployment orchestration",
-      "focus_ids": [33, 36, 22, 25],
-      "core_capabilities": [
-        {"capability_id": 4, "min_proficiency": 3},
-        {"capability_id": 5, "min_proficiency": 3},
-        {"capability_id": 9, "min_proficiency": 3},
-        {"capability_id": 1, "min_proficiency": 2}
+      "focus_ids": [
+        33,
+        36,
+        22,
+        25,
+        13,
+        34
       ],
-      "tool_access": ["docker", "docker-compose", "kubectl", "helm", "terraform", "ansible", "git", "gh"],
-      "team_size": {"min": 1, "max": 4},
-      "pairs_well_with": ["backend_dev", "platform_engineer", "sre"],
-      "icon": "🔄",
+      "core_capabilities": [
+        {
+          "capability_id": 4,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 5,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 9,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 1,
+          "min_proficiency": 2
+        }
+      ],
+      "tool_access": [
+        "docker",
+        "docker-compose",
+        "kubectl",
+        "helm",
+        "terraform",
+        "ansible",
+        "git",
+        "gh"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 4
+      },
+      "pairs_well_with": [
+        "backend_dev",
+        "platform_engineer",
+        "sre"
+      ],
+      "icon": "\ud83d\udd04",
       "instruction_template": "devops_engineer",
       "sort_order": 2
     },
@@ -45,16 +120,53 @@
       "slug": "network_engineer",
       "label": "Network Engineer",
       "description": "Network infrastructure, routing, firewalls, and connectivity",
-      "focus_ids": [10, 11, 12, 15, 16],
-      "core_capabilities": [
-        {"capability_id": 3, "min_proficiency": 4},
-        {"capability_id": 7, "min_proficiency": 2},
-        {"capability_id": 14, "min_proficiency": 3}
+      "focus_ids": [
+        10,
+        11,
+        12,
+        15,
+        16,
+        5,
+        13,
+        14,
+        35
       ],
-      "tool_access": ["ping", "traceroute", "dig", "nslookup", "netstat", "ss", "tcpdump", "curl", "nmap", "iptables"],
-      "team_size": {"min": 1, "max": 2},
-      "pairs_well_with": ["security_analyst", "linux_admin", "cloud_engineer"],
-      "icon": "🌐",
+      "core_capabilities": [
+        {
+          "capability_id": 3,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 7,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 14,
+          "min_proficiency": 3
+        }
+      ],
+      "tool_access": [
+        "ping",
+        "traceroute",
+        "dig",
+        "nslookup",
+        "netstat",
+        "ss",
+        "tcpdump",
+        "curl",
+        "nmap",
+        "iptables"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 2
+      },
+      "pairs_well_with": [
+        "security_analyst",
+        "linux_admin",
+        "cloud_engineer"
+      ],
+      "icon": "\ud83c\udf10",
       "instruction_template": "network_engineer",
       "sort_order": 3
     },
@@ -63,17 +175,48 @@
       "slug": "security_analyst",
       "label": "Security Analyst",
       "description": "Security assessment, monitoring, incident response, and hardening",
-      "focus_ids": [12, 16],
-      "core_capabilities": [
-        {"capability_id": 7, "min_proficiency": 3},
-        {"capability_id": 8, "min_proficiency": 2},
-        {"capability_id": 3, "min_proficiency": 2},
-        {"capability_id": 14, "min_proficiency": 2}
+      "focus_ids": [
+        12,
+        16,
+        45
       ],
-      "tool_access": ["openssl", "nmap", "fail2ban", "auditctl", "grep", "awk", "journalctl"],
-      "team_size": {"min": 1, "max": 2},
-      "pairs_well_with": ["network_engineer", "linux_admin", "sre"],
-      "icon": "🔐",
+      "core_capabilities": [
+        {
+          "capability_id": 7,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 8,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 3,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 14,
+          "min_proficiency": 2
+        }
+      ],
+      "tool_access": [
+        "openssl",
+        "nmap",
+        "fail2ban",
+        "auditctl",
+        "grep",
+        "awk",
+        "journalctl"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 2
+      },
+      "pairs_well_with": [
+        "network_engineer",
+        "linux_admin",
+        "sre"
+      ],
+      "icon": "\ud83d\udd10",
       "instruction_template": "security_analyst",
       "sort_order": 4
     },
@@ -82,16 +225,47 @@
       "slug": "dba",
       "label": "Database Administrator",
       "description": "Database management, optimization, backup/restore, and high availability",
-      "focus_ids": [40, 41, 43],
-      "core_capabilities": [
-        {"capability_id": 6, "min_proficiency": 4},
-        {"capability_id": 15, "min_proficiency": 2},
-        {"capability_id": 14, "min_proficiency": 2}
+      "focus_ids": [
+        40,
+        41,
+        43,
+        23,
+        44,
+        45
       ],
-      "tool_access": ["psql", "mysql", "sqlite3", "redis-cli", "mongo", "pg_dump", "mysqldump"],
-      "team_size": {"min": 1, "max": 2},
-      "pairs_well_with": ["backend_dev", "data_engineer", "sre"],
-      "icon": "🗄",
+      "core_capabilities": [
+        {
+          "capability_id": 6,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 15,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 14,
+          "min_proficiency": 2
+        }
+      ],
+      "tool_access": [
+        "psql",
+        "mysql",
+        "sqlite3",
+        "redis-cli",
+        "mongo",
+        "pg_dump",
+        "mysqldump"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 2
+      },
+      "pairs_well_with": [
+        "backend_dev",
+        "data_engineer",
+        "sre"
+      ],
+      "icon": "\ud83d\uddc4",
       "instruction_template": "dba",
       "sort_order": 5
     },
@@ -100,16 +274,45 @@
       "slug": "platform_engineer",
       "label": "Platform Engineer",
       "description": "Infrastructure platforms, Kubernetes, cloud architecture",
-      "focus_ids": [24, 25, 22],
-      "core_capabilities": [
-        {"capability_id": 4, "min_proficiency": 4},
-        {"capability_id": 10, "min_proficiency": 3},
-        {"capability_id": 5, "min_proficiency": 3}
+      "focus_ids": [
+        24,
+        25,
+        22,
+        2,
+        23
       ],
-      "tool_access": ["kubectl", "helm", "terraform", "aws", "gcloud", "docker"],
-      "team_size": {"min": 2, "max": 4},
-      "pairs_well_with": ["devops_engineer", "sre", "cloud_engineer"],
-      "icon": "🏗",
+      "core_capabilities": [
+        {
+          "capability_id": 4,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 10,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 5,
+          "min_proficiency": 3
+        }
+      ],
+      "tool_access": [
+        "kubectl",
+        "helm",
+        "terraform",
+        "aws",
+        "gcloud",
+        "docker"
+      ],
+      "team_size": {
+        "min": 2,
+        "max": 4
+      },
+      "pairs_well_with": [
+        "devops_engineer",
+        "sre",
+        "cloud_engineer"
+      ],
+      "icon": "\ud83c\udfd7",
       "instruction_template": "platform_engineer",
       "sort_order": 6
     },
@@ -118,17 +321,52 @@
       "slug": "sre",
       "label": "Site Reliability Engineer",
       "description": "Reliability, observability, incident response, and SLO management",
-      "focus_ids": [30, 33, 25],
-      "core_capabilities": [
-        {"capability_id": 8, "min_proficiency": 4},
-        {"capability_id": 14, "min_proficiency": 4},
-        {"capability_id": 4, "min_proficiency": 2},
-        {"capability_id": 1, "min_proficiency": 3}
+      "focus_ids": [
+        30,
+        33,
+        25,
+        1,
+        3,
+        4,
+        13
       ],
-      "tool_access": ["kubectl", "docker", "journalctl", "top", "htop", "strace", "curl"],
-      "team_size": {"min": 2, "max": 4},
-      "pairs_well_with": ["platform_engineer", "devops_engineer", "dba"],
-      "icon": "🚨",
+      "core_capabilities": [
+        {
+          "capability_id": 8,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 14,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 4,
+          "min_proficiency": 2
+        },
+        {
+          "capability_id": 1,
+          "min_proficiency": 3
+        }
+      ],
+      "tool_access": [
+        "kubectl",
+        "docker",
+        "journalctl",
+        "top",
+        "htop",
+        "strace",
+        "curl"
+      ],
+      "team_size": {
+        "min": 2,
+        "max": 4
+      },
+      "pairs_well_with": [
+        "platform_engineer",
+        "devops_engineer",
+        "dba"
+      ],
+      "icon": "\ud83d\udea8",
       "instruction_template": "sre",
       "sort_order": 7
     },
@@ -137,17 +375,51 @@
       "slug": "backend_dev",
       "label": "Backend Developer",
       "description": "Server-side application development, APIs, and services",
-      "focus_ids": [30, 31, 32],
-      "core_capabilities": [
-        {"capability_id": 2, "min_proficiency": 3},
-        {"capability_id": 12, "min_proficiency": 3},
-        {"capability_id": 9, "min_proficiency": 3},
-        {"capability_id": 6, "min_proficiency": 2}
+      "focus_ids": [
+        30,
+        31,
+        32,
+        34,
+        35,
+        46
       ],
-      "tool_access": ["python", "pip", "git", "gh", "curl", "jq", "docker"],
-      "team_size": {"min": 2, "max": 6},
-      "pairs_well_with": ["frontend_dev", "dba", "devops_engineer"],
-      "icon": "⚙",
+      "core_capabilities": [
+        {
+          "capability_id": 2,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 12,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 9,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 6,
+          "min_proficiency": 2
+        }
+      ],
+      "tool_access": [
+        "python",
+        "pip",
+        "git",
+        "gh",
+        "curl",
+        "jq",
+        "docker"
+      ],
+      "team_size": {
+        "min": 2,
+        "max": 6
+      },
+      "pairs_well_with": [
+        "frontend_dev",
+        "dba",
+        "devops_engineer"
+      ],
+      "icon": "\u2699",
       "instruction_template": "backend_dev",
       "sort_order": 8
     },
@@ -156,16 +428,47 @@
       "slug": "data_engineer",
       "label": "Data Engineer",
       "description": "Data pipelines, ETL, warehousing, and analytics infrastructure",
-      "focus_ids": [40, 41, 42, 43],
-      "core_capabilities": [
-        {"capability_id": 15, "min_proficiency": 4},
-        {"capability_id": 6, "min_proficiency": 3},
-        {"capability_id": 2, "min_proficiency": 3}
+      "focus_ids": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
       ],
-      "tool_access": ["python", "psql", "jq", "awk", "sed", "curl"],
-      "team_size": {"min": 1, "max": 3},
-      "pairs_well_with": ["dba", "backend_dev", "ml_engineer"],
-      "icon": "🔧",
+      "core_capabilities": [
+        {
+          "capability_id": 15,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 6,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 2,
+          "min_proficiency": 3
+        }
+      ],
+      "tool_access": [
+        "python",
+        "psql",
+        "jq",
+        "awk",
+        "sed",
+        "curl"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 3
+      },
+      "pairs_well_with": [
+        "dba",
+        "backend_dev",
+        "ml_engineer"
+      ],
+      "icon": "\ud83d\udd27",
       "instruction_template": "data_engineer",
       "sort_order": 9
     },
@@ -174,16 +477,42 @@
       "slug": "cloud_engineer",
       "label": "Cloud Engineer",
       "description": "Cloud infrastructure provisioning and management across providers",
-      "focus_ids": [24],
-      "core_capabilities": [
-        {"capability_id": 10, "min_proficiency": 4},
-        {"capability_id": 5, "min_proficiency": 3},
-        {"capability_id": 3, "min_proficiency": 2}
+      "focus_ids": [
+        24,
+        22,
+        25
       ],
-      "tool_access": ["aws", "gcloud", "az", "terraform", "ansible"],
-      "team_size": {"min": 1, "max": 3},
-      "pairs_well_with": ["network_engineer", "platform_engineer", "security_analyst"],
-      "icon": "☁",
+      "core_capabilities": [
+        {
+          "capability_id": 10,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 5,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 3,
+          "min_proficiency": 2
+        }
+      ],
+      "tool_access": [
+        "aws",
+        "gcloud",
+        "az",
+        "terraform",
+        "ansible"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 3
+      },
+      "pairs_well_with": [
+        "network_engineer",
+        "platform_engineer",
+        "security_analyst"
+      ],
+      "icon": "\u2601",
       "instruction_template": "cloud_engineer",
       "sort_order": 10
     },
@@ -194,14 +523,35 @@
       "description": "BAGMAN: CAT. Decomposes ASSIGNMENT specifications into optimally-sized MANIFEST task graphs. Transforms requirements into precise BEE deployments.",
       "focus_ids": [],
       "core_capabilities": [
-        {"capability_id": 14, "min_proficiency": 4},
-        {"capability_id": 8, "min_proficiency": 3},
-        {"capability_id": 2, "min_proficiency": 3}
+        {
+          "capability_id": 14,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 8,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 2,
+          "min_proficiency": 3
+        }
       ],
-      "tool_access": ["nim.dispatch", "nim.owl", "jq", "yq"],
-      "team_size": {"min": 1, "max": 1},
-      "pairs_well_with": ["owl", "queen", "sre"],
-      "icon": "🐱",
+      "tool_access": [
+        "nim.dispatch",
+        "nim.owl",
+        "jq",
+        "yq"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 1
+      },
+      "pairs_well_with": [
+        "owl",
+        "queen",
+        "sre"
+      ],
+      "icon": "\ud83d\udc31",
       "instruction_template": "cat",
       "sort_order": 11,
       "bagman": {
@@ -218,13 +568,29 @@
       "description": "BAGMAN: OWL. Supervisory meta-agent for oversight, coordination, and governance. The silent sentinel ensuring alignment.",
       "focus_ids": [],
       "core_capabilities": [
-        {"capability_id": 14, "min_proficiency": 5},
-        {"capability_id": 8, "min_proficiency": 4}
+        {
+          "capability_id": 14,
+          "min_proficiency": 5
+        },
+        {
+          "capability_id": 8,
+          "min_proficiency": 4
+        }
       ],
-      "tool_access": ["nim.dispatch", "nim.sting", "nim.smoker"],
-      "team_size": {"min": 1, "max": 1},
-      "pairs_well_with": ["cat", "queen"],
-      "icon": "🦉",
+      "tool_access": [
+        "nim.dispatch",
+        "nim.sting",
+        "nim.smoker"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 1
+      },
+      "pairs_well_with": [
+        "cat",
+        "queen"
+      ],
+      "icon": "\ud83e\udd89",
       "instruction_template": "owl",
       "sort_order": 12,
       "bagman": {
@@ -241,13 +607,30 @@
       "description": "BAGMAN: QUEEN. Apex coordinator of HIVE segment. BEE lifecycle management, resource allocation, DOCTRINE enforcement.",
       "focus_ids": [],
       "core_capabilities": [
-        {"capability_id": 14, "min_proficiency": 4},
-        {"capability_id": 8, "min_proficiency": 3}
+        {
+          "capability_id": 14,
+          "min_proficiency": 4
+        },
+        {
+          "capability_id": 8,
+          "min_proficiency": 3
+        }
       ],
-      "tool_access": ["nim.dispatch", "nim.apiary", "nim.comb"],
-      "team_size": {"min": 1, "max": 1},
-      "pairs_well_with": ["owl", "cat", "drone"],
-      "icon": "👑",
+      "tool_access": [
+        "nim.dispatch",
+        "nim.apiary",
+        "nim.comb"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 1
+      },
+      "pairs_well_with": [
+        "owl",
+        "cat",
+        "drone"
+      ],
+      "icon": "\ud83d\udc51",
       "instruction_template": "queen",
       "sort_order": 13,
       "bagman": {
@@ -263,13 +646,31 @@
       "description": "BAGMAN: FORAGER. BEE variant specialized for external data acquisition. Scouts, harvests, returns NECTAR to COMB.",
       "focus_ids": [],
       "core_capabilities": [
-        {"capability_id": 15, "min_proficiency": 3},
-        {"capability_id": 3, "min_proficiency": 2}
+        {
+          "capability_id": 15,
+          "min_proficiency": 3
+        },
+        {
+          "capability_id": 3,
+          "min_proficiency": 2
+        }
       ],
-      "tool_access": ["curl", "wget", "jq", "ssh", "scp"],
-      "team_size": {"min": 1, "max": 6},
-      "pairs_well_with": ["data_engineer", "backend_dev"],
-      "icon": "🔍",
+      "tool_access": [
+        "curl",
+        "wget",
+        "jq",
+        "ssh",
+        "scp"
+      ],
+      "team_size": {
+        "min": 1,
+        "max": 6
+      },
+      "pairs_well_with": [
+        "data_engineer",
+        "backend_dev"
+      ],
+      "icon": "\ud83d\udd0d",
       "instruction_template": "forager",
       "sort_order": 14,
       "bagman": {
@@ -285,9 +686,15 @@
       "focus_ids": [],
       "core_capabilities": [],
       "tool_access": [],
-      "team_size": {"min": 4, "max": 100},
-      "pairs_well_with": ["queen", "devops_engineer"],
-      "icon": "🔄",
+      "team_size": {
+        "min": 4,
+        "max": 100
+      },
+      "pairs_well_with": [
+        "queen",
+        "devops_engineer"
+      ],
+      "icon": "\ud83d\udd04",
       "instruction_template": "drone",
       "sort_order": 15,
       "bagman": {

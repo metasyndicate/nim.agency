@@ -31,15 +31,19 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 
 | Command | Backing module | Purpose | State |
 |---|---|---|---|
-| `dispatch [-y] [-v\|-vv]` | `lib/cli/dispatch.py` | gated mission execution (briefing → confirm → dispatch) | functional |
+| `dispatch [-y] [-v\|-vv]` | `lib/cli/dispatch.py` | gated mission execution (briefing → confirm → dispatch → payroll) | functional |
 | `mission plan\|show\|list\|report` | `lib/cli/mission.py` | briefing preview, saved-mission inspection, reports | functional |
+| `project create\|list\|show\|edit\|assign\|release` | `lib/cli/project.py` | stateful scoped work units: crew engagements, host binding, objectives, directives | functional (cycles pending) |
 | `agent list\|show\|generate` | `lib/cli/agent.py` | roster operations | functional |
+| `agent credit\|train\|equip` | `lib/cli/agent.py` | economy: paymaster adjustments, dojo, depot | functional |
+| `agent enroll [--backfill]` | `lib/cli/agent.py` | badge + primary keypair issuance into the depot vault | functional |
 | `data verify\|seed\|schemas\|describe` | `lib/cli/data.py` | datastore init + schema inspection | functional |
-| `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses agent builder (min 80x24) | functional, monolithic (~3600 lines) |
+| `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional, monolithic (~5900 lines) |
 | Programmatic (Python) | `lib.data`, `lib.dispatch` | see README "Programmatic" | functional |
 
-Shared mission flags (`dispatch`, `mission plan`): `--mission {codebase,security}`,
-`--target DIR`, `--crew a,b`, `--count N`, `--timeout S`, `--output F`.
+Shared mission flags (`dispatch`, `mission plan`):
+`--mission {codebase,security,task}`, `--task PROMPT`, `--target DIR`,
+`--crew a,b`, `--skill t1,t2`, `--count N`, `--timeout S`, `--output F`.
 Any command that spawns agent work renders the centralized mission briefing
 (`lib/dispatch/briefing.py`) first and requires confirmation (`-y` bypasses;
 non-TTY without `-y` refuses, exit 2).
@@ -48,11 +52,15 @@ non-TTY without `-y` refuses, exit 2).
 
 | Component | Path | Purpose | Maturity |
 |---|---|---|---|
-| SchemaManager | `lib/data/schema.py` | schema loading/validation (`data/agency/schema/`) | stable |
-| DataStore / CRUD | `lib/data/crud.py` | JSON datastore, soft-delete, queries | stable |
+| SchemaManager | `lib/data/schema.py` | schema loading/validation (`data/agency/schema/`); https `$id`s resolve from a local store, validation degrades gracefully without `jsonschema` | stable |
+| DataStore / CRUD | `lib/data/crud.py` | JSON datastore, soft-delete, queries; reference-table writes (`add_reference_entry`/`update_reference_entry`, id+slug immutable) | stable |
 | AgentGenerator | `lib/data/generator.py` | procedural agents from `lex/` taxonomies, weighted class/tier | stable |
 | AgentComposer | `lib/data/composer.py` | operational profile / system prompt assembly; tracks instruction source provenance (`OperationalProfile.sources`) | stable |
 | OWL / CrüeRoster | `lib/data/owl.py` | crew assembly | stable |
+| Roster matching | `lib/data/roster.py` | competency-term crew selection (skills/tools/specialties/capabilities, scored + disclosed); draft-hire fallback | functional |
+| Projects | `lib/data/project.py` | aggregate-root work units: engagement rows (reuse `assignment_status`), host binding, objectives, journal; slug/id-prefix resolution | functional |
+| Economy | `lib/data/economy.py` | mission payroll, rank/qualifier progression, gold ledger, dojo (`train`) + depot (`equip`) | functional |
+| Identity | `lib/data/identity.py` | badge + immutable ed25519 keypair issuance; depot vault custody (`hive/depot/.vault/<dogtag>/`, 0700/0600) | functional |
 | Mission / Constraints | `lib/dispatch/mission.py` | work orders, tasks, dependency graph, JSON persistence | stable |
 | MissionBuilder + templates | `lib/dispatch/builder.py` | fluent builder; `codebase`/`security` templates | stable |
 | Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger | stable |
@@ -61,7 +69,7 @@ non-TTY without `-y` refuses, exit 2).
 | Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
 | Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, ops_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
-| TUI | `tui/builder.py` | RPG-themed agent builder HUD | functional; refactor candidate |
+| TUI | `tui/builder.py` + `tui/textkit.py` | RPG-themed HUD; cell-accurate rendering (`textkit` handles wide-glyph clipping/padding); threaded live dispatch | functional; refactor candidate |
 
 ## CONVENTIONS & DEFAULTS
 
@@ -75,11 +83,14 @@ runtime — overrides via CLI flags):
 | `dispatch.timeout_seconds` | `600` | mission templates; `--timeout` overrides |
 | `dispatch.report_dir` | `log` (project-relative) | report + mission JSON output |
 | `logging.dir` | `~/.nim/agency` | dispatch/audit logs |
+| `economy.*` | `25`/`10` per task, `15`/`5` bonus, `10` sp/rank | payroll + promotion rates (`lib/data/economy.py`) |
 
 Output artifacts per mission run:
 
-- `log/mission-<id>-report.md` — assembled report (written on success **and** failure)
+- `log/mission-<id>-report.md` — assembled report incl. payroll (written on success **and** failure)
 - `log/mission-<id>-report.json` — full mission record: prompts, constraints, per-task results/errors
+- `data/agency/data/transactions/ledger.json` — immutable gold ledger
+- `data/agency/hive/depot/.vault/<dogtag>/` — key material + manifest (gitignored)
 - `~/.nim/agency/dispatch.log` / `dispatch.json` — lifecycle event logs
 - `~/.nim/agency/remote_operations.json` — remote ops audit trail (mode 0600)
 
@@ -88,9 +99,17 @@ Output artifacts per mission run:
 - No test suite.
 - No dependency declaration (core is stdlib; `asyncssh`, `cryptography`,
   `jsonschema` optional — see README).
-- Custom missions not yet supported via CLI (programmatic only);
-  `--dry-run` replaced by `nim.agency mission plan`.
-- `tui/builder.py` is a single-file monolith.
+- `tui/builder.py` is a single-file monolith (~4900 lines; split candidate).
+- Key distribution/revocation flows not yet built (vault issuance only);
+  mission outcomes feed the economy but not achievements.
+- TUI dispatch backgrounds its worker thread if the operator leaves the
+  run screen; no reattach view yet beyond re-entering Dispatch.
+- Project subsystem phases B–E pending (derived availability/booking,
+  cycle engine, access grants + remote dispatch, TUI screen) — tracked in
+  `.nim/instructions/nim.agency.projects.bootstrap.md`.
 - Remote layer (`lib/remote/`) untested against live infrastructure this revision.
 - `mission show -v/-vv` recomposes prompts from the current datastore, not
   dispatch-time state (caveat printed in output).
+- `lib/dispatch/ops_log.py` and `lib/remote/ops_log.py` share a filename but
+  are distinct (dispatch lifecycle vs HQ remote-ops messaging) — rename
+  candidate, not a consolidation candidate.

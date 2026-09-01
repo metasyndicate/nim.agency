@@ -82,12 +82,15 @@ class DataStore:
         "instruction": {"type": "reference", "file": "instruction.json"},
         "crue_type": {"type": "reference", "file": "crue_type.json"},
         "agent_relation": {"type": "reference", "file": "agent_relation.json"},
+        "assignment_status": {"type": "reference", "file": "assignment_status.json"},
+        "project_status": {"type": "reference", "file": "project_status.json"},
         "config": {"type": "singleton", "file": "config.json"},
 
         # Entity data: stored in directories with individual files
         "agent": {"type": "collection", "dir": "agents", "id_field": "id"},
         "mission": {"type": "collection", "dir": "missions", "id_field": "id"},
         "group": {"type": "collection", "dir": "groups", "id_field": "id"},
+        "project": {"type": "collection", "dir": "projects", "id_field": "id"},
         "transaction": {"type": "append", "file": "transactions/ledger.json"},
         "event": {"type": "append", "file": "events/log.json"},
         "peer_review": {"type": "append", "file": "reviews/reviews.json"},
@@ -208,6 +211,73 @@ class DataStore:
                 return record
         return None
 
+    def _write_reference(self, entity_type: str, data: list[dict]) -> None:
+        """Persist a reference table, preserving the file's wrapper shape
+        ({"$schema": ..., "data": [...]} vs bare array)."""
+        config = self.ENTITY_CONFIG.get(entity_type)
+        if not config or config["type"] != "reference":
+            raise ValueError(f"Not a writable reference type: {entity_type}")
+
+        file_path = self.base_path / "reference" / config["file"]
+        wrapper = None
+        if file_path.exists():
+            with open(file_path, "r") as f:
+                content = json.load(f)
+            if isinstance(content, dict):
+                wrapper = content
+
+        if wrapper is not None:
+            wrapper["data"] = data
+            payload = wrapper
+        else:
+            payload = data
+
+        with open(file_path, "w") as f:
+            json.dump(payload, f, indent=2)
+            f.write("\n")
+        self._reference_cache[entity_type] = data
+
+    def add_reference_entry(self, entity_type: str, entry: dict) -> dict:
+        """Append an operator-defined entry to a reference table.
+
+        Assigns the next id and sort_order; derives a slug from the label
+        when absent. Slugs must be unique - they are the relational anchor.
+        """
+        data = list(self.load_reference(entity_type, force_reload=True))
+
+        if not entry.get("slug"):
+            label = entry.get("label", "")
+            entry["slug"] = "".join(
+                c if c.isalnum() else "_" for c in label.lower()).strip("_")
+        if not entry["slug"]:
+            raise ValueError("Entry needs a label or slug")
+        if any(e.get("slug") == entry["slug"] for e in data):
+            raise ValueError(f"Slug already exists: {entry['slug']}")
+
+        next_id = max((e.get("id", 0) for e in data), default=0) + 1
+        entry.setdefault("id", next_id)
+        entry.setdefault("sort_order", entry["id"])
+
+        data.append(entry)
+        self._write_reference(entity_type, data)
+        return entry
+
+    def update_reference_entry(
+        self, entity_type: str, entry_id: int, updates: dict
+    ) -> Optional[dict]:
+        """Update a reference entry's descriptive fields. `id` and `slug`
+        are immutable - agent records point at them."""
+        data = list(self.load_reference(entity_type, force_reload=True))
+        for entry in data:
+            if entry.get("id") == entry_id:
+                for key, value in updates.items():
+                    if key in ("id", "slug"):
+                        continue
+                    entry[key] = value
+                self._write_reference(entity_type, data)
+                return entry
+        return None
+
     def get_config(self) -> dict:
         """Get the agency configuration."""
         data = self.load_reference("config")
@@ -246,8 +316,10 @@ class DataStore:
         data["audit"]["updated_at"] = now
         data["audit"]["retired_at"] = None
 
-        # Validate if requested
-        if validate:
+        # Validate if requested. Core stays stdlib-only: without the
+        # optional jsonschema dependency, validate() returns a skip notice
+        # that would otherwise read as a hard failure.
+        if validate and self.schema_manager.can_validate():
             errors = self.schema_manager.validate(entity_type, data)
             if errors:
                 raise ValueError(f"Validation failed: {'; '.join(errors)}")
@@ -405,13 +477,13 @@ class DataStore:
 
         total = len(entities)
 
-        # Sort
+        # Sort. Missing values sort last; the tuple keeps types unmixed
+        # (a bare `or ""` fallback breaks numeric sorts - 0 is falsy)
         if sort_key:
-            entities = sorted(
-                entities,
-                key=lambda x: self._get_nested(x, sort_key) or "",
-                reverse=sort_reverse
-            )
+            def sort_value(entity):
+                value = self._get_nested(entity, sort_key)
+                return (value is None, "" if value is None else value)
+            entities = sorted(entities, key=sort_value, reverse=sort_reverse)
 
         # Paginate
         if offset:

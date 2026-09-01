@@ -1,0 +1,83 @@
+{
+  "$schema": "../schema/reference/project_status.schema.json",
+  "$comment": "PROJECT program lifecycle states",
+  "data": [
+    {
+      "id": 1,
+      "slug": "draft",
+      "label": "Draft",
+      "description": "PROJECT chartered but not yet activated",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "📝",
+      "color": "#888888",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "active",
+      "label": "Active",
+      "description": "PROJECT live - engagements bind agents and cycles may dispatch",
+      "is_terminal": false,
+      "is_active": true,
+      "icon": "🌱",
+      "color": "#44cc44",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "paused",
+      "label": "Paused",
+      "description": "PROJECT suspended by operator - engagements persist, cycles refuse",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "⏸",
+      "color": "#ffaa00",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "blocked",
+      "label": "Blocked",
+      "description": "PROJECT waiting on an external dependency or unresolved conflict",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "🚧",
+      "color": "#ff6644",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "review",
+      "label": "Under Review",
+      "description": "Cycles held pending operator review of objectives and artifacts",
+      "is_terminal": false,
+      "is_active": false,
+      "icon": "🔍",
+      "color": "#4488ff",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "complete",
+      "label": "Complete",
+      "description": "Objectives met - PROJECT closed with engagements released",
+      "is_terminal": true,
+      "is_active": false,
+      "icon": "🏆",
+      "color": "#22aa55",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "archived",
+      "label": "Archived",
+      "description": "PROJECT shelved for the record - reactivate by re-chartering",
+      "is_terminal": true,
+      "is_active": false,
+      "icon": "📦",
+      "color": "#666666",
+      "sort_order": 7
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/project.schema.json",
+  "title": "Project",
+  "description": "Stateful scoped work unit (schema:Project): crew engagements, host binding, objectives, directives, and cycle journal. Aggregate root that REFERENCES agents/substations/paths - it never copies them.",
+  "@type": ["schema:Project", "prov:Activity"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400113,
+    "created": "2026-08-31T00:00:00Z",
+    "modified": "2026-08-31T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "project",
+      "type": "schema",
+      "path": "L3.agency.core.project"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$",
+      "minLength": 2,
+      "maxLength": 64,
+      "description": "Addressable reference for CLI/TUI (unique across projects)"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "description": {
+      "type": "string"
+    },
+    "status_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Reference to project_status lookup"
+    },
+    "priority": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/priority"
+    },
+    "crue_id": {
+      "oneOf": [
+        { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+        { "type": "null" }
+      ],
+      "description": "Optional whole-CRÜE binding (bulk engagement)"
+    },
+    "engagements": {
+      "type": "array",
+      "description": "Persistent temporal agent assignments - one row per agent, lifecycle state from assignment_status. The only new stateful relation.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "agent_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 64,
+            "default": "specialist",
+            "description": "Engagement role (lead, specialist, reviewer, ...)"
+          },
+          "responsibilities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Become per-agent task prompts at cycle composition"
+          },
+          "status_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Reference to assignment_status lookup - mission outcomes drive transitions"
+          },
+          "assigned_at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          },
+          "released_at": {
+            "oneOf": [
+              { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp" },
+              { "type": "null" }
+            ],
+            "description": "Set when the engagement ends - a released row is history, not state"
+          },
+          "quality_score": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/rating",
+            "description": "Performance score (set on release/completion)"
+          }
+        },
+        "required": ["agent_id", "status_id", "assigned_at"]
+      }
+    },
+    "host_binding": {
+      "type": "object",
+      "description": "Where the work happens - null substation_id means the local host",
+      "properties": {
+        "substation_id": {
+          "oneOf": [
+            { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+            { "type": "null" }
+          ]
+        },
+        "worktrees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string", "maxLength": 1024 },
+              "writable": { "type": "boolean", "default": false },
+              "primary": { "type": "boolean", "default": false }
+            },
+            "required": ["path"]
+          }
+        },
+        "required_permissions": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["read", "write", "deploy"] },
+          "default": ["read"],
+          "description": "Checked against substation permissions at briefing time"
+        }
+      }
+    },
+    "objectives": {
+      "type": "array",
+      "description": "Goals with acceptance criteria - marked done by operator review, never automatically",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "text": { "type": "string" },
+          "acceptance": { "type": "string" },
+          "done": { "type": "boolean", "default": false }
+        },
+        "required": ["id", "text"]
+      }
+    },
+    "specifications": {
+      "type": "array",
+      "description": "Functional spec references (paths or URLs)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string", "maxLength": 128 },
+          "path_or_url": { "type": "string", "maxLength": 1024 }
+        },
+        "required": ["path_or_url"]
+      }
+    },
+    "directives": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Standing instruction lines injected into every cycle"
+    },
+    "artifacts": {
+      "type": "array",
+      "description": "Declared outputs",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string", "maxLength": 128 },
+          "path": { "type": "string", "maxLength": 1024 },
+          "kind": { "type": "string", "enum": ["report", "code", "doc"] }
+        },
+        "required": ["path"]
+      }
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "max_cycles": {
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ],
+          "default": null
+        },
+        "read_only": {
+          "type": "boolean",
+          "default": true,
+          "description": "Cycle missions inherit this constraint"
+        },
+        "max_concurrent_engagements": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Per-agent booking cap consulted by derived availability"
+        }
+      }
+    },
+    "journal": {
+      "type": "array",
+      "description": "Append-only cycle log - one entry per dispatched cycle",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cycle": { "type": "integer", "minimum": 1 },
+          "mission_id": { "type": "string", "maxLength": 64 },
+          "at": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+          },
+          "status": { "type": "string", "maxLength": 32 },
+          "note": { "type": "string" }
+        },
+        "required": ["cycle", "at"]
+      }
+    },
+    "owl_id": {
+      "oneOf": [
+        { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+        { "type": "null" }
+      ],
+      "description": "Supervising OWL - wiring deferred until owl.py grows duties"
+    },
+    "created_by": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Operator that chartered the PROJECT"
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "slug", "title", "status_id"]
+}

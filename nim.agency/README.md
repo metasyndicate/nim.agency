@@ -27,7 +27,8 @@ logs, and audit trails are not.
 - **Agent generation** — procedural identities (name, codename, class, rank,
   skills, bio) built from lexicon taxonomies with weighted distribution
 - **Schematic datastore** — JSON Schema-defined entities with a generic CRUD
-  layer, soft-deletes, and reference data
+  layer, soft-deletes, and reference data; reference tables accept
+  operator-defined entries (id/slug immutable once created)
 - **Mission dispatch** — crews of agents execute dependency-ordered tasks
   against a target directory via the `claude` CLI, with per-task timeouts and
   concurrency limits
@@ -35,6 +36,11 @@ logs, and audit trails are not.
   domains, tools, specialties, and capabilities with scored, disclosed
   rationale; when nobody on the roster qualifies, dispatch drafts a
   general-purpose hire on the spot
+- **Projects** — long-lived, addressable work units that bind crew
+  engagements (roles + responsibilities), a host/worktree, objectives with
+  acceptance criteria, and standing directives into one slug-referenced
+  aggregate; steered by editing between cycles (project-scoped dispatch
+  cycles land in a later phase)
 - **RPG economy** — completed tasks pay XP and gold (full missions pay a
   bonus), promotions follow the rank ladder and grant skill points to spend
   at the dojo (`agent train`), gold buys tooling at the depot
@@ -49,7 +55,13 @@ logs, and audit trails are not.
   results, errors) per run, plus CSV/JSON lifecycle logs
 - **Remote operations layer** — asyncssh transport, encrypted credential
   vault (Fernet), command risk classification, audit logging
-- **TUI** — a curses, RPG-HUD-styled agent builder
+- **TUI** — a curses RPG-HUD: roster/dossier browsing (mugshots included),
+  agent create/edit forms, live mission dispatch with a briefing gate and
+  streaming event log (direct-dispatch from any dossier or crue), mission
+  history browser, per-agent service records and composed operational
+  profiles, gold ledger, dojo/depot, crue management with a member picker,
+  agency statistics, and a Type Foundry for operator-defined reference
+  types — cell-accurate rendering via a width-aware textkit
 
 ## REQUIREMENTS
 
@@ -78,6 +90,11 @@ bin/nim.agency dispatch --mission codebase --target /path/to/repo --count 3
 # shorthand: one competency-matched specialist on an ad-hoc local task
 bin/nim.agency dispatch --task "inventory all TODO comments" --skill regex
 
+# charter a persistent project and engage crew on it
+bin/nim.agency project create --slug my-project --title "..." --target /path/to/repo
+bin/nim.agency project assign my-project some.codename --role lead --resp "own the schema layer"
+bin/nim.agency project show my-project
+
 # review past runs
 bin/nim.agency mission list
 bin/nim.agency mission show <id> -v
@@ -101,6 +118,11 @@ One canonical entry point with a consistent grammar:
 | `mission show <id> [-v\|-vv]` | render a saved mission's briefing |
 | `mission list` | list saved missions |
 | `mission report <id>` | print a saved mission report |
+| `project create --slug S --title T [--target DIR]` | charter a project (chartering ceremony) |
+| `project list` / `project show <ref>` | project index / full disclosure (crew, objectives, journal) |
+| `project edit <ref> [--status S] [--add-objective ...]` | steer a project between cycles |
+| `project assign <ref> <codename> [--role R] [--resp ...]` | engage an agent with responsibilities |
+| `project release <ref> <codename>` | end an engagement (row becomes history) |
 | `agent list [--limit N] [--by-xp]` | tabular agent roster (XP, gold, missions) |
 | `agent show <codename>` | agent details |
 | `agent generate [-n N]` | procedurally generate and save agents |
@@ -111,7 +133,7 @@ One canonical entry point with a consistent grammar:
 | `data verify` | verify reference data |
 | `data seed --agents N` | generate sample agents |
 | `data schemas` / `data describe <schema>` | schema inspection |
-| `tui` | interactive curses agent builder |
+| `tui` | interactive curses HUD: roster, create/edit, dispatch, missions, dojo, crues, stats, type foundry |
 
 Mission flags (shared by `dispatch` and `mission plan`):
 `--mission {codebase,security,task}`, `--task PROMPT` (implies
@@ -220,7 +242,7 @@ missions only at targets you'd trust an intern with root... er, read access.
 ```
 bin/          canonical CLI entry point (nim.agency)
 etc/          source-controlled defaults (agency.json)
-lib/cli/      CLI command modules (dispatch, mission, agent, data)
+lib/cli/      CLI command modules (dispatch, mission, project, agent, data)
 lib/data/     datastore, schema, agent generation & composition
 lib/dispatch/ missions, dispatcher, provider, briefing, logging
 lib/remote/   ssh, vault, safety, audit
@@ -238,7 +260,7 @@ maturity assessment.
 Early revision. Functional: generation, datastore, dispatch (template and
 ad-hoc `--task` missions, competency-matched crews), RPG economy
 (payroll, promotions, dojo/depot), agent identity (badges, keypairs, depot
-vault), TUI, logging.
-In progress: key distribution/revocation flows, remote-layer live
-validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
+vault), projects (chartering, engagements, objectives), TUI, logging.
+In progress: project availability/booking + cycle engine, key
+distribution/revocation flows, remote-layer live validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
 amnesia, neckbeard, and sporadic anomalous flow — patch early, patch often.

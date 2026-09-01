@@ -6,6 +6,7 @@ Grammar: nim.agency <component> <action> [--flags]
 Components mirror the library nomenclature:
     dispatch    execute missions (lib.dispatch, gated by briefing + confirm)
     mission     briefing, inspection, and reports (lib.dispatch.mission)
+    project     stateful scoped work units (lib.data.project)
     agent       roster operations (lib.data.generator)
     data        datastore init and schema inspection (lib.data)
     tui         interactive agent builder (tui.builder)
@@ -20,6 +21,7 @@ from . import agent as agent_cmd
 from . import data as data_cmd
 from . import dispatch as dispatch_cmd
 from . import mission as mission_cmd
+from . import project as project_cmd
 
 
 def cmd_tui(args) -> int:
@@ -75,6 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     dispatch_cmd.add_parser(sub, mission_flags, verbosity)
     mission_cmd.add_parser(sub, mission_flags, verbosity)
+    project_cmd.add_parser(sub)
     agent_cmd.add_parser(sub)
     data_cmd.add_parser(sub)
 

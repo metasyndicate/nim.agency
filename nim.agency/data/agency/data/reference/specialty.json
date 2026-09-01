@@ -8,7 +8,7 @@
       "description": "Clicks 'dismiss' professionally. Has achieved inbox zero by ignoring everything.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "🔔",
+      "icon": "\ud83d\udd14",
       "sort_order": 1
     },
     {
@@ -18,7 +18,7 @@
       "description": "Tuned the SIEM once. Made it worse. Now everything is a false positive.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "🎯",
+      "icon": "\ud83c\udfaf",
       "sort_order": 2
     },
     {
@@ -28,7 +28,7 @@
       "description": "'We're SOC2 compliant.' (They are not.)",
       "ops_domain_id": 4,
       "category": "security",
-      "icon": "☑",
+      "icon": "\u2611",
       "sort_order": 3
     },
     {
@@ -38,7 +38,7 @@
       "description": "Subscribed to 40 feeds. Reads none. Dashboards look impressive though.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "📡",
+      "icon": "\ud83d\udce1",
       "sort_order": 4
     },
     {
@@ -48,7 +48,7 @@
       "description": "Writes detailed postmortems. Learns nothing. Same incident next quarter.",
       "ops_domain_id": 4,
       "category": "security",
-      "icon": "📝",
+      "icon": "\ud83d\udcdd",
       "sort_order": 5
     },
     {
@@ -58,7 +58,7 @@
       "description": "Has 200 penetration test reports. Zero remediations. 'We'll get to it.'",
       "ops_domain_id": 4,
       "category": "security",
-      "icon": "📁",
+      "icon": "\ud83d\udcc1",
       "sort_order": 6
     },
     {
@@ -68,7 +68,7 @@
       "description": "The IDS has been in 'learning mode' for three years.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "👁",
+      "icon": "\ud83d\udc41",
       "sort_order": 7
     },
     {
@@ -78,7 +78,7 @@
       "description": "The one person who actually knows what the agent does. Feared. Respected.",
       "ops_domain_id": 3,
       "category": "security",
-      "icon": "🔮",
+      "icon": "\ud83d\udd2e",
       "sort_order": 8
     },
     {
@@ -88,7 +88,7 @@
       "description": "Excavates ancient rules. 'Allow any any' from 2009. Nobody knows why.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "🏺",
+      "icon": "\ud83c\udffa",
       "sort_order": 9
     },
     {
@@ -98,7 +98,7 @@
       "description": "Requires 47 character passwords. Changed monthly. Wonders why everyone uses sticky notes.",
       "ops_domain_id": 4,
       "category": "security",
-      "icon": "🔐",
+      "icon": "\ud83d\udd10",
       "sort_order": 10
     },
     {
@@ -108,7 +108,7 @@
       "description": "'Have you tried disconnecting and reconnecting?' Has said this 10,000 times.",
       "ops_domain_id": 2,
       "category": "security",
-      "icon": "🔗",
+      "icon": "\ud83d\udd17",
       "sort_order": 11
     },
     {
@@ -118,7 +118,7 @@
       "description": "The alerts have been firing for months. 'It's on the backlog.'",
       "ops_domain_id": 3,
       "category": "security",
-      "icon": "📜",
+      "icon": "\ud83d\udcdc",
       "sort_order": 12
     },
     {
@@ -128,7 +128,7 @@
       "description": "Tends vast fields of indentation. One space off and the harvest fails.",
       "ops_domain_id": 4,
       "category": "devops",
-      "icon": "🌾",
+      "icon": "\ud83c\udf3e",
       "sort_order": 13
     },
     {
@@ -138,7 +138,7 @@
       "description": "The pipeline is 9000 lines. Nobody dares touch it. It works. Sometimes.",
       "ops_domain_id": 4,
       "category": "devops",
-      "icon": "🪄",
+      "icon": "\ud83e\ude84",
       "sort_order": 14
     },
     {
@@ -148,7 +148,7 @@
       "description": "Has never run kubectl. Has opinions about service meshes. Strong opinions.",
       "ops_domain_id": 3,
       "category": "devops",
-      "icon": "☸",
+      "icon": "\u2638",
       "sort_order": 15
     },
     {
@@ -158,7 +158,7 @@
       "description": "900 VMs. 12 are used. The rest are 'probably important.'",
       "ops_domain_id": 3,
       "category": "platform",
-      "icon": "📦",
+      "icon": "\ud83d\udce6",
       "sort_order": 16
     },
     {
@@ -168,7 +168,7 @@
       "description": "Assigned to 'quick fix' from 2019. Still ranging.",
       "ops_domain_id": 4,
       "category": "devops",
-      "icon": "💸",
+      "icon": "\ud83d\udcb8",
       "sort_order": 17
     },
     {
@@ -178,7 +178,7 @@
       "description": "Once null-routed a continent. Would do it again.",
       "ops_domain_id": 2,
       "category": "network",
-      "icon": "🌍",
+      "icon": "\ud83c\udf0d",
       "sort_order": 18
     },
     {
@@ -188,7 +188,7 @@
       "description": "Traces cables through the ceiling void. Finds things. Terrible things.",
       "ops_domain_id": 1,
       "category": "facility",
-      "icon": "🔌",
+      "icon": "\ud83d\udd0c",
       "sort_order": 19
     },
     {
@@ -198,8 +198,178 @@
       "description": "It's always DNS. Always. They know this. They've accepted it.",
       "ops_domain_id": 2,
       "category": "network",
-      "icon": "🧙",
+      "icon": "\ud83e\uddd9",
       "sort_order": 20
+    },
+    {
+      "id": 21,
+      "slug": "raised_floor_spelunker",
+      "label": "Raised Floor Spelunker",
+      "description": "Descends beneath the datacenter tiles with a headlamp and returns with cables nobody remembers installing.",
+      "ops_domain_id": 1,
+      "category": "facility",
+      "icon": "\ud83d\udd26",
+      "sort_order": 21
+    },
+    {
+      "id": 22,
+      "slug": "hvac_whisperer",
+      "label": "HVAC Whisperer",
+      "description": "Communes with the cooling units. Knows which CRAC unit is lying about its setpoint.",
+      "ops_domain_id": 1,
+      "category": "facility",
+      "icon": "\u2744\ufe0f",
+      "sort_order": 22
+    },
+    {
+      "id": 23,
+      "slug": "rack_tetris_champion",
+      "label": "Rack Tetris Champion",
+      "description": "Fits 43U of equipment into a 42U rack. Nobody asks how.",
+      "ops_domain_id": 1,
+      "category": "facility",
+      "icon": "\ud83e\udde9",
+      "sort_order": 23
+    },
+    {
+      "id": 24,
+      "slug": "packet_autopsy_surgeon",
+      "label": "Packet Autopsy Surgeon",
+      "description": "Opens pcaps the way others open cold cases. The packet always tells the truth eventually.",
+      "ops_domain_id": 2,
+      "category": "network",
+      "icon": "\ud83d\udd2c",
+      "sort_order": 24
+    },
+    {
+      "id": 25,
+      "slug": "nat_traversal_mystic",
+      "label": "NAT Traversal Mystic",
+      "description": "Sees through double NAT. Speaks fluent STUN. Refuses to explain hairpinning at parties.",
+      "ops_domain_id": 2,
+      "category": "network",
+      "icon": "\ud83c\udf00",
+      "sort_order": 25
+    },
+    {
+      "id": 26,
+      "slug": "captive_portal_escapologist",
+      "label": "Captive Portal Escapologist",
+      "description": "Has never once clicked 'I agree to the terms'. The hotel wifi fears them.",
+      "ops_domain_id": 2,
+      "category": "network",
+      "icon": "\ud83d\udd13",
+      "sort_order": 26
+    },
+    {
+      "id": 27,
+      "slug": "cron_job_necromancer",
+      "label": "Cron Job Necromancer",
+      "description": "Raises long-dead scheduled jobs and occasionally puts them back down. Knows what runs at 3:07 AM and why.",
+      "ops_domain_id": 3,
+      "category": "platform",
+      "icon": "\ud83e\udea6",
+      "sort_order": 27
+    },
+    {
+      "id": 28,
+      "slug": "container_escape_artist",
+      "label": "Container Escape Artist",
+      "description": "Gets out of any pod, sandbox, or namespace. Strictly for legitimate debugging purposes.",
+      "ops_domain_id": 3,
+      "category": "platform",
+      "icon": "\ud83d\udce6",
+      "sort_order": 28
+    },
+    {
+      "id": 29,
+      "slug": "golden_image_curator",
+      "label": "Golden Image Curator",
+      "description": "Maintains the one true base image. All other images are derivative works and they will say so.",
+      "ops_domain_id": 3,
+      "category": "platform",
+      "icon": "\ud83d\uddbc\ufe0f",
+      "sort_order": 29
+    },
+    {
+      "id": 30,
+      "slug": "quota_negotiator",
+      "label": "Quota Negotiator",
+      "description": "Argues with resource limits for a living. Has never met a namespace it couldn't expand.",
+      "ops_domain_id": 3,
+      "category": "platform",
+      "icon": "\u2696\ufe0f",
+      "sort_order": 30
+    },
+    {
+      "id": 31,
+      "slug": "regex_exorcist",
+      "label": "Regex Exorcist",
+      "description": "Called in when the pattern matches things it should not. Reads catastrophic backtracking like scripture.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "\ud83d\udcff",
+      "sort_order": 31
+    },
+    {
+      "id": 32,
+      "slug": "legacy_code_docent",
+      "label": "Legacy Code Docent",
+      "description": "Gives guided tours of code nobody else will enter. Knows which functions are load-bearing.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "\ud83c\udfdb\ufe0f",
+      "sort_order": 32
+    },
+    {
+      "id": 33,
+      "slug": "feature_flag_janitor",
+      "label": "Feature Flag Janitor",
+      "description": "Sweeps up flags that shipped in 2019 and were never removed. The if-statements remember.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "\ud83e\uddf9",
+      "sort_order": 33
+    },
+    {
+      "id": 34,
+      "slug": "stack_trace_sommelier",
+      "label": "Stack Trace Sommelier",
+      "description": "Swirls the exception, notes hints of null pointer with an off-by-one finish. Vintage: production.",
+      "ops_domain_id": 4,
+      "category": "devops",
+      "icon": "\ud83c\udf77",
+      "sort_order": 34
+    },
+    {
+      "id": 35,
+      "slug": "schema_drift_tracker",
+      "label": "Schema Drift Tracker",
+      "description": "Follows the migration trail. Can tell you the exact quarter the column stopped meaning what its name says.",
+      "ops_domain_id": 5,
+      "category": "data",
+      "icon": "\ud83e\udded",
+      "sort_order": 35
+    },
+    {
+      "id": 36,
+      "slug": "backup_restore_doubter",
+      "label": "Backup Restore Doubter",
+      "description": "A backup is a rumor until it has been restored. Trusts nothing. Verifies everything. Annually disappointed.",
+      "ops_domain_id": 5,
+      "category": "data",
+      "icon": "\ud83e\udd28",
+      "sort_order": 36
+    },
+    {
+      "id": 37,
+      "slug": "data_lake_lifeguard",
+      "label": "Data Lake Lifeguard",
+      "description": "Watches the lake become a swamp in real time. Occasionally rescues a drowning dataset.",
+      "ops_domain_id": 5,
+      "category": "data",
+      "icon": "\ud83d\udedf",
+      "sort_order": 37
     }
   ]
 }

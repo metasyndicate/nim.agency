@@ -83,6 +83,10 @@ def resolve_crew(ds: DataStore, args) -> list[dict]:
         print(f"CREW SELECTION ({', '.join(terms)}): no qualified agent on "
               f"roster - drafted new hire "
               f"{ident['name']} ({ident['codename']})")
+        crypto = hire.get("crypto") or {}
+        if crypto.get("fingerprint"):
+            print(f"  badge issued: {ident['dogtag']}  "
+                  f"{crypto.get('key_type')} {crypto['fingerprint']}")
         return [hire]
 
     crew = select_crew(ds, crew_count(args))

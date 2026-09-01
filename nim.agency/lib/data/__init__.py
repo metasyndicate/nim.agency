@@ -13,6 +13,10 @@ from .owl import OWL, assemble_crue, CrüeRoster
 from .roster import RosterMatch, match_agents, draft_hire
 from .economy import Payout, apply_award, award_mission, train, equip
 from .identity import Enrollment, enroll, backfill, is_enrolled
+from .project import (
+    active_engagements, assign_agent, create_project, find_project,
+    release_agent,
+)
 
 # Re-export remote module for convenience
 from ..remote import (
@@ -51,6 +55,11 @@ __all__ = [
     "enroll",
     "backfill",
     "is_enrolled",
+    "active_engagements",
+    "assign_agent",
+    "create_project",
+    "find_project",
+    "release_agent",
     # Remote layer
     "CredentialVault",
     "VaultScope",
