@@ -307,6 +307,7 @@ class AgentBuilder:
         # Dispatch state
         self.dispatch_field_index = 0
         self.dispatch_form = {"task": "", "skill": "", "target": ".", "count": "1"}
+        self.dispatch_preset = None        # applied task_preset entry
         self.dispatch_brief = None
         self.dispatch_events = []
         self.dispatch_thread = None
@@ -4765,7 +4766,35 @@ class AgentBuilder:
             return
         self.dispatch_field_index = 0
         self.dispatch_brief = None
+        self.dispatch_preset = None
         self.mode = "dispatch"
+
+    def _cycle_dispatch_preset(self, direction: int = 1):
+        """Stamp the form from the next task_preset (one-action dispatch:
+        T to pick, P to brief, Y to launch). Fields stay visible and
+        editable - the preset is a starting point, not a cage."""
+        presets = sorted(self.ds.load_reference("task_preset"),
+                         key=lambda p: p.get("sort_order", p["id"]))
+        if not presets:
+            self.message = "No presets defined - add some in the Type Foundry"
+            self.message_color = Colors.HEALTH
+            return
+        if self.dispatch_preset is None:
+            index = 0 if direction > 0 else len(presets) - 1
+        else:
+            current = next((i for i, p in enumerate(presets)
+                            if p["slug"] == self.dispatch_preset["slug"]), -1)
+            index = (current + direction) % len(presets)
+        preset = presets[index]
+        self.dispatch_preset = preset
+        self.dispatch_form["task"] = preset.get("prompt", "")
+        if preset.get("skill"):
+            self.dispatch_form["skill"] = preset["skill"]
+        if preset.get("count"):
+            self.dispatch_form["count"] = str(preset["count"])
+        self.message = (f"PRESET {index + 1}/{len(presets)}: "
+                        f"{preset['label']}")
+        self.message_color = Colors.STAT_VALUE
 
     def _draw_dispatch_form(self, height: int, width: int):
         """Draw the ad-hoc mission form."""
@@ -4797,8 +4826,22 @@ class AgentBuilder:
                                   curses.color_pair(Colors.DIM))
             y += 1
 
-        # Crew source disclosure
+        # Preset attribution
         y += 1
+        if self.dispatch_preset:
+            icon = self.dispatch_preset.get("icon") or ""
+            preset_note = (f"Preset: {icon} {self.dispatch_preset['label']} "
+                           f"[{self.dispatch_preset['slug']}]").strip()
+            self._safe_addstr(y, box_x + 2, clip(preset_note, box_width - 4),
+                              curses.color_pair(Colors.STAT_VALUE))
+        else:
+            self._safe_addstr(y, box_x + 2,
+                              clip("Preset: (none - T cycles the foundry's "
+                                   "task presets)", box_width - 4),
+                              curses.color_pair(Colors.DIM))
+        y += 1
+
+        # Crew source disclosure
         if self.dispatch_crew_override:
             crew_note = f"Crew: {self.dispatch_crew_label}"
         elif self.selected_agents:
@@ -4815,7 +4858,8 @@ class AgentBuilder:
             self._draw_footer(height, width, "Type to edit | ENTER: Apply | ESC: Cancel")
         else:
             self._draw_footer(height, width,
-                              "UP/DOWN: Field | ENTER: Edit | P: Plan Briefing | Q: Back")
+                              "UP/DOWN: Field | ENTER: Edit | T: Preset | "
+                              "P: Plan Briefing | Q: Back")
 
     def _handle_dispatch_form_input(self, key: int):
         """Handle dispatch form input."""
@@ -4843,6 +4887,10 @@ class AgentBuilder:
             field_key = self.DISPATCH_FIELDS[self.dispatch_field_index][0]
             self.edit_buffer = self.dispatch_form.get(field_key, "")
             self.editing = True
+        elif key == ord('t'):
+            self._cycle_dispatch_preset(1)
+        elif key == ord('T'):
+            self._cycle_dispatch_preset(-1)
         elif key == ord('p') or key == ord('P'):
             self._prepare_dispatch_brief()
         elif key == ord('q') or key == ord('Q') or key == 27:
@@ -4910,7 +4958,11 @@ class AgentBuilder:
             self.message_color = Colors.HEALTH
             return
 
-        mission = adhoc_task_mission(crew, str(target), task)
+        title = None
+        if (self.dispatch_preset
+                and self.dispatch_preset.get("prompt", "").strip() == task):
+            title = f"Preset: {self.dispatch_preset['label']}"
+        mission = adhoc_task_mission(crew, str(target), task, title=title)
         self.dispatch_brief = {
             "mission": mission,
             "crew": crew,
