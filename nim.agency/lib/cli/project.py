@@ -12,7 +12,7 @@
 import sys
 from pathlib import Path
 
-from ..config import get_config, report_dir
+from ..config import get_config, modality_violation, report_dir
 from ..data import get_datastore
 from ..data.project import (
     active_engagements, append_journal, assign_agent, complete_project,
@@ -399,6 +399,14 @@ def cmd_cycle(args) -> int:
     if not worktree or not Path(worktree.get("path", "")).exists():
         print(f"\033[91mERROR: no usable worktree on {project['slug']} - "
               f"the primary worktree path must exist\033[0m", file=sys.stderr)
+        return 1
+
+    # Fail the briefing, not the mission: global posture vs project policy
+    refusal = modality_violation(
+        bool((project.get("policy") or {}).get("read_only", True)), True)
+    if refusal:
+        print(f"\033[91mERROR: cycle refused - {refusal}\033[0m",
+              file=sys.stderr)
         return 1
 
     provider = get_provider("claude-cli")

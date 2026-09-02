@@ -59,7 +59,16 @@ logs, and audit trails are not.
   (or via `agent enroll --backfill`) into the operator-owned depot vault;
   the record carries only the public half and fingerprint
 - **Constraints by default** — missions run read-only, local-only, with
-  blocked destructive commands
+  blocked destructive commands, under a single global posture knob
+  (`dispatch.modality`: `readonly`/`supervised`/`unrestricted`) that
+  every dispatch path honors — briefing-time refusal plus a dispatcher
+  backstop
+- **Attribution, in perpetuity** — `lib/data/attribution.py` codifies
+  three crediting formats (git author + trailers, personified banner,
+  code byline); every mission is stamped with the spawn context — the
+  operator/host/session identity the crew piggybacks on — disclosed in
+  the briefing (`OPERATOR:` line) and signed into the report footer:
+  `⚙ [26.9.2] @codename >> Name, Title, NIM Biomimetic Agency | 💰 | ⚡ | [mission] COMPLETE pay:+15g | dispatched by user@host | scope: read-only`
 - **Full paper trail** — markdown report + complete mission JSON (prompts,
   results, errors) per run, plus CSV/JSON lifecycle logs
 - **Remote operations layer** — asyncssh transport, encrypted credential
@@ -210,6 +219,7 @@ and treated as read-only at runtime. Override per-invocation with CLI flags
 | `dispatch.provider` | `claude-cli` | LLM backend |
 | `dispatch.max_concurrent` | `2` | parallel task limit |
 | `dispatch.timeout_seconds` | `600` | per-task timeout |
+| `dispatch.modality` | `readonly` | global posture: readonly / supervised (local writes) / unrestricted (remote, phase D) |
 | `dispatch.report_dir` | `log` | mission report/JSON output dir (project-relative) |
 | `logging.dir` | `~/.nim/agency` | operator-local log directory |
 | `economy.xp_per_task` / `gold_per_task` | `25` / `10` | pay per completed task |
@@ -234,7 +244,14 @@ Every dispatch announces its output locations in the briefing and writes:
 
 Missions default to `read_only=True` and `local_only=True`; destructive
 commands (`rm`, `mv`, `chmod`, `chown`, `sudo`, `su`) are blocked by
-constraint injection. Remote operations require vaulted credentials, pass
+constraint injection. Above the per-mission constraints sits the global
+`dispatch.modality` posture (default `readonly`): the CLI fails the
+briefing and the dispatcher independently refuses any mission whose
+constraints exceed the posture, so no entry point can dispatch past it.
+Agents author nothing today — no writes, no commits; when write-capable
+work arrives (`supervised` + phase D), agent-authored output carries the
+codified attribution formats so every artifact names both the agent and
+the operator identity it piggybacked on. Remote operations require vaulted credentials, pass
 through command risk classification, and land in an audit log.
 
 Agent identity is AGENCY-custodial: primary keypairs are generated

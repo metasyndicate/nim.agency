@@ -7,7 +7,7 @@ requires operator confirmation (-y/--yes to bypass), then executes.
 
 import asyncio
 
-from ..config import get_config
+from ..config import get_config, modality_violation
 from ..data import get_datastore
 from ..dispatch import (
     Dispatcher, build_briefing, render_briefing, get_provider,
@@ -30,6 +30,14 @@ def cmd_dispatch(args) -> int:
     apply_preset(ds, args)
     crew = resolve_crew(ds, args)
     mission = build_mission_from_args(args, crew)
+
+    # Fail the briefing, not the mission: the global posture rules first
+    refusal = modality_violation(mission.constraints.read_only,
+                                 mission.constraints.local_only)
+    if refusal:
+        print(f"\033[91mERROR: {refusal}\033[0m")
+        return 1
+
     report_path = resolve_report_path(args, mission)
 
     # Full disclosure before any agent work is spawned

@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
 
+from ..config import modality_violation
 from ..data import DataStore, get_datastore
+from ..data.attribution import banner, mission_scope_label, spawn_context
 from ..data.composer import AgentComposer, get_composer
 from ..data.economy import Payout, award_mission
 from ..data.project import (
@@ -133,6 +135,25 @@ class Dispatcher:
                     message=message,
                     data=data
                 ))
+
+        # Global modality backstop - the CLI fails the briefing first, but
+        # nothing dispatches past the posture regardless of entry point
+        refusal = modality_violation(mission.constraints.read_only,
+                                     mission.constraints.local_only)
+        if refusal:
+            emit("error", f"Dispatch refused: {refusal}")
+            self.logger.log_mission_fail(
+                dispatch_id=dispatch_id,
+                mission_id=mission.id,
+                error=f"modality refusal: {refusal}"
+            )
+            mission.status = MissionStatus.FAILED
+            return mission
+
+        # Stamp the spawn context (attribution: the operator/host/session
+        # identity this crew piggybacks on)
+        if mission.dispatched_by is None:
+            mission.dispatched_by = spawn_context()
 
         # Validate mission
         if not mission.tasks:
@@ -491,6 +512,16 @@ class Dispatcher:
             for payout in payouts:
                 lines.append(f"- {payout.summary_line()}")
             lines.extend(["", "---", ""])
+
+        # Attribution footer (lib.data.attribution banner convention)
+        pay_by_agent = {p.agent["id"]: p.gold for p in (payouts or [])}
+        scope = mission_scope_label(mission.constraints.read_only)
+        lines.extend(["## Attribution", ""])
+        for agent_id in mission.crew_ids:
+            agent = self._load_agent(agent_id)
+            if agent:
+                lines.append(f"- {banner(agent, mission=mission, pay_gold=pay_by_agent.get(agent_id), ctx=mission.dispatched_by, ds=self.ds, scope=scope)}")
+        lines.extend(["", "---", ""])
 
         return "\n".join(lines)
 

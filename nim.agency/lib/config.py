@@ -8,6 +8,7 @@ Falls back to built-in defaults if the file is missing or invalid.
 
 import json
 from pathlib import Path
+from typing import Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = PROJECT_ROOT / "etc" / "agency.json"
@@ -18,6 +19,7 @@ DEFAULTS = {
         "max_concurrent": 2,
         "timeout_seconds": 600,
         "report_dir": "log",
+        "modality": "readonly",
     },
     "logging": {
         "dir": "~/.nim/agency",
@@ -52,6 +54,35 @@ def get_config() -> dict:
             pass
         _config = merged
     return _config
+
+
+# Global dispatch posture, most restrictive first. One knob controls what
+# the whole agency may do; per-mission constraints can only narrow it.
+#   readonly     - missions must be read-only and local (dev/test/train)
+#   supervised   - write-capable local missions allowed where a project
+#                  policy or template explicitly asks for them
+#   unrestricted - remote missions also allowed (inert until phase D
+#                  access grants exist)
+MODALITIES = ("readonly", "supervised", "unrestricted")
+
+
+def modality() -> str:
+    """The agency's global dispatch posture (etc/agency.json)."""
+    value = get_config()["dispatch"].get("modality", "readonly")
+    return value if value in MODALITIES else "readonly"
+
+
+def modality_violation(read_only: bool, local_only: bool) -> Optional[str]:
+    """Why the global modality refuses these mission constraints, or None.
+    Checked at briefing time and again by the dispatcher as a backstop."""
+    posture = modality()
+    if posture == "readonly" and not read_only:
+        return ("global modality 'readonly' forbids write-capable missions "
+                "- set dispatch.modality to 'supervised' in etc/agency.json")
+    if posture in ("readonly", "supervised") and not local_only:
+        return (f"global modality '{posture}' forbids remote missions - "
+                "requires 'unrestricted' and phase D access grants")
+    return None
 
 
 def log_dir() -> Path:

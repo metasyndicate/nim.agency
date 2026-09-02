@@ -143,6 +143,10 @@ class Mission:
     project_id: Optional[str] = None
     cycle: Optional[int] = None
 
+    # Spawn context - the operator/host/session identity the crew
+    # piggybacks on, captured at dispatch (lib.data.attribution)
+    dispatched_by: Optional[dict] = None
+
     # Results
     final_report: Optional[str] = None
 
@@ -183,6 +187,7 @@ class Mission:
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "project_id": self.project_id,
             "cycle": self.cycle,
+            "dispatched_by": self.dispatched_by,
             "final_report": self.final_report
         }
 
@@ -214,6 +219,7 @@ class Mission:
         mission.final_report = data.get("final_report")
         mission.project_id = data.get("project_id")
         mission.cycle = data.get("cycle")
+        mission.dispatched_by = data.get("dispatched_by")
 
         # Load constraints
         c = data.get("constraints", {})

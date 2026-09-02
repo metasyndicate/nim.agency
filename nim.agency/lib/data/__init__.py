@@ -13,6 +13,9 @@ from .owl import OWL, assemble_crue, CrüeRoster
 from .roster import RosterMatch, match_agents, draft_hire
 from .economy import Payout, apply_award, award_mission, train, equip
 from .identity import Enrollment, enroll, backfill, is_enrolled
+from .attribution import (
+    banner, code_byline, git_author, git_trailers, spawn_context,
+)
 from .project import (
     active_engagements, agent_bookings, apply_mission_outcome, assign_agent,
     availability_map, create_project, find_project, release_agent,
@@ -56,6 +59,11 @@ __all__ = [
     "enroll",
     "backfill",
     "is_enrolled",
+    "banner",
+    "code_byline",
+    "git_author",
+    "git_trailers",
+    "spawn_context",
     "active_engagements",
     "agent_bookings",
     "apply_mission_outcome",

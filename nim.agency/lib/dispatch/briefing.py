@@ -20,8 +20,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from ..config import CONFIG_PATH, get_config, log_dir
+from ..config import CONFIG_PATH, get_config, log_dir, modality
 from ..data import DataStore, get_datastore
+from ..data.attribution import dispatched_by_line, spawn_context
 from ..data.composer import AgentComposer, get_composer
 
 from .mission import Mission, MissionConstraints
@@ -133,6 +134,9 @@ def render_briefing(briefing: Briefing, verbosity: int = 0) -> str:
         f"TARGET:    {c.working_directory or '(current directory)'}",
         f"SCOPE:     {op_tag}"
         + ("  (read-only: no write operations)" if c.read_only else "  (WRITE-CAPABLE)"),
+        f"MODALITY:  {modality()}  (global posture - etc/agency.json)",
+        f"OPERATOR:  {dispatched_by_line(getattr(m, 'dispatched_by', None) or spawn_context())}"
+        "  (identity the crew piggybacks on)",
         "",
         f"CREW ({len(m.crew_ids)}):",
     ]

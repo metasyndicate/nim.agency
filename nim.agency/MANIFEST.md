@@ -65,6 +65,7 @@ non-TTY without `-y` refuses, exit 2).
 | Projects | `lib/data/project.py` | aggregate-root work units: engagement rows (reuse `assignment_status`), host binding, objectives, journal; derived availability + booking cap; mission outcomes drive engagement transitions (swarming/review/smoked); cycle engine composes missions from project state (`lib/dispatch/builder.py:project_cycle_mission`) | functional |
 | Economy | `lib/data/economy.py` | mission payroll, rank/qualifier progression, gold ledger, dojo (`train`) + depot (`equip`) | functional |
 | Identity | `lib/data/identity.py` | badge + immutable ed25519 keypair issuance; depot vault custody (`hive/depot/.vault/<dogtag>/`, 0700/0600) | functional |
+| Attribution | `lib/data/attribution.py` | codified crediting convention (in perpetuity): git author + trailers, personified banner, code byline; `spawn_context()` captures the operator/host/session identity the crew piggybacks on, stamped onto missions (`dispatched_by`) and disclosed in briefings + report footers | functional |
 | Mission / Constraints | `lib/dispatch/mission.py` | work orders, tasks, dependency graph, JSON persistence; optional `project_id`/`cycle` tags | stable |
 | MissionBuilder + templates | `lib/dispatch/builder.py` | fluent builder; `codebase`/`security` templates | stable |
 | Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger; drives project engagement transitions for project-tagged missions | stable |
@@ -85,6 +86,7 @@ runtime — overrides via CLI flags):
 | `dispatch.provider` | `claude-cli` | dispatcher |
 | `dispatch.max_concurrent` | `2` | `lib/cli/dispatch.py` |
 | `dispatch.timeout_seconds` | `600` | mission templates; `--timeout` overrides |
+| `dispatch.modality` | `readonly` | global posture: `readonly` (missions must be read-only + local), `supervised` (write-capable local allowed where explicitly configured), `unrestricted` (remote too - inert until phase D). Checked at the briefing AND by the dispatcher backstop; unknown values clamp to `readonly` |
 | `dispatch.report_dir` | `log` (project-relative) | report + mission JSON output |
 | `logging.dir` | `~/.nim/agency` | dispatch/audit logs |
 | `economy.*` | `25`/`10` per task, `15`/`5` bonus, `10` sp/rank | payroll + promotion rates (`lib/data/economy.py`) |

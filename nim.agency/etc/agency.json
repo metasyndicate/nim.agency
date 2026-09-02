@@ -4,7 +4,8 @@
     "provider": "claude-cli",
     "max_concurrent": 2,
     "timeout_seconds": 600,
-    "report_dir": "log"
+    "report_dir": "log",
+    "modality": "readonly"
   },
   "logging": {
     "dir": "~/.nim/agency",
