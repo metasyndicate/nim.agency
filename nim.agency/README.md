@@ -85,8 +85,15 @@ logs, and audit trails are not.
 
 - Python 3.9+ (core is stdlib-only)
 - [`claude` CLI](https://claude.com/claude-code) on PATH (mission dispatch)
-- Optional: `jsonschema` (schema validation), `asyncssh` + `cryptography`
-  (remote operations / vault)
+- Optional extras, declared in `pyproject.toml`: `validation`
+  (`jsonschema`), `remote` (`asyncssh` + `cryptography`), or `all` —
+  e.g. `pip install jsonschema asyncssh cryptography`
+
+Tests (stdlib `unittest`, isolated temp datastore per class):
+
+```sh
+python3 -m unittest discover -s tests
+```
 
 ## QUICKSTART
 
@@ -284,6 +291,7 @@ lib/remote/   ssh, vault, safety, audit
 data/agency/  JSON schemas + instance data
 lex/          lexicon/taxonomy CSVs
 tui/          curses agent builder + mugshots
+tests/        stdlib unittest suite (isolated temp datastores)
 log/          mission outputs (gitignored)
 ```
 

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nim-agency"
+version = "26.9.2"
+description = "NIM Agency - dispatch desk for delegated agentic identities"
+readme = "README.md"
+requires-python = ">=3.9"
+# Core is stdlib-only by design; everything below is opt-in
+dependencies = []
+
+[project.optional-dependencies]
+validation = ["jsonschema>=4"]
+remote = ["asyncssh>=2.14", "cryptography>=41"]
+all = ["jsonschema>=4", "asyncssh>=2.14", "cryptography>=41"]
+
+[tool.setuptools]
+# Repo layout is operational (lib/, tui/, bin/), not a distributable
+# package - this file declares metadata and dependencies, not packaging
+packages = []

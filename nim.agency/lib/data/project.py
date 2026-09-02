@@ -120,6 +120,29 @@ def complete_project(ds: DataStore, project: dict) -> int:
     return released
 
 
+def binding_violation(project: dict) -> Optional[str]:
+    """Why the project's host binding refuses a cycle, or None.
+
+    Briefing-time check (fail the briefing, not the mission): a project
+    whose policy requests write needs a writable primary worktree and a
+    declared 'write' permission. Read-only cycles always pass - the
+    mission clamps to the narrower of policy and worktree anyway.
+    """
+    policy = project.get("policy") or {}
+    if policy.get("read_only", True):
+        return None
+    worktree = primary_worktree(project) or {}
+    if not worktree.get("writable"):
+        return ("policy requests write but the primary worktree is "
+                "read-only - mark it writable or set policy.read_only")
+    permissions = (project.get("host_binding") or {}).get(
+        "required_permissions") or []
+    if "write" not in permissions:
+        return ("policy requests write but host_binding."
+                "required_permissions lacks 'write'")
+    return None
+
+
 def agent_bookings(
     ds: DataStore, agent_id: str, exclude_project_id: Optional[str] = None
 ) -> list[dict]:

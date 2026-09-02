@@ -15,10 +15,10 @@ from pathlib import Path
 from ..config import get_config, modality_violation, report_dir
 from ..data import get_datastore
 from ..data.project import (
-    active_engagements, append_journal, assign_agent, complete_project,
-    create_project, cycle_in_flight, engagement_status, find_project,
-    next_cycle, next_objective_id, primary_worktree, project_status,
-    release_agent,
+    active_engagements, append_journal, assign_agent, binding_violation,
+    complete_project, create_project, cycle_in_flight, engagement_status,
+    find_project, next_cycle, next_objective_id, primary_worktree,
+    project_status, release_agent,
 )
 from ..dispatch import (
     Dispatcher, build_briefing, get_provider, project_cycle_mission,
@@ -401,9 +401,12 @@ def cmd_cycle(args) -> int:
               f"the primary worktree path must exist\033[0m", file=sys.stderr)
         return 1
 
-    # Fail the briefing, not the mission: global posture vs project policy
+    # Fail the briefing, not the mission: global posture vs project policy,
+    # then policy vs host binding (permission-mismatch guardrail)
     refusal = modality_violation(
         bool((project.get("policy") or {}).get("read_only", True)), True)
+    if not refusal:
+        refusal = binding_violation(project)
     if refusal:
         print(f"\033[91mERROR: cycle refused - {refusal}\033[0m",
               file=sys.stderr)

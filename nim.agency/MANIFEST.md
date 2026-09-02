@@ -102,9 +102,10 @@ Output artifacts per mission run:
 
 ## KNOWN GAPS
 
-- No test suite.
-- No dependency declaration (core is stdlib; `asyncssh`, `cryptography`,
-  `jsonschema` optional — see README).
+- Test coverage is seeded, not exhaustive: `tests/` covers the datastore,
+  project aggregate, availability/matching, dispatch pipeline (stub
+  provider), attribution, and modality — TUI and remote layers are still
+  untested. Run: `python3 -m unittest discover -s tests`.
 - `tui/builder.py` is a single-file monolith (~4900 lines; split candidate).
 - Key distribution/revocation flows not yet built (vault issuance only);
   mission outcomes feed the economy but not achievements.
