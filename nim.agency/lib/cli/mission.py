@@ -15,7 +15,7 @@ from ..data import get_datastore
 from ..dispatch import Mission, build_briefing, render_briefing, get_provider
 
 from .common import (
-    build_mission_from_args, mission_json_path,
+    apply_preset, build_mission_from_args, mission_json_path,
     resolve_crew, resolve_report_path,
 )
 
@@ -23,6 +23,7 @@ from .common import (
 def cmd_plan(args) -> int:
     """Build a mission and render its briefing without executing."""
     ds = get_datastore()
+    apply_preset(ds, args)
     crew = resolve_crew(ds, args)
     mission = build_mission_from_args(args, crew)
     report_path = resolve_report_path(args, mission)

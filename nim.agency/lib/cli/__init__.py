@@ -48,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
                                default="codebase", help="Mission template (default: codebase)")
     mission_flags.add_argument("--task", type=str,
                                help="Ad-hoc task prompt (implies --mission task)")
+    mission_flags.add_argument("--preset", type=str,
+                               help="Dispatch a predefined task_preset by slug "
+                                    "(fills --task/--skill/--count; explicit "
+                                    "flags win. Define presets in the Type "
+                                    "Foundry)")
     mission_flags.add_argument("--target", type=str, default=".",
                                help="Target directory (default: .)")
     mission_flags.add_argument("--crew", type=str,

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/role_title.schema.json",
+  "title": "Role Title",
+  "description": "Operator-defined role/title vocabulary assignable to agents (identity.role_title)",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400032,
+    "created": "2026-09-01T00:00:00Z",
+    "modified": "2026-09-01T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "role_title",
+      "type": "schema",
+      "path": "L2.agency.reference.role_title"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label"]
+}

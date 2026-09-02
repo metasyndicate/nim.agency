@@ -113,6 +113,92 @@ class MissionBuilder:
 
 # Pre-built mission templates
 
+def _cycle_task_prompt(project: dict, row: dict, cycle: int) -> str:
+    """Per-agent task prompt from project state: role + responsibilities +
+    open objectives + standing directives + spec references."""
+    from ..data.project import open_objectives
+
+    lines = [f"PROJECT: {project['title']} ({project['slug']}) - cycle {cycle}"]
+    if project.get("description"):
+        lines.append(project["description"])
+
+    lines.extend(["", f"YOUR ROLE: {row.get('role', 'specialist')}",
+                  "YOUR RESPONSIBILITIES:"])
+    responsibilities = row.get("responsibilities") or [
+        "Contribute your specialty toward the open objectives."]
+    lines.extend(f"  - {r}" for r in responsibilities)
+
+    objectives = open_objectives(project)
+    if objectives:
+        lines.extend(["", "OPEN OBJECTIVES (project-wide):"])
+        for objective in objectives:
+            acceptance = (f"  (acceptance: {objective['acceptance']})"
+                          if objective.get("acceptance") else "")
+            lines.append(f"  {objective['id']}. {objective['text']}{acceptance}")
+
+    directives = project.get("directives") or []
+    if directives:
+        lines.extend(["", "STANDING DIRECTIVES:"])
+        lines.extend(f"  - {d}" for d in directives)
+
+    specifications = project.get("specifications") or []
+    if specifications:
+        lines.extend(["", "SPECIFICATIONS (consult as needed):"])
+        lines.extend(
+            f"  - {s.get('label') or s['path_or_url']}: {s['path_or_url']}"
+            for s in specifications)
+
+    lines.extend([
+        "",
+        "Work your responsibilities toward the open objectives from the "
+        "target directory. Be concrete - cite files and evidence. Your "
+        "report is reviewed by the operator between cycles; objectives are "
+        "closed only by operator review, never by you.",
+    ])
+    return "\n".join(lines)
+
+
+def project_cycle_mission(
+    project: dict,
+    engagements: list[dict],
+    agents: dict[str, dict],
+    cycle: int,
+) -> Mission:
+    """
+    Compose a cycle mission from project state: one task per engaged
+    agent, tagged back to the project so the dispatcher drives engagement
+    transitions and the journal stays 1:1 with missions.
+    """
+    from ..data.project import open_objectives, primary_worktree
+
+    builder = MissionBuilder()
+    builder.title(f"{project['slug']} cycle {cycle}")
+    remaining = len(open_objectives(project))
+    builder.objective(
+        f"Advance the {remaining} open objective(s) of project "
+        f"'{project['title']}' (cycle {cycle})")
+
+    worktree = primary_worktree(project) or {}
+    builder.working_dir(worktree.get("path", "."))
+    policy = project.get("policy") or {}
+    builder.constraint_read_only(bool(policy.get("read_only", True)))
+    builder.timeout(get_config()["dispatch"]["timeout_seconds"])
+
+    for row in engagements:
+        agent = agents[row["agent_id"]]
+        builder.add_crew_member(agent)
+        builder.add_task(
+            agent["id"],
+            (row.get("role") or "specialist").title(),
+            _cycle_task_prompt(project, row, cycle),
+        )
+
+    mission = builder.build()
+    mission.project_id = project["id"]
+    mission.cycle = cycle
+    return mission
+
+
 def codebase_analysis_mission(
     agents: list[dict],
     target_dir: str,

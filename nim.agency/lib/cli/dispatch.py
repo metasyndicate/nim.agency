@@ -14,7 +14,7 @@ from ..dispatch import (
 )
 
 from .common import (
-    build_mission_from_args, confirm_dispatch, print_event,
+    apply_preset, build_mission_from_args, confirm_dispatch, print_event,
     resolve_crew, resolve_report_path, save_report,
 )
 
@@ -27,6 +27,7 @@ def cmd_dispatch(args) -> int:
         print("\033[91mERROR: claude CLI not found. Install it first.\033[0m")
         return 1
 
+    apply_preset(ds, args)
     crew = resolve_crew(ds, args)
     mission = build_mission_from_args(args, crew)
     report_path = resolve_report_path(args, mission)

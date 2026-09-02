@@ -35,6 +35,7 @@ from .builder import (
     MissionBuilder,
     adhoc_task_mission,
     codebase_analysis_mission,
+    project_cycle_mission,
     security_audit_mission,
 )
 
@@ -75,6 +76,7 @@ __all__ = [
     "MissionBuilder",
     "adhoc_task_mission",
     "codebase_analysis_mission",
+    "project_cycle_mission",
     "security_audit_mission",
     # Briefing
     "Briefing",

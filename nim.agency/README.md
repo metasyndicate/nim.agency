@@ -39,10 +39,17 @@ logs, and audit trails are not.
 - **Projects** — long-lived, addressable work units that bind crew
   engagements (roles + responsibilities), a host/worktree, objectives with
   acceptance criteria, and standing directives into one slug-referenced
-  aggregate; steered by editing between cycles (project-scoped dispatch
-  cycles land in a later phase). Engagements book agents: availability is
-  derived, crew selection skips and discloses `BOOKED (project)` agents,
-  and mission outcomes drive engagement state (swarming/review/smoked)
+  aggregate; steered by editing between cycles. Engagements book agents:
+  availability is derived, crew selection skips and discloses
+  `BOOKED (project)` agents, and mission outcomes drive engagement state
+  (swarming/review/smoked). `project cycle` composes one task per engaged
+  agent from responsibilities + open objectives + directives, dispatches
+  through the briefing gate, and journals the outcome
+- **Rapid dispatch** — `--preset` runs an operator-defined `task_preset`
+  in one action (define them in the Type Foundry); `tools/easme agent`
+  pipes any command's output to an agent
+  (`mycommand | easme agent --hint "parse dates"`) with stdout reserved
+  for the agent's answer so it composes in pipelines
 - **RPG economy** — completed tasks pay XP and gold (full missions pay a
   bonus), promotions follow the rank ladder and grant skill points to spend
   at the dojo (`agent train`), gold buys tooling at the depot
@@ -92,10 +99,16 @@ bin/nim.agency dispatch --mission codebase --target /path/to/repo --count 3
 # shorthand: one competency-matched specialist on an ad-hoc local task
 bin/nim.agency dispatch --task "inventory all TODO comments" --skill regex
 
-# charter a persistent project and engage crew on it
+# charter a persistent project, engage crew, run a work cycle
 bin/nim.agency project create --slug my-project --title "..." --target /path/to/repo
 bin/nim.agency project assign my-project some.codename --role lead --resp "own the schema layer"
+bin/nim.agency project edit my-project --status active --add-objective "..."
+bin/nim.agency project cycle my-project        # briefing gate, then dispatch + journal
 bin/nim.agency project show my-project
+
+# one-action predefined tasks; pipestream dispatch
+bin/nim.agency dispatch --preset secrets_sweep -y
+git log --oneline -20 | tools/easme agent --hint "what shipped this week?" -y
 
 # review past runs
 bin/nim.agency mission list
@@ -125,6 +138,8 @@ One canonical entry point with a consistent grammar:
 | `project edit <ref> [--status S] [--add-objective ...]` | steer a project between cycles |
 | `project assign <ref> <codename> [--role R] [--resp ...]` | engage an agent with responsibilities |
 | `project release <ref> <codename>` | end an engagement (row becomes history) |
+| `project cycle <ref> [-n N] [-y] [--force]` | dispatch the project's work detail (briefing gate, journal, serialized per project) |
+| `project pause\|resume\|complete <ref>` | lifecycle verbs; complete releases the crew |
 | `agent list [--limit N] [--by-xp]` | tabular agent roster (XP, gold, missions) |
 | `agent show <codename>` | agent details |
 | `agent generate [-n N]` | procedurally generate and save agents |
@@ -243,6 +258,7 @@ missions only at targets you'd trust an intern with root... er, read access.
 
 ```
 bin/          canonical CLI entry point (nim.agency)
+tools/        auxiliary entry points (easme pipestream shim)
 etc/          source-controlled defaults (agency.json)
 lib/cli/      CLI command modules (dispatch, mission, project, agent, data)
 lib/data/     datastore, schema, agent generation & composition
@@ -262,7 +278,8 @@ maturity assessment.
 Early revision. Functional: generation, datastore, dispatch (template and
 ad-hoc `--task` missions, competency-matched crews), RPG economy
 (payroll, promotions, dojo/depot), agent identity (badges, keypairs, depot
-vault), projects (chartering, engagements, objectives), TUI, logging.
-In progress: project cycle engine, key distribution/revocation flows,
-remote-layer live validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
+vault), projects (chartering, engagements, objectives, gated work
+cycles), task presets + pipestream dispatch (`easme`), TUI, logging.
+In progress: access grants + remote dispatch, key distribution/
+revocation flows, remote-layer live validation, tests, WUI. Untreated, proliferated biomimetic vagrancy may cause blurred vision,
 amnesia, neckbeard, and sporadic anomalous flow — patch early, patch often.

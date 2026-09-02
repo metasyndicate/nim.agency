@@ -1,0 +1,39 @@
+{
+  "$schema": "../schema/reference/task_preset.schema.json",
+  "$comment": "Predefined dispatchable tasks - one-action dispatch via `nim.agency dispatch --preset <slug>` or the Type Foundry. `skill` seeds crew matching; `count` is the default crew size.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "inventory_todos",
+      "label": "Inventory TODOs",
+      "description": "Sweep the target for deferred work markers",
+      "prompt": "Inventory all TODO, FIXME, HACK, and XXX comments in the target directory. For each: file path, line, marker type, and the comment text. Group by file and finish with counts per marker type.",
+      "skill": "analysis",
+      "count": 1,
+      "icon": "🧹",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "doc_coverage",
+      "label": "Documentation Coverage",
+      "description": "Assess README/inline docs against the code that exists",
+      "prompt": "Assess documentation coverage in the target directory: README completeness, per-module docstrings/comments, setup instructions, and undocumented public surfaces. Cite files. Finish with the three highest-value gaps.",
+      "skill": "documentation",
+      "count": 1,
+      "icon": "📚",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "secrets_sweep",
+      "label": "Secrets Sweep",
+      "description": "Hunt for credentials that should not be on disk",
+      "prompt": "Sweep the target directory for hardcoded credentials, API keys, tokens, private keys, and suspicious .env or config values. Check .gitignore coverage for sensitive paths. Report findings with file and line; state clearly if nothing was found.",
+      "skill": "security",
+      "count": 1,
+      "icon": "🔦",
+      "sort_order": 3
+    }
+  ]
+}

@@ -49,6 +49,7 @@ class Briefing:
     max_concurrent: int
     prompt_sources: dict[str, list[str]] = field(default_factory=dict)
     system_prompts: dict[str, str] = field(default_factory=dict)
+    project_label: Optional[str] = None      # "slug  cycle N" when tagged
 
 
 def build_briefing(
@@ -86,6 +87,12 @@ def build_briefing(
         max_concurrent=cfg["max_concurrent"],
     )
 
+    if getattr(mission, "project_id", None):
+        project = ds.read("project", mission.project_id)
+        slug = (project or {}).get("slug", mission.project_id)
+        cycle = f"  cycle {mission.cycle}" if mission.cycle else ""
+        briefing.project_label = f"{slug}{cycle}"
+
     # Prompt provenance and full prompts require composition
     if verbosity >= 1:
         composer = composer or get_composer()
@@ -119,6 +126,8 @@ def render_briefing(briefing: Briefing, verbosity: int = 0) -> str:
         "MISSION BRIEFING",
         "=" * 60,
         f"MISSION:   {m.title}  [{m.id}]",
+        *([f"PROJECT:   {briefing.project_label}"]
+          if briefing.project_label else []),
         f"OBJECTIVE: {m.objective}",
         f"STATUS:    {m.status.value}",
         f"TARGET:    {c.working_directory or '(current directory)'}",

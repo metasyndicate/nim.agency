@@ -1178,9 +1178,9 @@ class AgentBuilder:
         self._draw_message(height - 3, width)
 
         # Updated footer with rolodex controls
-        footer = ("H/L: Nav | D: Dispatch | O: OpProfile | W: Service | E: Edit | "
-                  "S: Skills | T: Tools | J: Dojo | B: Badge | V: Bio | R: Roll | "
-                  "X: Del | Q: Back")
+        footer = ("H/L: Nav | D: Dispatch | O: OpProfile | W: Service | "
+                  "A: Access | E: Edit | S: Skills | T: Tools | J: Dojo | "
+                  "B: Badge | V: Bio | R: Roll | X: Del | Q: Back")
         self._draw_footer(height, width, footer)
 
     def _get_next_rank_info(self, current_xp: int) -> dict:
@@ -2152,6 +2152,10 @@ class AgentBuilder:
         elif key == ord('w') or key == ord('W'):
             self._open_service_record()
 
+        # A: Access - badge, host deployments, project engagements
+        elif key == ord('a') or key == ord('A'):
+            self._open_access_view()
+
         # E: Edit agent form
         elif key == ord('e') or key == ord('E'):
             self._enter_agent_edit()
@@ -2990,7 +2994,7 @@ class AgentBuilder:
         # Status message
         self._draw_message(height - 4, width)
 
-        self._draw_footer(height, width, "ENTER: View | N: New | E: Edit | C: Check | K: Keys | X: Delete | Q: Back")
+        self._draw_footer(height, width, "ENTER: View | N: New | E: Edit | C: Connect | K: Keys | X: Delete | Q: Back")
 
     def _draw_substation_view(self, height: int, width: int):
         """Draw detailed substation view."""
@@ -3085,7 +3089,7 @@ class AgentBuilder:
         # Status message
         self._draw_message(height - 4, width)
 
-        self._draw_footer(height, width, "C: Check | E: Edit | P: Permissions | D: Deploy | X: Delete | Q: Back")
+        self._draw_footer(height, width, "C: Connect | E: Edit | P: Permissions | D: Deploy | X: Delete | Q: Back")
 
     def _draw_substation_edit(self, height: int, width: int):
         """Draw substation edit view."""
@@ -3333,7 +3337,7 @@ class AgentBuilder:
             self.mode = "ssh_keys"
         elif key == ord('c') or key == ord('C'):
             if self.substations:
-                self._check_substation(self.substations[self.substation_index])
+                self._connect_substation(self.substations[self.substation_index])
         elif key == ord('e') or key == ord('E'):
             # Quick edit from list
             if self.substations:
@@ -3352,7 +3356,9 @@ class AgentBuilder:
     def _handle_substation_view_input(self, key: int):
         """Handle substation detail view input."""
         if key == ord('c') or key == ord('C'):
-            self._check_substation(self.current_substation)
+            self._connect_substation(self.current_substation)
+        elif key == ord('d') or key == ord('D'):
+            self._deploy_from_substation(self.current_substation)
         elif key == ord('e') or key == ord('E'):
             # Enter edit mode
             self.substation_edit_index = 0
@@ -3656,21 +3662,112 @@ class AgentBuilder:
             self.message = f"Create error: {str(e)[:30]}"
             self.message_color = Colors.HEALTH
 
-    def _check_substation(self, substation):
-        """Check substation connectivity (placeholder)."""
+    def _connect_substation(self, substation):
+        """Open an interactive SSH session to the substation: suspend the
+        HUD, hand the terminal to ssh(1), resume on exit. Failures stay on
+        screen (verbose stderr) until the operator returns."""
+        import subprocess
         from datetime import datetime, timezone
+        from lib.remote.ssh import ssh_command
 
-        # Update status
-        substation["status"]["last_check"] = datetime.now(timezone.utc).isoformat()
-        substation["status"]["state"] = "unknown"  # Would actually test connection
-
-        try:
-            self.ds.update("substation", substation["id"], substation)
-            self.message = "Check completed (async check not implemented)"
-            self.message_color = Colors.DIM
-        except Exception as e:
-            self.message = f"Check error: {str(e)[:30]}"
+        conn = substation.get("connection") or {}
+        if not conn.get("hostname"):
+            self.message = "No hostname configured - E: Edit first"
             self.message_color = Colors.HEALTH
+            return
+
+        argv = ssh_command(conn)
+        codename = substation.get("identity", {}).get("codename", "?")
+        exit_code = None
+
+        curses.def_prog_mode()
+        curses.endwin()
+        try:
+            print("=" * 60)
+            print(f"CONNECT: {codename}")
+            print("=" * 60)
+            user = conn.get("username") or ""
+            target = f"{user}@{conn['hostname']}" if user else conn["hostname"]
+            print(f"target:  {target}:{conn.get('port', 22)}")
+            jump = conn.get("jump_host") or {}
+            if jump.get("hostname"):
+                print(f"jump:    {jump.get('username', '')}@"
+                      f"{jump['hostname']}:{jump.get('port', 22)}")
+            print(f"command: {' '.join(argv)}")
+            print("-" * 60, flush=True)
+            try:
+                exit_code = subprocess.call(argv)
+            except FileNotFoundError:
+                print("ERROR: ssh binary not found on PATH")
+            print("-" * 60)
+            if exit_code == 0:
+                print("[session closed cleanly]")
+            elif exit_code == 255:
+                print("[ssh exited 255: connection/auth failure - "
+                      "stderr above tells the story]")
+            elif exit_code is not None:
+                print(f"[session closed - remote exit {exit_code}]")
+            try:
+                input("Press ENTER to return to the HUD...")
+            except (EOFError, KeyboardInterrupt):
+                pass
+        finally:
+            curses.reset_prog_mode()
+            self.stdscr.refresh()
+
+        now = datetime.now(timezone.utc).isoformat()
+        status = dict(substation.get("status") or {})
+        status["last_check"] = now
+        if exit_code is None:
+            self.message = "ssh binary not found on PATH"
+            self.message_color = Colors.HEALTH
+        elif exit_code == 255:
+            status["state"] = "unreachable"
+            self.message = f"{codename}: unreachable (ssh exit 255)"
+            self.message_color = Colors.HEALTH
+        else:
+            # Any other exit means the session ran - the code is whatever
+            # the remote shell last returned
+            status["state"] = "online"
+            status["last_connected"] = now
+            self.message = f"{codename}: session closed (exit {exit_code})"
+            self.message_color = Colors.STAT_VALUE
+        try:
+            self.ds.update("substation", substation["id"], {"status": status})
+            self._load_substations()
+            if self.current_substation:
+                self.current_substation = next(
+                    (s for s in self.substations
+                     if s["id"] == substation["id"]), self.current_substation)
+        except Exception as e:
+            self.message = f"Status update error: {str(e)[:40]}"
+            self.message_color = Colors.HEALTH
+
+    def _deploy_from_substation(self, substation):
+        """Deploy prerequisites, checked honestly - the first missing one
+        is reported instead of the key fizzling."""
+        try:
+            from lib.remote.ssh import HAS_ASYNCSSH
+        except ImportError:
+            HAS_ASYNCSSH = False
+
+        perms = substation.get("permissions") or {}
+        conn = substation.get("connection") or {}
+        if not HAS_ASYNCSSH:
+            self.message = ("Deploy blocked: asyncssh not installed "
+                            "(pip install asyncssh)")
+        elif not perms.get("deploy_enabled"):
+            self.message = "Deploy blocked: deploy disabled - P: Permissions"
+        elif not conn.get("credential_id"):
+            self.message = "Deploy blocked: no credential bound to this host"
+        elif not (self.vault and self.vault.is_unlocked()):
+            self.message = "Deploy blocked: vault is locked"
+        else:
+            self.message = ("Deploy prerequisites met - remote deploy ships "
+                            "with access grants (phase D)")
+            self.message_color = Colors.STAT_VALUE
+            return
+        self.message_color = Colors.HEALTH
 
     def _delete_substation(self, substation):
         """Delete a substation."""
@@ -5168,6 +5265,77 @@ class AgentBuilder:
             lines.append("")
         self._open_viewer(f"SERVICE RECORD - {ident['codename']}", lines, "view")
 
+    def _open_access_view(self):
+        """Assigned network/host/resource access: badge identity, host
+        deployments, and project engagements (worktree bindings)."""
+        if not self.current_agent:
+            return
+        from lib.data.project import agent_bookings, engagement_status
+
+        agent = self.current_agent
+        ident = agent["identity"]
+        crypto = agent.get("crypto") or {}
+
+        lines = [f"## ACCESS - {ident['name']} ({ident['codename']})",
+                 "", "#Badge / Identity"]
+        if crypto.get("fingerprint"):
+            lines.extend([
+                f"  org id:      {org_id(agent)}",
+                f"  remote user: {ident.get('dogtag', '?')}",
+                f"  key:         {crypto.get('key_type', '?')} "
+                f"{crypto.get('fingerprint')}",
+                f"  key status:  {crypto.get('status', 'active')}",
+                f"  vault:       {crypto.get('vault_path', '?')}/",
+            ])
+        else:
+            lines.append("  Not enrolled - no badge or keypair on file "
+                         "(B in the dossier issues one)")
+
+        lines.extend(["", "#Host Deployments"])
+        deployments = []
+        try:
+            for substation in self.ds.query("substation").data:
+                for dep in substation.get("deployments") or []:
+                    if dep.get("agent_id") == agent["id"]:
+                        deployments.append((substation, dep))
+        except Exception:
+            pass
+        if deployments:
+            for substation, dep in deployments:
+                sub_ident = substation.get("identity", {})
+                conn = substation.get("connection", {})
+                lines.append(
+                    f"  * {sub_ident.get('codename', '?')}  "
+                    f"{conn.get('hostname', '?')}  [{dep.get('status', '?')}]")
+                lines.append(
+                    f"    path: {dep.get('remote_path', '?')}  "
+                    f"deployed: {(dep.get('deployed_at') or '?')[:10]}")
+        else:
+            lines.append("  (no host deployments on record)")
+
+        lines.extend(["", "#Project Engagements"])
+        bookings = agent_bookings(self.ds, agent["id"])
+        if bookings:
+            for booking in bookings:
+                project = booking["project"]
+                row = booking["engagement"]
+                state = engagement_status(self.ds, row)
+                lines.append(f"  * {project['slug']}  "
+                             f"role: {row.get('role', '?')}  "
+                             f"[{state.get('label', '?')}]")
+                binding = project.get("host_binding") or {}
+                for worktree in binding.get("worktrees", []):
+                    mode = ("read/write" if worktree.get("writable")
+                            else "read-only")
+                    lines.append(f"    worktree: {worktree.get('path')} "
+                                 f"({mode})")
+        else:
+            lines.append("  (no active project engagements)")
+
+        lines.extend(["", "#Access Grants",
+                      "  (agent key -> host grants land in phase D)"])
+        self._open_viewer(f"ACCESS - {ident['codename']}", lines, "view")
+
     def _open_ledger_viewer(self):
         """Display the gold ledger, newest first."""
         codenames = {a["id"]: a["identity"]["codename"] for a in self.roster}
@@ -5291,7 +5459,10 @@ class AgentBuilder:
     AGENT_EDIT_FIELDS = [
         ("name", "Name", "text"),
         ("codename", "Codename", "text"),
+        ("role_title", "Role/Title", "choice:role_title"),
         ("specialty_id", "Specialty", "choice:specialty"),
+        ("focus_id", "Focus", "choice:focus"),
+        ("class_id", "Class", "choice:class"),
         ("status_id", "Status", "choice:status"),
         ("motto", "Motto", "text"),
     ]
@@ -5304,10 +5475,16 @@ class AgentBuilder:
         self.agent_edit_form = {
             "name": agent["identity"].get("name", ""),
             "codename": agent["identity"].get("codename", ""),
+            "role_title": agent["identity"].get("role_title", ""),
             "specialty_id": agent["classification"].get("specialty_id"),
+            "focus_id": agent["classification"].get("focus_id"),
+            "class_id": agent["classification"].get("class_id"),
             "status_id": agent["classification"].get("status_id", 1),
             "motto": agent.get("profile", {}).get("motto", ""),
         }
+        # role_title cycles through the operator-defined role_title table,
+        # anchored on the agent's current (computed) title
+        self._role_title_anchor = agent["identity"].get("role_title", "")
         self.agent_edit_index = 0
         self.editing = False
         self.edit_buffer = ""
@@ -5321,8 +5498,14 @@ class AgentBuilder:
                 return "(none - not everyone gets to be special)"
             entry = self.ds.get_reference_by_id("specialty", value)
             return entry.get("label", "?") if entry else "?"
-        if field_key == "status_id":
-            entry = self.ds.get_reference_by_id("status", value)
+        if field_key == "role_title":
+            return value or "(untitled)"
+        if field_key in ("status_id", "focus_id", "class_id"):
+            table = {"status_id": "status", "focus_id": "focus",
+                     "class_id": "class"}[field_key]
+            if value is None:
+                return "(none)"
+            entry = self.ds.get_reference_by_id(table, value)
             return entry.get("label", "?") if entry else "?"
         return str(value)
 
@@ -5331,9 +5514,17 @@ class AgentBuilder:
         if field_key == "specialty_id":
             options = [None] + [s["id"] for s in sorted(
                 self.ds.load_reference("specialty"), key=lambda s: s["id"])]
-        elif field_key == "status_id":
+        elif field_key == "role_title":
+            # Anchor (current/computed title) first, then foundry entries
+            labels = [e.get("label", "") for e in sorted(
+                self.ds.load_reference("role_title"), key=lambda e: e["id"])]
+            options = [self._role_title_anchor] + [
+                l for l in labels if l and l != self._role_title_anchor]
+        elif field_key in ("status_id", "focus_id", "class_id"):
+            table = {"status_id": "status", "focus_id": "focus",
+                     "class_id": "class"}[field_key]
             options = [s["id"] for s in sorted(
-                self.ds.load_reference("status"), key=lambda s: s["id"])]
+                self.ds.load_reference(table), key=lambda s: s["id"])]
         else:
             return
         current = self.agent_edit_form.get(field_key)
@@ -5447,9 +5638,13 @@ class AgentBuilder:
                 "codename": (form.get("codename", "").strip().lower()
                              or agent["identity"]["codename"]),
                 "specialty": specialty.get("label") if specialty else None,
+                "role_title": (form.get("role_title", "").strip()
+                               or agent["identity"].get("role_title", "")),
             },
             "classification": {
                 "specialty_id": specialty_id,
+                "focus_id": form.get("focus_id"),
+                "class_id": form.get("class_id"),
                 "status_id": form.get("status_id", 1),
             },
             "profile": {"motto": form.get("motto", "")},
@@ -5494,6 +5689,39 @@ class AgentBuilder:
             ("mission_profile", "Mission Profile", "text"),
             ("icon", "Icon", "text"),
         ]),
+        ("role_title", "Roles / Titles", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("task_preset", "Task Presets", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("prompt", "Task Prompt", "text"),
+            ("skill", "Skill Terms", "text"),
+            ("count", "Crew Size", "int"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("skill_domain", "Skill Domains", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("abbrev", "Abbrev", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("ops_domain", "Ops Domains", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("abbrev", "Abbrev", "text"),
+            ("icon", "Icon", "text"),
+        ]),
+        ("qualifier", "Qualifiers", [
+            ("label", "Label", "text"),
+            ("description", "Description", "text"),
+            ("vibe", "Vibe", "text"),
+            ("min_xp", "Min XP", "int"),
+            ("max_xp", "Max XP", "int"),
+            ("icon", "Icon", "text"),
+        ]),
     ]
 
     # Structural defaults injected on create so new entries satisfy what
@@ -5513,6 +5741,11 @@ class AgentBuilder:
             "support_archetypes": [],
             "coordination": "",
         },
+        "role_title": {},
+        "task_preset": {"count": 1},
+        "skill_domain": {"max_points": 20, "category": "technical"},
+        "ops_domain": {"layer": 0, "color": "#888888"},
+        "qualifier": {},
     }
 
     def _refresh_reference_caches(self):

@@ -19,11 +19,13 @@ from .crud import DataStore
 ENGAGEMENT_QUEUED = 2
 ENGAGEMENT_SWARMING = 4
 ENGAGEMENT_REVIEW = 7
+ENGAGEMENT_COMPLETED = 8
 ENGAGEMENT_SMOKED = 11
 
 # project_status ids
 PROJECT_DRAFT = 1
 PROJECT_ACTIVE = 2
+PROJECT_COMPLETE = 6
 
 
 def _now() -> str:
@@ -58,6 +60,64 @@ def active_engagements(project: dict) -> list[dict]:
 def next_objective_id(project: dict) -> int:
     return max((o.get("id", 0) for o in project.get("objectives", [])),
                default=0) + 1
+
+
+def open_objectives(project: dict) -> list[dict]:
+    return [o for o in project.get("objectives", []) if not o.get("done")]
+
+
+def primary_worktree(project: dict) -> Optional[dict]:
+    worktrees = (project.get("host_binding") or {}).get("worktrees", [])
+    for worktree in worktrees:
+        if worktree.get("primary"):
+            return worktree
+    return worktrees[0] if worktrees else None
+
+
+def next_cycle(project: dict) -> int:
+    return max((e.get("cycle", 0) for e in project.get("journal", [])),
+               default=0) + 1
+
+
+def cycle_in_flight(project: dict) -> bool:
+    """A previous cycle's mission is still running (engagements swarming).
+    Cycles serialize per project."""
+    return any(row.get("status_id") == ENGAGEMENT_SWARMING
+               for row in active_engagements(project))
+
+
+def append_journal(
+    ds: DataStore,
+    project: dict,
+    cycle: int,
+    mission_id: str,
+    status: str,
+    note: str = "",
+) -> dict:
+    """Append a cycle entry to the project journal (append-only log)."""
+    entry = {"cycle": cycle, "mission_id": mission_id, "at": _now(),
+             "status": status, "note": note}
+    journal = list(project.get("journal", [])) + [entry]
+    ds.update("project", project["id"], {"journal": journal})
+    project["journal"] = journal
+    return entry
+
+
+def complete_project(ds: DataStore, project: dict) -> int:
+    """Close a project: release every active engagement as completed and
+    set the project status terminal. Returns engagements released."""
+    rows = list(project.get("engagements", []))
+    released = 0
+    for row in rows:
+        if not row.get("released_at"):
+            row["status_id"] = ENGAGEMENT_COMPLETED
+            row["released_at"] = _now()
+            released += 1
+    ds.update("project", project["id"],
+              {"engagements": rows, "status_id": PROJECT_COMPLETE})
+    project["engagements"] = rows
+    project["status_id"] = PROJECT_COMPLETE
+    return released
 
 
 def agent_bookings(

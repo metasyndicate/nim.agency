@@ -12,13 +12,21 @@
 import sys
 from pathlib import Path
 
+from ..config import get_config, report_dir
 from ..data import get_datastore
 from ..data.project import (
-    active_engagements, assign_agent, create_project, engagement_status,
-    find_project, next_objective_id, project_status, release_agent,
+    active_engagements, append_journal, assign_agent, complete_project,
+    create_project, cycle_in_flight, engagement_status, find_project,
+    next_cycle, next_objective_id, primary_worktree, project_status,
+    release_agent,
+)
+from ..dispatch import (
+    Dispatcher, build_briefing, get_provider, project_cycle_mission,
+    render_briefing,
 )
 
 from .agent import _find_agent
+from .common import confirm_dispatch, print_event, save_report
 
 
 def _find_project_or_die(ds, ref: str) -> dict:
@@ -353,6 +361,172 @@ def cmd_assign(args) -> int:
     return 0
 
 
+def cmd_cycle(args) -> int:
+    """Dispatch the project's stored work detail through the briefing-gated
+    mission pipeline. Steering happens by editing the project between
+    cycles - the cycle itself just runs what the project says."""
+    ds = get_datastore()
+    project = _find_project_or_die(ds, args.ref)
+
+    status = project_status(ds, project)
+    if not status.get("is_active"):
+        print(f"\033[91mERROR: cycle refused - {project['slug']} is "
+              f"{status.get('label', '?')}; resume it first: "
+              f"nim.agency project resume {project['slug']}\033[0m",
+              file=sys.stderr)
+        return 1
+
+    if (project.get("host_binding") or {}).get("substation_id"):
+        print("\033[91mERROR: cycle refused - remote host binding requires "
+              "access grants (phase D, not yet built). Rebind to the local "
+              "host to cycle now.\033[0m", file=sys.stderr)
+        return 1
+
+    rows = active_engagements(project)
+    if not rows:
+        print(f"\033[91mERROR: no crew engaged on {project['slug']} - "
+              f"assign first: nim.agency project assign {project['slug']} "
+              f"<codename> --role lead --resp \"...\"\033[0m", file=sys.stderr)
+        return 1
+
+    if cycle_in_flight(project) and not args.force:
+        print(f"\033[91mERROR: cycle refused - engagement(s) still swarming "
+              f"from a previous cycle. Cycles serialize per project; pass "
+              f"--force only if that cycle is dead.\033[0m", file=sys.stderr)
+        return 1
+
+    worktree = primary_worktree(project)
+    if not worktree or not Path(worktree.get("path", "")).exists():
+        print(f"\033[91mERROR: no usable worktree on {project['slug']} - "
+              f"the primary worktree path must exist\033[0m", file=sys.stderr)
+        return 1
+
+    provider = get_provider("claude-cli")
+    if not provider.is_available():
+        print("\033[91mERROR: claude CLI not found. Install it first.\033[0m",
+              file=sys.stderr)
+        return 1
+
+    agents = {}
+    for row in rows:
+        agent = ds.read("agent", row["agent_id"])
+        if not agent:
+            print(f"\033[91mERROR: engaged agent missing from datastore: "
+                  f"{row['agent_id']}\033[0m", file=sys.stderr)
+            return 1
+        agents[row["agent_id"]] = agent
+
+    policy = project.get("policy") or {}
+    ran = 0
+    for _ in range(args.n):
+        cycle = next_cycle(project)
+        if policy.get("max_cycles") and cycle > policy["max_cycles"]:
+            print(f"POLICY: max_cycles ({policy['max_cycles']}) reached - "
+                  f"no further cycles.")
+            break
+
+        mission = project_cycle_mission(project, rows, agents, cycle)
+        report_path = report_dir() / f"mission-{mission.id}-report.md"
+
+        briefing = build_briefing(
+            mission, ds=ds, report_path=report_path,
+            provider=provider, verbosity=args.verbose)
+        print(render_briefing(briefing, verbosity=args.verbose))
+
+        if not confirm_dispatch(args.yes):
+            return 2 if ran == 0 else 0
+
+        print(f"\nDISPATCHING CYCLE {cycle}...\n")
+        dispatcher = Dispatcher(datastore=ds, provider=provider)
+        result = dispatcher.execute_sync(
+            mission, on_event=print_event,
+            max_concurrent=get_config()["dispatch"]["max_concurrent"])
+
+        save_report(result, report_path)
+
+        # Re-read: the dispatcher moved engagement rows underneath us
+        project = ds.read("project", project["id"])
+        completed = sum(1 for t in result.tasks
+                        if t.status.value == "complete")
+        entry = append_journal(
+            ds, project, cycle, mission.id, result.status.value,
+            note=f"{completed}/{len(result.tasks)} tasks complete")
+        print(f"\nJOURNAL: cycle {entry['cycle']}  mission:{mission.id}  "
+              f"{entry['status']}  ({entry['note']})")
+
+        print("ENGAGEMENTS:")
+        codenames = _codenames(ds)
+        for row in active_engagements(project):
+            state = engagement_status(ds, row)
+            print(f"  {codenames.get(row['agent_id'], row['agent_id']):<24} "
+                  f"{state.get('label', '?')}")
+        print(f"\nReview the report, close objectives you accept "
+              f"(project edit {project['slug']} --complete-objective N), "
+              f"steer, then cycle again.")
+
+        ran += 1
+        if result.status.value != "complete":
+            return 1
+        rows = active_engagements(project)
+    return 0
+
+
+def _set_project_status(ds, project: dict, slug: str) -> dict:
+    status = ds.get_reference_by_slug("project_status", slug)
+    previous = project_status(ds, project)
+    ds.update("project", project["id"], {"status_id": status["id"]})
+    print(f"PROJECT {status['label'].upper()}: {project['slug']} "
+          f"({previous.get('label', '?')} -> {status['label']})")
+    return status
+
+
+def cmd_pause(args) -> int:
+    ds = get_datastore()
+    project = _find_project_or_die(ds, args.ref)
+    if project_status(ds, project).get("is_terminal"):
+        print(f"\033[91mERROR: {project['slug']} is closed - re-charter "
+              f"instead\033[0m", file=sys.stderr)
+        return 1
+    _set_project_status(ds, project, "paused")
+    print("  cycles refuse until resumed; engagements persist.")
+    return 0
+
+
+def cmd_resume(args) -> int:
+    ds = get_datastore()
+    project = _find_project_or_die(ds, args.ref)
+    if project_status(ds, project).get("is_terminal"):
+        print(f"\033[91mERROR: {project['slug']} is closed - re-charter "
+              f"instead\033[0m", file=sys.stderr)
+        return 1
+    _set_project_status(ds, project, "active")
+    return 0
+
+
+def cmd_complete(args) -> int:
+    ds = get_datastore()
+    project = _find_project_or_die(ds, args.ref)
+    status = project_status(ds, project)
+    if status.get("is_terminal"):
+        print(f"\033[91mERROR: {project['slug']} is already "
+              f"{status.get('label', 'closed')}\033[0m", file=sys.stderr)
+        return 1
+    if cycle_in_flight(project):
+        print(f"\033[91mERROR: a cycle is still swarming on "
+              f"{project['slug']} - let it land first\033[0m",
+              file=sys.stderr)
+        return 1
+
+    objectives = project.get("objectives", [])
+    done = sum(1 for o in objectives if o.get("done"))
+    released = complete_project(ds, project)
+    print(f"PROJECT COMPLETE: {project['slug']}")
+    print(f"  objectives: {done}/{len(objectives)} done   "
+          f"cycles run: {len(project.get('journal', []))}   "
+          f"engagements released: {released}")
+    return 0
+
+
 def cmd_release(args) -> int:
     ds = get_datastore()
     project = _find_project_or_die(ds, args.ref)
@@ -442,3 +616,31 @@ def add_parser(subparsers):
     release.add_argument("ref", help="Project slug or id")
     release.add_argument("codename", help="Agent codename")
     release.set_defaults(func=cmd_release)
+
+    cycle = actions.add_parser(
+        "cycle",
+        help="Dispatch the project's work detail (briefing gate + journal)")
+    cycle.add_argument("ref", help="Project slug or id")
+    cycle.add_argument("-n", type=int, default=1,
+                       help="Cycles to run back-to-back (default: 1)")
+    cycle.add_argument("-y", "--yes", action="store_true",
+                       help="Bypass the confirmation gate")
+    cycle.add_argument("--force", action="store_true",
+                       help="Cycle even if a previous cycle looks in-flight")
+    cycle.add_argument("-v", "--verbose", action="count", default=0,
+                       help="Briefing verbosity (-v: constraints + prompt "
+                            "sources, -vv: full prompts)")
+    cycle.set_defaults(func=cmd_cycle)
+
+    pause = actions.add_parser("pause", help="Pause a project (cycles refuse)")
+    pause.add_argument("ref", help="Project slug or id")
+    pause.set_defaults(func=cmd_pause)
+
+    resume = actions.add_parser("resume", help="Reactivate a paused project")
+    resume.add_argument("ref", help="Project slug or id")
+    resume.set_defaults(func=cmd_resume)
+
+    complete = actions.add_parser(
+        "complete", help="Close a project and release its engagements")
+    complete.add_argument("ref", help="Project slug or id")
+    complete.set_defaults(func=cmd_complete)

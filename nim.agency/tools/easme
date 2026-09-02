@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""easme - pipestream dispatch shim for the NIM Agency.
+
+Feed a command's output to an agent as the work payload:
+
+    mycommand --arg1 | easme agent
+    mycommand --arg1 | easme agent --hint "parse dates"
+    cat access.log   | easme agent --preset secrets_sweep -y
+
+stdout carries ONLY the agent's output, so easme composes in a pipeline:
+
+    dmesg | easme agent --hint "flag anything alarming" -y | less
+
+Everything else - briefing, events, payroll - goes to stderr. The
+briefing gate prompts on the controlling terminal (/dev/tty) because
+stdin is the payload; pass -y for fully unattended pipelines.
+"""
+
+import argparse
+import contextlib
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+MAX_PAYLOAD = 64 * 1024  # keep prompts sane; the tail is the fresh part
+
+
+def build_prompt(hint: str, payload: str, truncated: bool) -> str:
+    lines = [hint or ("Process the piped input below and report the "
+                      "result concisely.")]
+    note = " (head truncated - showing the most recent bytes)" if truncated else ""
+    lines += [
+        "",
+        f"PIPED INPUT{note}:",
+        "---8<---",
+        payload.rstrip("\n"),
+        "--->8---",
+    ]
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="easme",
+        description="Pipestream dispatch: stdin becomes the work payload.")
+    sub = parser.add_subparsers(dest="component", required=True)
+
+    agent = sub.add_parser("agent", help="Dispatch piped input to an agent")
+    agent.add_argument("--hint", type=str,
+                       help="What to do with the piped input")
+    agent.add_argument("--preset", type=str,
+                       help="task_preset slug supplying the instruction "
+                            "(--hint wins if both given)")
+    agent.add_argument("--skill", type=str,
+                       help="Competency terms for crew matching")
+    agent.add_argument("--count", type=int,
+                       help="Crew size (default: 1)")
+    agent.add_argument("--target", type=str, default=".",
+                       help="Working directory for the task (default: .)")
+    agent.add_argument("--crew", type=str,
+                       help="Comma-separated agent codenames")
+    agent.add_argument("-y", "--yes", action="store_true",
+                       help="Bypass the confirmation gate")
+    agent.add_argument("-v", "--verbose", action="count", default=0,
+                       help="Briefing verbosity")
+    args = parser.parse_args()
+
+    if sys.stdin.isatty():
+        print("easme agent expects piped input on stdin, e.g.:\n"
+              "  mycommand | easme agent --hint 'parse dates'",
+              file=sys.stderr)
+        return 1
+
+    raw = sys.stdin.buffer.read()
+    truncated = len(raw) > MAX_PAYLOAD
+    if truncated:
+        raw = raw[-MAX_PAYLOAD:]
+    payload = raw.decode("utf-8", errors="replace")
+    if not payload.strip():
+        print("easme: empty payload on stdin - nothing to dispatch.",
+              file=sys.stderr)
+        return 1
+
+    from lib.config import get_config
+    from lib.data import get_datastore
+    from lib.dispatch import (
+        Dispatcher, adhoc_task_mission, build_briefing, get_provider,
+        render_briefing,
+    )
+    from lib.cli.common import (
+        confirm_dispatch, print_event, resolve_crew, resolve_report_path,
+        save_report,
+    )
+
+    ds = get_datastore()
+    provider = get_provider("claude-cli")
+    if not provider.is_available():
+        print("ERROR: claude CLI not found. Install it first.",
+              file=sys.stderr)
+        return 1
+
+    hint = args.hint
+    if not hint and args.preset:
+        preset = ds.get_reference_by_slug("task_preset", args.preset)
+        if not preset:
+            slugs = ", ".join(
+                p["slug"] for p in ds.load_reference("task_preset"))
+            print(f"ERROR: Unknown preset '{args.preset}' "
+                  f"(one of: {slugs or 'none defined'})", file=sys.stderr)
+            return 1
+        print(f"PRESET: {preset['label']} [{preset['slug']}]",
+              file=sys.stderr)
+        hint = preset["prompt"]
+        if not args.skill and preset.get("skill"):
+            args.skill = preset["skill"]
+        if not args.count and preset.get("count"):
+            args.count = preset["count"]
+
+    # Ceremonies to stderr; stdout is reserved for the agent's output
+    with contextlib.redirect_stdout(sys.stderr):
+        crew_args = argparse.Namespace(
+            crew=args.crew, skill=args.skill, count=args.count or 1,
+            task=hint or "pipestream", mission="task")
+        crew = resolve_crew(ds, crew_args)
+
+        mission = adhoc_task_mission(
+            crew, str(Path(args.target).resolve()),
+            build_prompt(hint, payload, truncated),
+            title=f"Pipestream: {hint or 'stdin payload'}"[:64])
+
+        report_path = resolve_report_path(argparse.Namespace(output=None),
+                                          mission)
+        briefing = build_briefing(mission, ds=ds, report_path=report_path,
+                                  provider=provider, verbosity=args.verbose)
+        print(render_briefing(briefing, verbosity=args.verbose))
+
+        if not confirm_dispatch(args.yes):
+            return 2
+
+        print("\nDISPATCHING...\n")
+        dispatcher = Dispatcher(datastore=ds, provider=provider)
+        result = dispatcher.execute_sync(
+            mission, on_event=print_event,
+            max_concurrent=get_config()["dispatch"]["max_concurrent"])
+        save_report(result, report_path)
+
+    for task in result.tasks:
+        if task.result and task.result.output:
+            print(task.result.output)
+        elif task.result and task.result.error:
+            print(f"easme: task {task.id} failed: {task.result.error}",
+                  file=sys.stderr)
+
+    return 0 if result.status.value == "complete" else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -54,6 +54,32 @@ def select_crew(ds: DataStore, count: int) -> list[dict]:
     return selected
 
 
+def apply_preset(ds: DataStore, args) -> None:
+    """Fill mission args from a task_preset (one-action dispatch).
+    Explicit flags win over preset defaults."""
+    slug = getattr(args, "preset", None)
+    if not slug:
+        return
+    preset = ds.get_reference_by_slug("task_preset", slug)
+    if not preset:
+        slugs = ", ".join(
+            p["slug"] for p in ds.load_reference("task_preset"))
+        options = slugs or "none defined - add some in the Type Foundry"
+        print(f"\033[91mERROR: Unknown preset '{slug}' (one of: {options})"
+              f"\033[0m", file=sys.stderr)
+        raise SystemExit(1)
+    print(f"PRESET: {preset['label']} [{preset['slug']}]"
+          + (f"  -  {preset['description']}"
+             if preset.get("description") else ""))
+    if not getattr(args, "task", None):
+        args.task = preset["prompt"]
+    if not getattr(args, "skill", None) and preset.get("skill"):
+        args.skill = preset["skill"]
+    if not getattr(args, "count", None) and preset.get("count"):
+        args.count = preset["count"]
+    args.mission = "task"
+
+
 def crew_count(args) -> int:
     """Crew size: --count override, else 1 for ad-hoc tasks, 3 for templates."""
     if args.count:
@@ -159,15 +185,30 @@ def mission_json_path(mission_id: str) -> Path:
 
 
 def confirm_dispatch(assume_yes: bool) -> bool:
-    """Interactive dispatch gate. --yes bypasses; non-TTY refuses."""
+    """Interactive dispatch gate. --yes bypasses. When stdin carries piped
+    data, the prompt falls back to the controlling terminal (/dev/tty);
+    with no terminal at all, refuse - the gate never self-confirms."""
     if assume_yes:
         return True
-    if not sys.stdin.isatty():
-        print("Refusing to dispatch: stdin is not a TTY and --yes was not given.",
-              file=sys.stderr)
-        return False
+    prompt = "Dispatch this mission? [y/N]: "
     try:
-        reply = input("Dispatch this mission? [y/N]: ")
+        if sys.stdin.isatty():
+            reply = input(prompt)
+        else:
+            try:
+                tty = open("/dev/tty", "r+")
+            except OSError:
+                print("Refusing to dispatch: stdin is not a TTY, no "
+                      "controlling terminal, and --yes was not given.",
+                      file=sys.stderr)
+                return False
+            with tty:
+                tty.write(prompt)
+                tty.flush()
+                reply = tty.readline()
+            if not reply:
+                print("\nDispatch aborted.", file=sys.stderr)
+                return False
     except (EOFError, KeyboardInterrupt):
         print("\nDispatch aborted.")
         return False

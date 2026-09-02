@@ -69,6 +69,33 @@ class SSHConnectionConfig:
         return f"{user}@{self.hostname}:{self.port}"
 
 
+def ssh_command(connection: dict, timeout: Optional[int] = None) -> list[str]:
+    """Build an ssh(1) argv from a substation `connection` block.
+
+    For interactive operator sessions (no asyncssh required) - auth is
+    left to the operator's own ssh setup (agent, ~/.ssh config).
+    """
+    argv = ["ssh"]
+    port = connection.get("port")
+    if port and int(port) != 22:
+        argv += ["-p", str(port)]
+    argv += ["-o", f"ConnectTimeout={int(timeout or connection.get('timeout') or 30)}"]
+
+    jump = connection.get("jump_host") or {}
+    if jump.get("hostname"):
+        jump_user = jump.get("username")
+        jump_spec = (f"{jump_user}@{jump['hostname']}" if jump_user
+                     else jump["hostname"])
+        if jump.get("port") and int(jump["port"]) != 22:
+            jump_spec += f":{jump['port']}"
+        argv += ["-J", jump_spec]
+
+    user = connection.get("username")
+    target = f"{user}@{connection['hostname']}" if user else connection["hostname"]
+    argv.append(target)
+    return argv
+
+
 @dataclass
 class CommandResult:
     """Result of a remote command execution."""

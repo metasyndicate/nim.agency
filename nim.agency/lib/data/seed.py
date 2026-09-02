@@ -24,7 +24,7 @@ def verify_reference_data(ds: DataStore) -> dict:
     reference_types = [
         "status", "rank", "class", "skill_domain",
         "tool_category", "achievement", "mission_status", "tool",
-        "assignment_status", "project_status"
+        "assignment_status", "project_status", "role_title", "task_preset"
     ]
 
     for ref_type in reference_types:

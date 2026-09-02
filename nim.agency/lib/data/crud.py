@@ -84,6 +84,8 @@ class DataStore:
         "agent_relation": {"type": "reference", "file": "agent_relation.json"},
         "assignment_status": {"type": "reference", "file": "assignment_status.json"},
         "project_status": {"type": "reference", "file": "project_status.json"},
+        "role_title": {"type": "reference", "file": "role_title.json"},
+        "task_preset": {"type": "reference", "file": "task_preset.json"},
         "config": {"type": "singleton", "file": "config.json"},
 
         # Entity data: stored in directories with individual files

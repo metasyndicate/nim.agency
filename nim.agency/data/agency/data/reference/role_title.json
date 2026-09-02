@@ -1,0 +1,38 @@
+{
+  "$schema": "../schema/reference/role_title.schema.json",
+  "$comment": "Operator-defined role/title vocabulary - assignable to agents in the TUI edit form (identity.role_title). Generated agents still compute titles from qualifier + focus + rank.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "system_administrator",
+      "label": "System Administrator",
+      "description": "Owns host configuration, services, and uptime",
+      "icon": "🖥",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "network_operator",
+      "label": "Network Operator",
+      "description": "Runs the wires - routing, DNS, firewalls, transit",
+      "icon": "🕸",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "database_administrator",
+      "label": "Database Administrator",
+      "description": "Mirror it. Again.",
+      "icon": "🗄",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "computational_scientist",
+      "label": "computational_scientist",
+      "description": "algorithms, parallel/distributed workloads, mpi, peformance tuning",
+      "icon": "🧮",
+      "sort_order": 4
+    }
+  ]
+}
