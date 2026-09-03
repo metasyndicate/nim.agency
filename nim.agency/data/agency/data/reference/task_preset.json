@@ -25,6 +25,17 @@
       "sort_order": 2
     },
     {
+      "id": 4,
+      "slug": "code_assimilation",
+      "label": "Code Assimilation",
+      "description": "The metamorphic assimilating transformer: audit a module against STYLE.md for redundancy, overloads, style drift, and hardcoded data",
+      "prompt": "NIM CODE ASSIMILATION PROTOCOL - read-only analysis pass. Target: the module/subsystem named in the operator's instructions (or the largest module under the working directory if unnamed). Read STYLE.md first; it is the alignment target. Produce a prioritized, mechanically-executable refactor plan with exact line numbers: (1) REDUNDANCY - near-duplicate methods/blocks to consolidate, each with a proposed generalized signature; (2) OVERLOADS - local reimplementations of centralized helpers (compare against lib/config, lib/data, lib/dispatch, tui/textkit) to delete in favor of the canonical one; (3) STYLE - violations of STYLE.md conventions and prohibited practices, including dead code and advertised-but-unbound controls; (4) DATA-LAYER - heredocs and hardcoded static data to relocate into data/ files loaded at runtime, with a proposed home for each; (5) STRUCTURE - if the module exceeds ~1000 lines, split boundaries as mixins over shared state, safest-first move-only extraction order with line ranges and a risk list. Modify nothing. Finish with the top five highest-value moves.",
+      "skill": "analysis",
+      "count": 1,
+      "icon": "🦠",
+      "sort_order": 4
+    },
+    {
       "id": 3,
       "slug": "secrets_sweep",
       "label": "Secrets Sweep",
