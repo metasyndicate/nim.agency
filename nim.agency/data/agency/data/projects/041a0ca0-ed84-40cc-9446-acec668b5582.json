@@ -1,0 +1,89 @@
+{
+  "slug": "nim-codex",
+  "title": "NIM Codex - schematic command reference",
+  "description": "Searchable relational datastore of shell commands with metadata, tagging/grouping automation, command + subshell interfaces, and topical markdown export. Program spec: ../CLAUDE.md (ENVIRONMENT MODULES CODEX). Requires Easley cluster discovery (remote - phase D).",
+  "status_id": 1,
+  "priority": 5,
+  "crue_id": null,
+  "engagements": [],
+  "host_binding": {
+    "substation_id": null,
+    "worktrees": [
+      {
+        "path": "/Users/bradley/Developer/nim",
+        "writable": false,
+        "primary": true
+      }
+    ],
+    "required_permissions": [
+      "read"
+    ]
+  },
+  "objectives": [
+    {
+      "id": 1,
+      "text": "Review bash code style and systemic/functional patterns in /usr/local/nim/lib/sh (NIM Metashell)",
+      "done": false,
+      "acceptance": "written pattern digest committed to the project as a spec"
+    },
+    {
+      "id": 2,
+      "text": "Select core ontology for the command/catalog data model (shell/os/command/syntax/catalog/index standards review)",
+      "done": false
+    },
+    {
+      "id": 3,
+      "text": "Design codex schema: command entity + metadata (title, descriptions, related/alternative commands, tags, groups)",
+      "done": false
+    },
+    {
+      "id": 4,
+      "text": "Build nim.codex command mode: pipe-store, set (session tag/group defaults), add subcommands",
+      "done": false
+    },
+    {
+      "id": 5,
+      "text": "Build nim.codex subshell mode with contextual usage and menu-driven control",
+      "done": false
+    },
+    {
+      "id": 6,
+      "text": "Inference/regex auto-tagging and grouping on add operations",
+      "done": false
+    },
+    {
+      "id": 7,
+      "text": "Topical markdown export of command groups/subsets with metadata",
+      "done": false
+    },
+    {
+      "id": 8,
+      "text": "Easley cluster discovery: lmod subsystem, MODULEPATH modulefiles, toolchains, /tools mappings (BLOCKED: remote access = phase D)",
+      "done": false
+    }
+  ],
+  "specifications": [
+    {
+      "label": "codex-spec",
+      "path_or_url": "../CLAUDE.md"
+    }
+  ],
+  "directives": [
+    "Command-mode and subshell interfaces share one datastore and one schema - no divergence"
+  ],
+  "artifacts": [],
+  "policy": {
+    "max_cycles": null,
+    "read_only": true,
+    "max_concurrent_engagements": 1
+  },
+  "journal": [],
+  "owl_id": null,
+  "created_by": "operator",
+  "id": "041a0ca0-ed84-40cc-9446-acec668b5582",
+  "audit": {
+    "created_at": "2026-09-03T02:17:12.216025+00:00",
+    "updated_at": "2026-09-03T02:17:21.866580+00:00",
+    "retired_at": null
+  }
+}

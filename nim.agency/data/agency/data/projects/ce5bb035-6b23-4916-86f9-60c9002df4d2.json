@@ -34,12 +34,12 @@
     {
       "id": 1,
       "text": "Stand up a test suite (no tests exist today)",
-      "done": false
+      "done": true
     },
     {
       "id": 2,
       "text": "Declare dependencies: core is stdlib; asyncssh, cryptography, jsonschema optional",
-      "done": false
+      "done": true
     },
     {
       "id": 3,
@@ -74,6 +74,21 @@
     {
       "id": 9,
       "text": "Rename one of the twin ops_log.py modules (dispatch lifecycle vs HQ remote-ops)",
+      "done": false
+    },
+    {
+      "id": 10,
+      "text": "Guard TUI text inputs against paste floods (role_title label corruption incident: terminal scrollback pasted into a curses field)",
+      "done": false
+    },
+    {
+      "id": 11,
+      "text": "Engagement quality review flow: rate quality_score on release/complete, pay a review bonus, surface it in the dossier",
+      "done": false
+    },
+    {
+      "id": 12,
+      "text": "Foundry support for capability rows (structured proficiency/xp-cost data needs a richer form than the flat field list)",
       "done": false
     }
   ],
@@ -111,7 +126,7 @@
   "id": "ce5bb035-6b23-4916-86f9-60c9002df4d2",
   "audit": {
     "created_at": "2026-09-01T01:46:08.079433+00:00",
-    "updated_at": "2026-09-01T15:29:59.407606+00:00",
+    "updated_at": "2026-09-03T02:17:12.138112+00:00",
     "retired_at": null
   }
 }
