@@ -181,8 +181,17 @@ def project_cycle_mission(
     worktree = primary_worktree(project) or {}
     builder.working_dir(worktree.get("path", "."))
     policy = project.get("policy") or {}
-    builder.constraint_read_only(bool(policy.get("read_only", True)))
+    read_only = bool(policy.get("read_only", True))
+    builder.constraint_read_only(read_only)
     builder.timeout(get_config()["dispatch"]["timeout_seconds"])
+    if not read_only:
+        # Writable cycles get a working toolset: editing tools unlocked,
+        # file ops within the worktree allowed; privilege escalation
+        # stays blocked. Gated by the global modality (supervised+).
+        constraints = builder._mission.constraints
+        constraints.allowed_tools = ["Read", "Glob", "Grep", "Bash",
+                                     "Edit", "Write"]
+        constraints.blocked_commands = ["sudo", "su", "chown"]
 
     for row in engagements:
         agent = agents[row["agent_id"]]

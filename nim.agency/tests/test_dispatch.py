@@ -85,6 +85,15 @@ class TestCyclePipeline(DatastoreCase):
         return project_cycle_mission(self.project, self.rows,
                                      self.agents, 1)
 
+    def test_writable_cycle_toolset(self):
+        writable = dict(self.project)
+        writable["policy"] = {"read_only": False}
+        mission = project_cycle_mission(writable, self.rows, self.agents, 1)
+        self.assertFalse(mission.constraints.read_only)
+        self.assertIn("Edit", mission.constraints.allowed_tools)
+        self.assertNotIn("mv", mission.constraints.blocked_commands)
+        self.assertIn("sudo", mission.constraints.blocked_commands)
+
     def test_composition_from_project_state(self):
         mission = self._mission()
         self.assertEqual(len(mission.tasks), 2)
