@@ -33,13 +33,23 @@ def _now() -> str:
 
 
 def find_project(ds: DataStore, ref: str) -> Optional[dict]:
-    """Resolve a project by slug, exact id, or unique id prefix."""
+    """Resolve a project by slug, exact id, or unique id prefix.
+    Resolutions land in the queue access log (worklog)."""
     projects = ds.query("project").data
+    match = None
     for project in projects:
         if project.get("slug") == ref or project.get("id") == ref:
-            return project
-    prefixed = [p for p in projects if p.get("id", "").startswith(ref)]
-    return prefixed[0] if len(prefixed) == 1 else None
+            match = project
+            break
+    if match is None:
+        prefixed = [p for p in projects if p.get("id", "").startswith(ref)]
+        match = prefixed[0] if len(prefixed) == 1 else None
+    if match is not None:
+        from .worklog import log_queue_access, project_record_path
+        log_queue_access("resolve", project=match,
+                         path=project_record_path(ds, match),
+                         detail=f"ref '{ref}'")
+    return match
 
 
 def project_status(ds: DataStore, project: dict) -> dict:
@@ -168,11 +178,15 @@ def availability_map(ds: DataStore) -> dict[str, list[str]]:
     """agent_id -> [project slugs] for every active booking, in one scan.
     Agents absent from the map are available."""
     booked: dict[str, list[str]] = {}
-    for project in ds.query("project").data:
+    projects = ds.query("project").data
+    for project in projects:
         for row in active_engagements(project):
             if engagement_status(ds, row).get("is_terminal"):
                 continue
             booked.setdefault(row["agent_id"], []).append(project["slug"])
+    from .worklog import log_queue_access
+    log_queue_access("scan", detail=f"availability sweep across "
+                                    f"{len(projects)} project record(s)")
     return booked
 
 

@@ -206,6 +206,9 @@ class Dispatcher:
         # Project-tagged missions drive engagement state on the project
         project = self._mission_project(mission)
         if project:
+            from ..data.worklog import project_record_path, queue_banner
+            emit("queue", queue_banner(
+                project, project_record_path(self.ds, project)))
             moved = transition_engagements(
                 self.ds, project, ENGAGEMENT_SWARMING,
                 agent_ids=mission.crew_ids)
@@ -390,9 +393,17 @@ class Dispatcher:
         return mission
 
     def _mission_project(self, mission: Mission) -> Optional[dict]:
-        """Resolve a mission's tagged project, if any."""
+        """Resolve a mission's tagged project, if any (audit-logged)."""
         project_id = getattr(mission, "project_id", None)
-        return self.ds.read("project", project_id) if project_id else None
+        if not project_id:
+            return None
+        project = self.ds.read("project", project_id)
+        if project:
+            from ..data.worklog import log_queue_access, project_record_path
+            log_queue_access("dispatch", project=project,
+                             path=project_record_path(self.ds, project),
+                             detail=f"mission {mission.id} engagement sync")
+        return project
 
     def _settle_engagements(self, project: Optional[dict],
                             mission: Mission, emit) -> None:

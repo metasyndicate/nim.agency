@@ -68,6 +68,12 @@ def apply_preset(ds: DataStore, args) -> None:
         print(f"\033[91mERROR: Unknown preset '{slug}' (one of: {options})"
               f"\033[0m", file=sys.stderr)
         raise SystemExit(1)
+    from ..data.worklog import log_queue_access, repo_relative
+    preset_file = (ds.base_path / "reference"
+                   / ds.ENTITY_CONFIG["task_preset"]["file"])
+    print(f"Processing Work Queue: PRESET {preset['slug']} "
+          f"({repo_relative(preset_file)})")
+    log_queue_access("preset", path=preset_file, detail=preset["slug"])
     print(f"PRESET: {preset['label']} [{preset['slug']}]"
           + (f"  -  {preset['description']}"
              if preset.get("description") else ""))
@@ -227,6 +233,7 @@ def print_event(event: DispatchEvent):
         "task_failed": "\033[91m[FAIL]\033[0m",
         "payroll": "\033[93m[PAYROLL]\033[0m",
         "engagement": "\033[96m[ENGAGE]\033[0m",
+        "queue": "\033[96m[QUEUE]\033[0m",
         "collecting": "\033[96m[COLLECT]\033[0m",
         "error": "\033[91m[ERROR]\033[0m",
     }.get(event.event_type, f"[{event.event_type}]")

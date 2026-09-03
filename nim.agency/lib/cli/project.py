@@ -20,6 +20,9 @@ from ..data.project import (
     find_project, next_cycle, next_objective_id, primary_worktree,
     project_status, release_agent,
 )
+from ..data.worklog import (
+    log_queue_access, project_record_path, queue_banner, source_line,
+)
 from ..dispatch import (
     Dispatcher, build_briefing, get_provider, project_cycle_mission,
     render_briefing,
@@ -133,6 +136,9 @@ def cmd_list(args) -> int:
 def cmd_show(args) -> int:
     ds = get_datastore()
     project = _find_project_or_die(ds, args.ref)
+    record = project_record_path(ds, project)
+    print(queue_banner(project, record))
+    log_queue_access("show", project=project, path=record)
     status = project_status(ds, project)
     codenames = _codenames(ds)
 
@@ -435,6 +441,19 @@ def cmd_cycle(args) -> int:
             print(f"POLICY: max_cycles ({policy['max_cycles']}) reached - "
                   f"no further cycles.")
             break
+
+        # Queue processing ceremony: disclose exactly which queue sources
+        # feed this cycle's composition, and audit-log each read
+        record = project_record_path(ds, project)
+        print(queue_banner(project, record))
+        log_queue_access("cycle", project=project, path=record,
+                         detail=f"composing cycle {cycle}")
+        for spec in project.get("specifications", []):
+            label = spec.get("label") or spec.get("path_or_url", "?")
+            print(source_line(f"spec:{label}", spec.get("path_or_url", "?")))
+            log_queue_access("spec", project=project,
+                             path=spec.get("path_or_url"),
+                             detail=f"cycle {cycle} composition")
 
         mission = project_cycle_mission(project, rows, agents, cycle)
         report_path = report_dir() / f"mission-{mission.id}-report.md"
