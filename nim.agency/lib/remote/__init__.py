@@ -102,8 +102,8 @@ from .protocol import (
     get_executor,
 )
 
-# Ops Log - HQ messaging protocol
-from .ops_log import (
+# HQ Log - HQ messaging protocol
+from .hq_log import (
     OpsMessage,
     OpsLogger,
     LogType,

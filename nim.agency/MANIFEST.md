@@ -73,7 +73,7 @@ non-TTY without `-y` refuses, exit 2).
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
 | Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
-| Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, ops_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
+| Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, hq_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
 | TUI | `tui/builder.py` + `tui/textkit.py` | RPG-themed HUD; cell-accurate rendering (`textkit` handles wide-glyph clipping/padding); threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/skill_domain/ops_domain/qualifier | functional; refactor candidate |
 
 ## CONVENTIONS & DEFAULTS
@@ -120,6 +120,6 @@ Output artifacts per mission run:
 - Remote layer (`lib/remote/`) untested against live infrastructure this revision.
 - `mission show -v/-vv` recomposes prompts from the current datastore, not
   dispatch-time state (caveat printed in output).
-- `lib/dispatch/ops_log.py` and `lib/remote/ops_log.py` share a filename but
-  are distinct (dispatch lifecycle vs HQ remote-ops messaging) — rename
-  candidate, not a consolidation candidate.
+- Resolved: the former `lib/remote/ops_log.py` (HQ remote-ops messaging) is
+  now `lib/remote/hq_log.py`, ending the twin-filename collision with
+  `lib/dispatch/ops_log.py` (dispatch lifecycle).
