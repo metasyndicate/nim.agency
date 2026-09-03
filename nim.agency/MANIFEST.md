@@ -20,7 +20,8 @@ nim.agency/
 │   ├── schema/     JSON Schema definitions (core, reference, meta)
 │   └── data/       instance data (agents, groups, reference, instruction)
 ├── lex/            lexicon/taxonomy CSVs for procedural generation
-├── tui/            curses TUI (agent builder) + ASCII mugshots
+├── tui/            curses HUD: builder.py core shell + chrome.py (draw
+│                   primitives) + mugshots.py + views/*.py screen mixins
 ├── log/            mission reports & mission JSON (gitignored)
 └── arc/            archives — drafts, retired artifacts (gitignored)
 ```
@@ -40,7 +41,7 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 | `agent credit\|train\|equip` | `lib/cli/agent.py` | economy: paymaster adjustments, dojo, depot | functional |
 | `agent enroll [--backfill]` | `lib/cli/agent.py` | badge + primary keypair issuance into the depot vault | functional |
 | `data verify\|seed\|schemas\|describe` | `lib/cli/data.py` | datastore init + schema inspection | functional |
-| `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional, monolithic (~5900 lines) |
+| `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional |
 | Programmatic (Python) | `lib.data`, `lib.dispatch` | see README "Programmatic" | functional |
 
 Shared mission flags (`dispatch`, `mission plan`):
@@ -74,7 +75,7 @@ non-TTY without `-y` refuses, exit 2).
 | Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
 | Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, hq_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
-| TUI | `tui/builder.py` + `tui/textkit.py` | RPG-themed HUD; cell-accurate rendering (`textkit` handles wide-glyph clipping/padding); threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/skill_domain/ops_domain/qualifier | functional; refactor candidate |
+| TUI | `tui/builder.py` (core shell) + `tui/chrome.py` + `tui/mugshots.py` + `tui/views/*.py` (13 screen mixins) + `tui/textkit.py` | RPG-themed HUD, mixins over shared state (move-only split of the former 6k-line monolith); cell-accurate rendering; threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/skill_domain/ops_domain/qualifier | functional |
 
 ## CONVENTIONS & DEFAULTS
 
@@ -106,7 +107,9 @@ Output artifacts per mission run:
   project aggregate, availability/matching, dispatch pipeline (stub
   provider), attribution, and modality — TUI and remote layers are still
   untested. Run: `python3 -m unittest discover -s tests`.
-- `tui/builder.py` is a single-file monolith (~4900 lines; split candidate).
+- TUI split landed move-only; deeper quality passes (mugshot art into
+  data files, choice-helper consolidation, unused-import sweep) queue
+  through `code_assimilation` cycles per module.
 - Key distribution/revocation flows not yet built (vault issuance only);
   mission outcomes feed the economy but not achievements.
 - TUI dispatch backgrounds its worker thread if the operator leaves the

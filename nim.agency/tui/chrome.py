@@ -30,37 +30,6 @@ class Colors:
     ERROR = 12
 
 
-class Panel:
-    """Base panel class for TUI components."""
-
-    def __init__(self, win, y: int, x: int, height: int, width: int):
-        self.parent = win
-        self.y = y
-        self.x = x
-        self.height = height
-        self.width = width
-        self.win = win.subwin(height, width, y, x)
-
-    def draw_border(self, title: str = ""):
-        """Draw panel border with optional title."""
-        self.win.attron(curses.color_pair(Colors.BORDER))
-        self.win.border()
-        if title:
-            title_str = f" {title} "
-            self.win.addstr(0, 2, title_str, curses.color_pair(Colors.TITLE) | curses.A_BOLD)
-        self.win.attroff(curses.color_pair(Colors.BORDER))
-
-    def clear(self):
-        """Clear panel content (not border)."""
-        for row in range(1, self.height - 1):
-            self.win.addstr(row, 1, " " * (self.width - 2))
-
-    def refresh(self):
-        self.win.refresh()
-
-
-
-
 class ChromeMixin:
     """Shared drawing primitives for every screen."""
 

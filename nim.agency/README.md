@@ -290,7 +290,7 @@ lib/dispatch/ missions, dispatcher, provider, briefing, logging
 lib/remote/   ssh, vault, safety, audit
 data/agency/  JSON schemas + instance data
 lex/          lexicon/taxonomy CSVs
-tui/          curses agent builder + mugshots
+tui/          curses HUD: core shell + chrome + views/ screen mixins + mugshots
 tests/        stdlib unittest suite (isolated temp datastores)
 log/          mission outputs (gitignored)
 ```

@@ -770,33 +770,6 @@ class DossierMixin:
         self.message = f"[{codename}] ({rank_label}): {response}"
         self.message_color = Colors.STAT_VALUE
 
-    def _deploy_agent_prompt(self):
-        """Initiate agent deployment to a substation."""
-        if not self.current_agent:
-            return
-
-        agent_name = self.current_agent["identity"]["codename"]
-        agent_rank = self.ranks.get(self.current_agent["classification"]["rank_id"], {})
-        rank_label = agent_rank.get("label", "Operative")
-
-        # Check if substations module is available
-        if not self.substations:
-            # Try to load substations
-            try:
-                self.substations = self.ds.list("substation")
-            except Exception:
-                self.substations = []
-
-        if not self.substations:
-            self.message = f"[{agent_name}] No substations available. Configure a remote host first."
-            self.message_color = Colors.DIM
-            return
-
-        # For now, show status - full deployment UI coming with Substations Phase 4
-        sub_count = len(self.substations)
-        self.message = f"[{agent_name}] Ready for deployment. {sub_count} substation(s) available. (Phase 4)"
-        self.message_color = Colors.XP
-
     def _handle_profile_input(self, key: int):
         """Handle profile viewer input."""
         if not self.profile_lines:
