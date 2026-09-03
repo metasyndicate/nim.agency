@@ -14,6 +14,17 @@
       ],
       "status_id": 7,
       "assigned_at": "2026-09-01T02:07:55.941153+00:00",
+      "released_at": "2026-09-03T16:39:29.303006+00:00"
+    },
+    {
+      "agent_id": "739e1316-3ea6-41d9-ae36-6b53d4b48707",
+      "role": "lead",
+      "responsibilities": [
+        "Objective 3 ONLY this cycle: produce the tui/builder.py split plan - proposed module boundaries with line ranges, extraction order (safest first), cross-module dependencies to break, and a risk list. Deliver it as a concrete plan the operator can execute mechanically.",
+        "Do not attempt other objectives; reference them only where the split affects them"
+      ],
+      "status_id": 7,
+      "assigned_at": "2026-09-03T16:39:29.384832+00:00",
       "released_at": null
     }
   ],
@@ -119,6 +130,13 @@
       "at": "2026-09-01T15:29:59.407557+00:00",
       "status": "complete",
       "note": "1/1 tasks complete"
+    },
+    {
+      "cycle": 2,
+      "mission_id": "8f4d48af",
+      "at": "2026-09-03T16:44:15.443428+00:00",
+      "status": "complete",
+      "note": "1/1 tasks complete"
     }
   ],
   "owl_id": null,
@@ -126,7 +144,7 @@
   "id": "ce5bb035-6b23-4916-86f9-60c9002df4d2",
   "audit": {
     "created_at": "2026-09-01T01:46:08.079433+00:00",
-    "updated_at": "2026-09-03T02:17:12.138112+00:00",
+    "updated_at": "2026-09-03T16:44:15.443507+00:00",
     "retired_at": null
   }
 }

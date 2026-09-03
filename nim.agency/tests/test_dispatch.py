@@ -111,8 +111,15 @@ class TestCyclePipeline(DatastoreCase):
         self.assertEqual(mission.tasks[0].role, "Lead")
 
     def test_briefing_discloses_project_and_posture(self):
-        rendered = render_briefing(build_briefing(
-            self._mission(), ds=self.ds, report_path=self.tmp / "r.md"))
+        from lib.config import get_config
+        cfg = get_config()
+        original = cfg["dispatch"].get("modality", "readonly")
+        cfg["dispatch"]["modality"] = "readonly"
+        try:
+            rendered = render_briefing(build_briefing(
+                self._mission(), ds=self.ds, report_path=self.tmp / "r.md"))
+        finally:
+            cfg["dispatch"]["modality"] = original
         self.assertIn("PROJECT:   pipeline  cycle 1", rendered)
         self.assertIn("MODALITY:  readonly", rendered)
         self.assertIn("OPERATOR:  ", rendered)
@@ -139,11 +146,18 @@ class TestCyclePipeline(DatastoreCase):
             self.assertEqual(row["status_id"], ENGAGEMENT_SMOKED)
 
     def test_modality_backstop_refuses_write(self):
+        from lib.config import get_config
+        cfg = get_config()
+        original = cfg["dispatch"].get("modality", "readonly")
+        cfg["dispatch"]["modality"] = "readonly"
         mission = Mission(title="write attempt",
                           constraints=MissionConstraints(read_only=False))
         events = []
-        result = self._dispatcher().execute_sync(mission,
-                                                 on_event=events.append)
+        try:
+            result = self._dispatcher().execute_sync(mission,
+                                                     on_event=events.append)
+        finally:
+            cfg["dispatch"]["modality"] = original
         self.assertEqual(result.status, MissionStatus.FAILED)
         self.assertTrue(any("modality" in e.message for e in events
                             if e.event_type == "error"))

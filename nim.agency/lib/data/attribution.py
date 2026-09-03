@@ -64,9 +64,9 @@ def spawn_context() -> dict:
         tty = None
     hostname = socket.gethostname()
     fqdn = socket.getfqdn()
-    # getfqdn() can return loopback reverse-DNS artifacts; the plain
-    # hostname is more honest than 1.0.0.127.in-addr.arpa
-    if (not fqdn or fqdn.endswith(".in-addr.arpa")
+    # getfqdn() can return loopback reverse-DNS artifacts (in-addr.arpa,
+    # ip6.arpa); the plain hostname is more honest
+    if (not fqdn or fqdn.endswith(".arpa")
             or fqdn.startswith("localhost")):
         fqdn = hostname
     return {
@@ -107,12 +107,20 @@ def agent_emoji(agent: dict, ds=None) -> str:
 
 
 def git_author(agent: dict) -> str:
-    """Scenario 1 (simple): git author/committer string.
+    """Scenario 1 (simple): the display author string.
 
     identity.name already carries the honorific ("Dr. Julia Pembroke").
+    For an actual `git commit --author`, use git_author_address() - git
+    wants a parseable email; the display form lives in the trailers.
     """
     ident = agent["identity"]
     return f"Biomimetic {ident['name']} <@{ident['codename']}>"
+
+
+def git_author_address(agent: dict) -> str:
+    """Scenario 1: parse-safe form for `git commit --author`."""
+    ident = agent["identity"]
+    return f"Biomimetic {ident['name']} <{ident['codename']}@nim.agency>"
 
 
 def git_trailers(agent: dict, mission=None, ctx: Optional[dict] = None) -> list[str]:

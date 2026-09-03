@@ -1,0 +1,69 @@
+{
+  "slug": "ops-log-rename",
+  "title": "Rename the remote ops_log twin",
+  "description": "Write experiment: first write-capable cycle. Mechanical rename of lib/remote/ops_log.py (HQ remote-ops messaging) to hq_log.py to break the twin-filename collision with lib/dispatch/ops_log.py.",
+  "status_id": 6,
+  "priority": 2,
+  "crue_id": null,
+  "engagements": [
+    {
+      "agent_id": "f4f8e638-7522-4efa-a476-5269c2675250",
+      "role": "specialist",
+      "responsibilities": [
+        "Rename lib/remote/ops_log.py to lib/remote/hq_log.py (content otherwise unchanged) and update the import in lib/remote/__init__.py",
+        "Update the two MANIFEST.md mentions: the Remote ops component row module list, and the KNOWN GAPS twin-filename rename-candidate line (mark it resolved)",
+        "Run python3 -m unittest discover -s tests and confirm green; do NOT run any git commands; touch nothing outside these files; finish your report with a list of every file you changed"
+      ],
+      "status_id": 8,
+      "assigned_at": "2026-09-03T16:45:31.737285+00:00",
+      "released_at": "2026-09-03T16:49:34.446301+00:00"
+    }
+  ],
+  "host_binding": {
+    "substation_id": null,
+    "worktrees": [
+      {
+        "path": "/Users/bradley/Developer/nim/nim.agency",
+        "writable": true,
+        "primary": true
+      }
+    ],
+    "required_permissions": [
+      "read",
+      "write"
+    ]
+  },
+  "objectives": [
+    {
+      "id": 1,
+      "text": "lib/remote/ops_log.py renamed to hq_log.py with all references updated and the test suite green",
+      "done": false,
+      "acceptance": "python3 -m unittest discover -s tests passes; no references to lib/remote/ops_log remain"
+    }
+  ],
+  "specifications": [],
+  "directives": [],
+  "artifacts": [],
+  "policy": {
+    "max_cycles": null,
+    "read_only": false,
+    "max_concurrent_engagements": 1
+  },
+  "journal": [
+    {
+      "cycle": 1,
+      "mission_id": "8f7873db",
+      "at": "2026-09-03T16:47:50.661012+00:00",
+      "status": "complete",
+      "note": "1/1 tasks complete"
+    }
+  ],
+  "owl_id": null,
+  "created_by": "operator",
+  "id": "96fe25bc-f842-4a43-9685-20b203367562",
+  "audit": {
+    "created_at": "2026-09-03T16:45:31.481956+00:00",
+    "updated_at": "2026-09-03T16:49:34.446339+00:00",
+    "retired_at": null
+  }
+}

@@ -28,7 +28,7 @@ class TestSpawnContext(unittest.TestCase):
         for key in ("operator", "host", "fqdn", "cwd", "captured_at"):
             self.assertTrue(ctx.get(key), key)
         self.assertIn("uid", ctx)
-        self.assertNotIn(".in-addr.arpa", ctx["fqdn"])
+        self.assertFalse(ctx["fqdn"].endswith(".arpa"))
         self.assertEqual(dispatched_by_line(ctx),
                          f"{ctx['operator']}@{ctx['fqdn']}")
 
