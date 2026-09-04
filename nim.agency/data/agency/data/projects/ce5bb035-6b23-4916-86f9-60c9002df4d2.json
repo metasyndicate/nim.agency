@@ -55,7 +55,7 @@
     {
       "id": 3,
       "text": "Split the tui/builder.py monolith (~4900 lines)",
-      "done": false
+      "done": true
     },
     {
       "id": 4,
@@ -85,7 +85,7 @@
     {
       "id": 9,
       "text": "Rename one of the twin ops_log.py modules (dispatch lifecycle vs HQ remote-ops)",
-      "done": false
+      "done": true
     },
     {
       "id": 10,
@@ -144,7 +144,7 @@
   "id": "ce5bb035-6b23-4916-86f9-60c9002df4d2",
   "audit": {
     "created_at": "2026-09-01T01:46:08.079433+00:00",
-    "updated_at": "2026-09-03T16:44:15.443507+00:00",
+    "updated_at": "2026-09-04T04:24:24.509167+00:00",
     "retired_at": null
   }
 }
