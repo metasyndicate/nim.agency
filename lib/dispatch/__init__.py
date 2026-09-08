@@ -28,7 +28,24 @@ from .provider import (
     Provider,
     ProviderConfig,
     ClaudeCliProvider,
+    HttpProvider,
+    OllamaProvider,
+    OpenAICompatProvider,
     get_provider,
+)
+
+from .syndicate import (
+    SyndicateError,
+    address_of,
+    capability_index,
+    capability_violation,
+    channel_capabilities,
+    endpoint_descriptor,
+    load_syndicates,
+    required_capabilities,
+    resolve,
+    transport_of,
+    validate_channel,
 )
 
 from .builder import (
@@ -71,7 +88,22 @@ __all__ = [
     "Provider",
     "ProviderConfig",
     "ClaudeCliProvider",
+    "HttpProvider",
+    "OllamaProvider",
+    "OpenAICompatProvider",
     "get_provider",
+    # Syndicate inventory
+    "SyndicateError",
+    "address_of",
+    "capability_index",
+    "capability_violation",
+    "channel_capabilities",
+    "endpoint_descriptor",
+    "load_syndicates",
+    "required_capabilities",
+    "resolve",
+    "transport_of",
+    "validate_channel",
     # Builder
     "MissionBuilder",
     "adhoc_task_mission",

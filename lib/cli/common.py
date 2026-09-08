@@ -12,9 +12,26 @@ from ..config import get_config, report_dir
 from ..data import DataStore, match_agents, draft_hire
 from ..data.project import availability_map
 from ..dispatch import (
-    DispatchEvent, Mission,
+    DispatchEvent, Mission, SyndicateError, get_provider,
     adhoc_task_mission, codebase_analysis_mission, security_audit_mission,
 )
+
+
+def resolve_provider(ds: DataStore, args):
+    """Resolve --provider (or the configured default) through the syndicate
+    inventory. Returns None after printing why, so callers exit 1."""
+    address = getattr(args, "provider", None)
+    try:
+        provider = get_provider(address, ds=ds)
+    except SyndicateError as exc:
+        print(f"\033[91mERROR: {exc}\033[0m", file=sys.stderr)
+        return None
+
+    if not provider.is_available():
+        print(f"\033[91mERROR: {provider.unavailable_reason}\033[0m",
+              file=sys.stderr)
+        return None
+    return provider
 
 
 def find_agents_by_codenames(ds: DataStore, codenames: list[str]) -> tuple[list[dict], list[str]]:
@@ -175,6 +192,14 @@ def build_mission_from_args(args, crew: list[dict]) -> Mission:
 
     if args.timeout:
         mission.constraints.timeout_seconds = args.timeout
+
+    if getattr(args, "text_only", False):
+        # An honest declaration, not a shortcut: with no tools the crew
+        # answers from the prompt alone. The capability gate uses this to
+        # let text-only syndicates serve the mission.
+        mission.constraints.allowed_tools = []
+        mission.constraints.blocked_commands = []
+
     return mission
 
 

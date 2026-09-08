@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/channel_capability.schema.json",
+  "title": "Channel Capability",
+  "description": "A functional feature a syndicate channel either grants or withholds. Missions derive required capabilities from their constraints; dispatch refuses a channel that cannot serve them.",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400034,
+    "created": "2026-09-08T00:00:00Z",
+    "modified": "2026-09-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "channel_capability",
+      "type": "schema",
+      "path": "L2.agency.reference.channel_capability"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "requires": {
+      "type": "array",
+      "description": "Capability slugs this one functionally depends on. A channel declaring this capability without its dependencies is an inconsistent declaration and is refused at validation.",
+      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+    },
+    "category": {
+      "type": "string",
+      "enum": ["generation", "harness", "modality", "protocol"],
+      "description": "generation: what the model emits. harness: what the surrounding runtime can reach. modality: input/output kinds. protocol: wire-level features.",
+      "default": "generation"
+    },
+    "harness_tools": {
+      "type": "array",
+      "description": "Mission tool names that imply this capability. A mission whose allowed_tools contains any of these requires the capability, which is how MissionConstraints derive their requirement set without a hardcoded map.",
+      "items": { "type": "string", "maxLength": 64 }
+    },
+    "hazard": {
+      "type": "string",
+      "enum": ["none", "disclosure", "mutation", "escalation"],
+      "default": "none",
+      "description": "What granting this capability puts at risk - drives briefing emphasis, not refusal"
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label"]
+}

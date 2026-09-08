@@ -1,0 +1,64 @@
+{
+  "id": "22810c4a-a5f3-483e-8daa-5bb746ffb548",
+  "slug": "mux_nova",
+  "identity": {
+    "label": "MUX-NOVA (Bonsai Dojo)",
+    "description": "Auxiliary Ollama host on the nim-substation-bonsai workstation, reachable over Tailscale. Owned hardware sitting idle most of the day - the low-cost dispatch target for text-only work. No tool harness: it generates, it does not act.",
+    "vendor": "self",
+    "tags": [
+      "auxiliary",
+      "amortized",
+      "tailnet",
+      "dojo"
+    ]
+  },
+  "transport_slug": "ollama_native",
+  "endpoint": {
+    "base_uri": "https://mux-nova.tailef068f.ts.net",
+    "credential_id": null,
+    "substation_id": null,
+    "egress": "private",
+    "verify_tls": true
+  },
+  "channels": [
+    {
+      "slug": "qwen3_coder",
+      "label": "Qwen3 Coder 30B",
+      "model": "qwen3-coder:30b",
+      "default": true,
+      "capabilities": [
+        "text_generation",
+        "system_prompt",
+        "structured_output"
+      ],
+      "limits": {
+        "context_window": 262144,
+        "max_concurrent": 1,
+        "timeout_seconds": 600
+      },
+      "parameters": {
+        "temperature": 0.2
+      },
+      "cost": {
+        "class": "amortized",
+        "currency": "USD"
+      },
+      "notes": "30.5B MoE, Q4_K_M. Measured ~64 tok/s eval warm; first call after idle pays a model-load penalty of roughly 10s. max_concurrent is 1 deliberately - one workstation GPU is not a fleet, and parallel requests queue behind each other anyway."
+    }
+  ],
+  "status": {
+    "state": "online",
+    "last_check": "2026-09-08T09:04:33.780234+00:00",
+    "error_message": "",
+    "latency_ms": 271.5,
+    "models_reported": [
+      "qwen3-coder:30b"
+    ]
+  },
+  "enabled": true,
+  "audit": {
+    "created_at": "2026-09-08T00:00:00+00:00",
+    "updated_at": "2026-09-08T09:04:33.780844+00:00",
+    "retired_at": null
+  }
+}

@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/syndicate.schema.json",
+  "title": "Syndicate",
+  "description": "A model provider in the agency inventory: one endpoint, one transport, and one or more dispatchable channels. Substations host syndicates; syndicates serve channels; channels grade out to capabilities.",
+  "@type": ["schema:Organization", "fipa:AgentPlatform", "prov:Agent"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400113,
+    "created": "2026-09-08T00:00:00Z",
+    "modified": "2026-09-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "syndicate",
+      "type": "schema",
+      "path": "L3.agency.core.syndicate"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "description": "Unique syndicate identifier"
+    },
+    "slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Dispatch address. `dispatch.provider` in etc/agency.json names this; `slug:channel_slug` addresses one channel directly."
+    },
+    "identity": {
+      "type": "object",
+      "description": "Syndicate identity and provenance",
+      "properties": {
+        "label": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Human-readable display name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "What this syndicate is and why it is in the inventory"
+        },
+        "vendor": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Organization behind the models (anthropic, ollama, openai, self)"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 32 }
+        }
+      },
+      "required": ["label"]
+    },
+    "transport_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Reference into the transport table - selects the provider handler and the capability ceiling"
+    },
+    "endpoint": {
+      "type": "object",
+      "description": "Where the syndicate answers. HTTP transports need base_uri; subprocess transports need command.",
+      "properties": {
+        "base_uri": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Scheme://host[:port] with no trailing path - the transport's default_path is appended",
+          "examples": ["https://mux-nova.tailef068f.ts.net", "http://localhost:11434"]
+        },
+        "path": {
+          "type": "string",
+          "description": "Overrides the transport's default_path when a deployment differs"
+        },
+        "command": {
+          "type": "string",
+          "description": "Executable name for subprocess transports",
+          "examples": ["claude"]
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Fixed arguments for subprocess transports"
+        },
+        "credential_id": {
+          "oneOf": [
+            { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+            { "type": "null" }
+          ],
+          "description": "Vault credential holding the bearer token or API key. Null when auth_mode is none or inherited - secrets never live in this record."
+        },
+        "substation_id": {
+          "oneOf": [
+            { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+            { "type": "null" }
+          ],
+          "description": "The substation hosting this syndicate, when the host is also under agency inventory"
+        },
+        "egress": {
+          "type": "string",
+          "enum": ["local", "private", "public"],
+          "default": "public",
+          "description": "Where prompt content travels. local: this host only. private: operator-controlled network (tailnet/LAN). public: a third party's infrastructure. Disclosed in every briefing; gated by dispatch.egress_policy."
+        },
+        "verify_tls": {
+          "type": "boolean",
+          "default": true,
+          "description": "Verify TLS certificates on HTTP transports"
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "description": "Dispatchable model channels served by this syndicate. A substation may host one syndicate serving many channels.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+            "description": "Channel address within the syndicate"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Model identifier as the endpoint expects it",
+            "examples": ["qwen3-coder:30b", "claude-sonnet-4-5"]
+          },
+          "default": {
+            "type": "boolean",
+            "default": false,
+            "description": "Channel used when the syndicate is addressed without one"
+          },
+          "capabilities": {
+            "type": "array",
+            "description": "Capability slugs this channel grants. Must be dependency-closed and within the transport ceiling.",
+            "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "context_window": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Usable input tokens"
+              },
+              "max_output_tokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "max_concurrent": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 1,
+                "description": "Parallel requests this channel tolerates. A workstation serving a 30B model is not a fleet - the dispatcher clamps mission concurrency to this."
+              },
+              "timeout_seconds": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Per-task ceiling; overrides the mission timeout when lower"
+              }
+            }
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Inference parameters passed through to the endpoint",
+            "properties": {
+              "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+              "top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+              "seed": { "type": "integer" }
+            }
+          },
+          "cost": {
+            "type": "object",
+            "description": "Dispatch economics - what routing here actually costs the operator",
+            "properties": {
+              "class": {
+                "type": "string",
+                "enum": ["free", "amortized", "metered"],
+                "default": "metered",
+                "description": "free: no marginal cost. amortized: owned hardware, cost is electricity. metered: billed per token."
+              },
+              "currency": { "type": "string", "maxLength": 8, "default": "USD" },
+              "input_per_mtok": { "type": "number", "minimum": 0 },
+              "output_per_mtok": { "type": "number", "minimum": 0 }
+            }
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Operator notes - suitability, quirks, observed behavior"
+          }
+        },
+        "required": ["slug", "model"]
+      }
+    },
+    "status": {
+      "type": "object",
+      "description": "Reachability state, refreshed by `nim.agency syndicate probe`",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["unknown", "online", "offline", "unreachable", "error"],
+          "default": "unknown"
+        },
+        "last_check": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "latency_ms": { "type": "number", "minimum": 0 },
+        "error_message": { "type": "string" },
+        "models_reported": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Models the endpoint advertised at last probe - drift from `channels` means the inventory is stale"
+        }
+      }
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Operator kill switch - a disabled syndicate is refused at the briefing"
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "slug", "identity", "transport_slug", "channels", "audit"]
+}

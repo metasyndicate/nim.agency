@@ -20,13 +20,35 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from ..config import CONFIG_PATH, get_config, log_dir, modality
+from ..config import CONFIG_PATH, egress_policy, get_config, log_dir, modality
 from ..data import DataStore, get_datastore
 from ..data.attribution import dispatched_by_line, spawn_context
 from ..data.composer import AgentComposer, get_composer
 
 from .mission import Mission, MissionConstraints
-from .provider import ClaudeCliProvider
+from .provider import Provider, get_provider
+from .syndicate import (
+    SyndicateError, capability_violation, channel_capabilities,
+    required_capabilities,
+)
+
+
+def _permission_mode(provider, syndicate: Optional[dict],
+                     channel: Optional[dict]) -> str:
+    """How constraints are actually enforced on this transport.
+
+    Honest reporting: a harness transport backs the constraint block with a
+    sandbox, a text-only endpoint has no tools to constrain at all. Saying
+    "enforced" for both would be a lie of uniformity.
+    """
+    if not syndicate or not channel:
+        return "(provider supplied directly - no inventory record)"
+
+    if "tool_use" in (channel.get("capabilities") or []):
+        return ("unattended; the harness owns tool permissions and enforces "
+                "the constraint block")
+    return ("text-only channel: no tools, no filesystem - constraints are "
+            "context for the model, not enforcement")
 
 
 def mission_scope(constraints: MissionConstraints) -> str:
@@ -45,12 +67,19 @@ class Briefing:
     agents: dict[str, Optional[dict]]        # agent_id -> entity (None if missing)
     report_path: Path
     provider_name: str
-    provider_binary: Optional[str]
+    provider_binary: Optional[str]           # endpoint descriptor (any transport)
     permission_mode: str
     max_concurrent: int
     prompt_sources: dict[str, list[str]] = field(default_factory=dict)
     system_prompts: dict[str, str] = field(default_factory=dict)
     project_label: Optional[str] = None      # "slug  cycle N" when tagged
+    # Syndicate disclosure - where the work goes and what it may do there
+    syndicate_label: Optional[str] = None
+    egress: Optional[str] = None
+    cost_class: Optional[str] = None
+    granted: set = field(default_factory=set)
+    required: set = field(default_factory=set)
+    capability_refusal: Optional[str] = None
 
 
 def build_briefing(
@@ -58,7 +87,7 @@ def build_briefing(
     ds: Optional[DataStore] = None,
     report_path: Optional[Path] = None,
     composer: Optional[AgentComposer] = None,
-    provider: Optional[ClaudeCliProvider] = None,
+    provider: Optional[Provider] = None,
     verbosity: int = 0,
 ) -> Briefing:
     """Assemble a Briefing for a mission (built or loaded)."""
@@ -73,20 +102,51 @@ def build_briefing(
         agent_id: ds.read("agent", agent_id) for agent_id in mission.crew_ids
     }
 
-    provider = provider or ClaudeCliProvider()
+    # A preview (`mission plan`, `mission show`) must render even when the
+    # inventory cannot answer - the unresolvable address is itself the
+    # disclosure, not a traceback.
+    resolution_error = None
+    if provider is None:
+        try:
+            provider = get_provider(getattr(mission, "provider_address", None),
+                                    ds=ds)
+        except SyndicateError as exc:
+            resolution_error = str(exc)
+
+    syndicate = getattr(provider, "syndicate", None)
+    channel = getattr(provider, "channel", None)
+
+    max_concurrent = cfg["max_concurrent"]
+    channel_limit = getattr(getattr(provider, "config", None),
+                            "max_concurrent", 0)
+    if channel_limit:
+        max_concurrent = min(max_concurrent, channel_limit)
 
     briefing = Briefing(
         mission=mission,
         agents=agents,
         report_path=report_path,
-        provider_name=cfg["provider"],
-        provider_binary=provider.binary_path,
-        permission_mode=(
-            "claude --print --dangerously-skip-permissions "
-            "(unattended; constraints enforced via prompt injection)"
-        ),
-        max_concurrent=cfg["max_concurrent"],
+        provider_name=getattr(getattr(provider, "config", None), "name",
+                              cfg["provider"]),
+        provider_binary=getattr(provider, "descriptor", None)
+        or "(unresolved)",
+        permission_mode=_permission_mode(provider, syndicate, channel),
+        max_concurrent=max_concurrent,
     )
+
+    if resolution_error:
+        briefing.capability_refusal = resolution_error
+        briefing.required = required_capabilities(mission.constraints, ds)
+    elif syndicate and channel:
+        briefing.syndicate_label = (syndicate.get("identity") or {}).get(
+            "label", syndicate.get("slug", "?"))
+        briefing.egress = (syndicate.get("endpoint") or {}).get(
+            "egress", "public")
+        briefing.cost_class = (channel.get("cost") or {}).get("class")
+        briefing.granted = channel_capabilities(channel, ds)
+        briefing.required = required_capabilities(mission.constraints, ds)
+        briefing.capability_refusal = capability_violation(
+            mission.constraints, syndicate, channel, ds)
 
     if getattr(mission, "project_id", None):
         project = ds.read("project", mission.project_id)
@@ -159,10 +219,44 @@ def render_briefing(briefing: Briefing, verbosity: int = 0) -> str:
 
     lines.extend([
         "",
-        "PROVIDER:",
-        f"  name:        {briefing.provider_name}",
-        f"  binary:      {briefing.provider_binary or '(not found)'}",
+        "SYNDICATE:",
+        f"  channel:     {briefing.provider_name}"
+        + (f"  ({briefing.syndicate_label})" if briefing.syndicate_label else ""),
+        f"  endpoint:    {briefing.provider_binary or '(not found)'}",
         f"  permissions: {briefing.permission_mode}",
+    ])
+
+    if briefing.egress:
+        egress_note = {
+            "local": "prompts stay on this host",
+            "private": "prompts leave this host for an operator-controlled network",
+            "public": "prompts leave this host for a third party",
+        }.get(briefing.egress, "")
+        lines.append(f"  egress:      {briefing.egress}  ({egress_note}; "
+                     f"policy: {egress_policy()})")
+    if briefing.cost_class:
+        cost_note = {
+            "free": "no marginal cost",
+            "amortized": "owned hardware - cost is electricity",
+            "metered": "billed per token",
+        }.get(briefing.cost_class, "")
+        lines.append(f"  cost:        {briefing.cost_class}  ({cost_note})")
+
+    if briefing.required:
+        served = briefing.required & briefing.granted
+        missing = briefing.required - briefing.granted
+        lines.append(f"  capability:  requires {', '.join(sorted(briefing.required))}")
+        lines.append(f"               channel serves {', '.join(sorted(served)) or 'none of it'}")
+        if missing:
+            lines.append(f"               \033[91mMISSING {', '.join(sorted(missing))}\033[0m")
+
+    if briefing.capability_refusal:
+        lines.extend([
+            "",
+            f"\033[91mREFUSED: {briefing.capability_refusal}\033[0m",
+        ])
+
+    lines.extend([
         "",
         "LIMITS:",
         f"  timeout:        {c.timeout_seconds}s per task",

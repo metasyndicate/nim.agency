@@ -1,0 +1,55 @@
+{
+  "$schema": "../schema/reference/transport.schema.json",
+  "$comment": "Wire protocols the dispatcher can speak. `handler` names the Provider subclass in lib/dispatch/provider.py - the registry resolves it from this table, so adding a transport is a data edit plus one class. `capability_ceiling` is the physical limit of the protocol: a raw completion endpoint cannot read a disk regardless of what an operator types into the channel record.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "claude_cli",
+      "label": "Claude CLI",
+      "description": "Local `claude --print` subprocess. Full agentic harness: the CLI owns tool execution, filesystem access, and its own permission sandbox. Prompts leave the host for Anthropic.",
+      "kind": "subprocess",
+      "handler": "ClaudeCliProvider",
+      "auth_mode": "inherited",
+      "capability_ceiling": [
+        "text_generation", "system_prompt", "tool_use", "filesystem_read",
+        "filesystem_write", "shell_exec", "network_egress",
+        "structured_output", "streaming", "vision", "session_persistence",
+        "subagent_spawn"
+      ],
+      "icon": "🅰️",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "ollama_native",
+      "label": "Ollama Native",
+      "description": "Ollama's own /api/generate. Single-shot prompt in, completion out, with a first-class system field. No harness: the response is text and nothing else runs.",
+      "kind": "http",
+      "handler": "OllamaProvider",
+      "default_path": "/api/generate",
+      "auth_mode": "none",
+      "capability_ceiling": [
+        "text_generation", "system_prompt", "structured_output",
+        "streaming", "vision"
+      ],
+      "icon": "🦙",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "openai_compat",
+      "label": "OpenAI-Compatible Chat",
+      "description": "The /v1/chat/completions lingua franca - Ollama, vLLM, llama.cpp, LM Studio, OpenRouter, and the commercial APIs all answer here. Tool-call emission is in the protocol, but execution belongs to whatever harness wraps it.",
+      "kind": "http",
+      "handler": "OpenAICompatProvider",
+      "default_path": "/v1/chat/completions",
+      "auth_mode": "bearer",
+      "capability_ceiling": [
+        "text_generation", "system_prompt", "tool_use", "structured_output",
+        "streaming", "vision"
+      ],
+      "icon": "🔌",
+      "sort_order": 3
+    }
+  ]
+}

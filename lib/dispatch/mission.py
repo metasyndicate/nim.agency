@@ -147,6 +147,11 @@ class Mission:
     # piggybacks on, captured at dispatch (lib.data.attribution)
     dispatched_by: Optional[dict] = None
 
+    # Syndicate channel this mission was routed to ("syndicate:channel"),
+    # stamped at dispatch. A saved mission reports where its work actually
+    # ran, not merely where the current config would send it.
+    provider_address: Optional[str] = None
+
     # Results
     final_report: Optional[str] = None
 
@@ -188,6 +193,7 @@ class Mission:
             "project_id": self.project_id,
             "cycle": self.cycle,
             "dispatched_by": self.dispatched_by,
+            "provider_address": self.provider_address,
             "final_report": self.final_report
         }
 
@@ -220,6 +226,7 @@ class Mission:
         mission.project_id = data.get("project_id")
         mission.cycle = data.get("cycle")
         mission.dispatched_by = data.get("dispatched_by")
+        mission.provider_address = data.get("provider_address")
 
         # Load constraints
         c = data.get("constraints", {})

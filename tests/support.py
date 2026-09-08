@@ -26,6 +26,11 @@ class DatastoreCase(unittest.TestCase):
         cls.tmp = Path(tempfile.mkdtemp(prefix="nim-tests-"))
         shutil.copytree(REPO / "data/agency/data/reference",
                         cls.tmp / "reference")
+        # The syndicate inventory travels with the reference data: the
+        # capability gate is only meaningful against real channel records.
+        syndicates = REPO / "data/agency/data/syndicates"
+        if syndicates.exists():
+            shutil.copytree(syndicates, cls.tmp / "syndicates")
         cls.ds = DataStore(base_path=str(cls.tmp))
 
     @classmethod

@@ -105,7 +105,7 @@ class DispatchLogEntry:
     previous_state: str = ""
 
     # Where
-    provider: str = "claude-cli"
+    provider: str = ""
     target_host: str = "localhost"
     working_dir: str = ""
 
@@ -434,7 +434,7 @@ class DispatchLogger:
         role: str,
         task_index: int = 0,
         tasks_total: int = 0,
-        provider: str = "claude-cli",
+        provider: str = "",
         **metadata
     ) -> DispatchLogEntry:
         """Log task dispatch to agent."""

@@ -1,0 +1,50 @@
+{
+  "id": "5220aca1-aeff-4357-be7f-227971e273da",
+  "slug": "claude_cli",
+  "identity": {
+    "label": "Claude CLI",
+    "description": "The local claude binary running as an unattended subprocess. Full agentic harness - the CLI owns tool execution and its own permission sandbox - which is why it is the only syndicate that can serve filesystem missions.",
+    "vendor": "anthropic",
+    "tags": ["default", "harness", "metered"]
+  },
+  "transport_slug": "claude_cli",
+  "endpoint": {
+    "command": "claude",
+    "args": ["--print", "--dangerously-skip-permissions"],
+    "credential_id": null,
+    "substation_id": null,
+    "egress": "public"
+  },
+  "channels": [
+    {
+      "slug": "default",
+      "label": "CLI Default Model",
+      "model": "",
+      "default": true,
+      "capabilities": [
+        "text_generation", "system_prompt", "tool_use", "filesystem_read",
+        "filesystem_write", "shell_exec", "network_egress",
+        "structured_output", "session_persistence", "subagent_spawn"
+      ],
+      "limits": {
+        "max_concurrent": 4,
+        "timeout_seconds": 600
+      },
+      "parameters": {},
+      "cost": {
+        "class": "metered",
+        "currency": "USD"
+      },
+      "notes": "Model selection is delegated to the operator's claude CLI configuration; the agency does not pin it. Sustained autonomous cycles here are the expensive path - route text-only work to an amortized syndicate."
+    }
+  ],
+  "status": {
+    "state": "unknown"
+  },
+  "enabled": true,
+  "audit": {
+    "created_at": "2026-09-08T00:00:00+00:00",
+    "updated_at": "2026-09-08T00:00:00+00:00",
+    "retired_at": null
+  }
+}

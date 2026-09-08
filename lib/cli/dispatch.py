@@ -10,21 +10,20 @@ import asyncio
 from ..config import get_config, modality_violation
 from ..data import get_datastore
 from ..dispatch import (
-    Dispatcher, build_briefing, render_briefing, get_provider,
+    Dispatcher, build_briefing, render_briefing,
 )
 
 from .common import (
     apply_preset, build_mission_from_args, confirm_dispatch, print_event,
-    resolve_crew, resolve_report_path, save_report,
+    resolve_crew, resolve_provider, resolve_report_path, save_report,
 )
 
 
 def cmd_dispatch(args) -> int:
     ds = get_datastore()
 
-    provider = get_provider("claude-cli")
-    if not provider.is_available():
-        print("\033[91mERROR: claude CLI not found. Install it first.\033[0m")
+    provider = resolve_provider(ds, args)
+    if provider is None:
         return 1
 
     apply_preset(ds, args)
@@ -46,6 +45,12 @@ def cmd_dispatch(args) -> int:
         provider=provider, verbosity=args.verbose,
     )
     print(render_briefing(briefing, verbosity=args.verbose))
+
+    # Fail the briefing, not the mission: a channel that cannot serve these
+    # requirements would answer from imagination rather than refuse.
+    if briefing.capability_refusal:
+        print(f"\033[91mERROR: {briefing.capability_refusal}\033[0m")
+        return 1
 
     if not confirm_dispatch(args.yes):
         return 2

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/transport.schema.json",
+  "title": "Transport",
+  "description": "How the agency speaks to a syndicate: the wire protocol, its default path and auth mode, and the ceiling of capabilities that protocol can physically support.",
+  "@type": "skos:ConceptScheme",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400035,
+    "created": "2026-09-08T00:00:00Z",
+    "modified": "2026-09-08T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "transport",
+      "type": "schema",
+      "path": "L2.agency.reference.transport"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["subprocess", "http"],
+      "description": "Dispatch mechanism: a local process invocation, or an HTTP request"
+    },
+    "handler": {
+      "type": "string",
+      "description": "Provider class in lib/dispatch/provider.py that implements this transport",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "default_path": {
+      "type": "string",
+      "description": "URI path appended to a syndicate's base_uri (http transports only)"
+    },
+    "auth_mode": {
+      "type": "string",
+      "enum": ["none", "bearer", "api_key_header", "inherited"],
+      "default": "none",
+      "description": "inherited: the transport authenticates out-of-band (host session, tailnet identity, CLI login) and the agency holds no secret"
+    },
+    "capability_ceiling": {
+      "type": "array",
+      "description": "The most any channel on this transport may declare. A channel granting a capability outside its transport ceiling is refused at validation - the protocol simply cannot carry it.",
+      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label", "kind", "handler"]
+}

@@ -11,7 +11,10 @@ from pathlib import Path
 
 from lib.config import get_config as agency_config, report_dir
 from lib.data.roster import match_agents, draft_hire
-from lib.dispatch import Dispatcher, adhoc_task_mission, get_provider
+from lib.dispatch import (
+    Dispatcher, SyndicateError, adhoc_task_mission, capability_violation,
+    get_provider,
+)
 from tui.chrome import Colors
 from tui.textkit import clip, display_width, pad
 
@@ -183,9 +186,14 @@ class DispatchMixin:
         except ValueError:
             count = 1
 
-        provider = get_provider("claude-cli")
+        try:
+            provider = get_provider()
+        except SyndicateError as exc:
+            self.message = str(exc)
+            self.message_color = Colors.HEALTH
+            return
         if not provider.is_available():
-            self.message = "claude CLI not found - install it first"
+            self.message = provider.unavailable_reason
             self.message_color = Colors.HEALTH
             return
 
@@ -229,6 +237,19 @@ class DispatchMixin:
                 and self.dispatch_preset.get("prompt", "").strip() == task):
             title = f"Preset: {self.dispatch_preset['label']}"
         mission = adhoc_task_mission(crew, str(target), task, title=title)
+
+        # Fail the briefing, not the mission: a channel without a harness
+        # cannot serve a filesystem task, and would invent one instead.
+        syndicate = getattr(provider, "syndicate", None)
+        channel = getattr(provider, "channel", None)
+        if syndicate and channel:
+            refusal = capability_violation(
+                mission.constraints, syndicate, channel, self.ds)
+            if refusal:
+                self.message = refusal
+                self.message_color = Colors.HEALTH
+                return
+
         self.dispatch_brief = {
             "mission": mission,
             "crew": crew,
@@ -247,7 +268,7 @@ class DispatchMixin:
 
         mission = brief["mission"]
         box_width = min(76, width - 4)
-        box_height = min(11 + len(brief["crew"]) + len(mission.tasks), height - 9)
+        box_height = min(12 + len(brief["crew"]) + len(mission.tasks), height - 9)
         box_y = 5
         box_x = (width - box_width) // 2
         self._draw_box(box_y, box_x, box_height, box_width,
@@ -269,8 +290,8 @@ class DispatchMixin:
         scope = "READ-ONLY" if mission.constraints.read_only else "READ/WRITE"
         scope += " | LOCAL" if mission.constraints.local_only else " | REMOTE OK"
         line("SCOPE", scope, Colors.GOLD)
-        line("PROVIDER", f"{brief['provider'].binary_path} "
-             f"(--print --dangerously-skip-permissions)", Colors.DIM)
+        line("SYNDICATE", brief["provider"].config.name, Colors.GOLD)
+        line("ENDPOINT", brief["provider"].descriptor, Colors.DIM)
         line("TIMEOUT", f"{mission.constraints.timeout_seconds}s per task")
         y += 1
 

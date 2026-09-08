@@ -24,12 +24,14 @@ from ..data.worklog import (
     log_queue_access, project_record_path, queue_banner, source_line,
 )
 from ..dispatch import (
-    Dispatcher, build_briefing, get_provider, project_cycle_mission,
+    Dispatcher, build_briefing, project_cycle_mission,
     render_briefing,
 )
 
 from .agent import _find_agent
-from .common import confirm_dispatch, print_event, save_report
+from .common import (
+    confirm_dispatch, print_event, resolve_provider, save_report,
+)
 
 
 def _find_project_or_die(ds, ref: str) -> dict:
@@ -418,10 +420,8 @@ def cmd_cycle(args) -> int:
               file=sys.stderr)
         return 1
 
-    provider = get_provider("claude-cli")
-    if not provider.is_available():
-        print("\033[91mERROR: claude CLI not found. Install it first.\033[0m",
-              file=sys.stderr)
+    provider = resolve_provider(ds, args)
+    if provider is None:
         return 1
 
     agents = {}
@@ -462,6 +462,12 @@ def cmd_cycle(args) -> int:
             mission, ds=ds, report_path=report_path,
             provider=provider, verbosity=args.verbose)
         print(render_briefing(briefing, verbosity=args.verbose))
+
+        # Fail the briefing, not the mission
+        if briefing.capability_refusal:
+            print(f"\033[91mERROR: cycle refused - "
+                  f"{briefing.capability_refusal}\033[0m", file=sys.stderr)
+            return 1 if ran == 0 else 0
 
         if not confirm_dispatch(args.yes):
             return 2 if ran == 0 else 0
@@ -655,6 +661,10 @@ def add_parser(subparsers):
                        help="Cycles to run back-to-back (default: 1)")
     cycle.add_argument("-y", "--yes", action="store_true",
                        help="Bypass the confirmation gate")
+    cycle.add_argument("--provider", type=str,
+                       help="Syndicate to dispatch to, as 'syndicate' or "
+                            "'syndicate:channel' (default: dispatch.provider "
+                            "in etc/agency.json)")
     cycle.add_argument("--force", action="store_true",
                        help="Cycle even if a previous cycle looks in-flight")
     cycle.add_argument("-v", "--verbose", action="count", default=0,

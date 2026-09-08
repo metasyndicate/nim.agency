@@ -178,8 +178,9 @@ Mission flags (shared by `dispatch` and `mission plan`):
 
 Anything that spawns agent work discloses everything first. `dispatch`
 renders the mission briefing — scope with READ/WRITE tags, crew, tasks,
-provider binary and permission mode, timeouts, concurrency, and output
-paths — then requires confirmation. `-y/--yes` bypasses the prompt
+the serving syndicate (endpoint, egress, cost class, capability
+arithmetic), timeouts, concurrency, and output paths — then requires
+confirmation. `-y/--yes` bypasses the prompt
 (required for non-interactive use; a non-TTY without `--yes` refuses with
 exit 2). Verbosity is escalating disclosure:
 
@@ -223,10 +224,11 @@ and treated as read-only at runtime. Override per-invocation with CLI flags
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `dispatch.provider` | `claude-cli` | LLM backend |
-| `dispatch.max_concurrent` | `2` | parallel task limit |
+| `dispatch.provider` | `claude_cli` | default syndicate address (`syndicate` or `syndicate:channel`), resolved through the inventory; `--provider` overrides per mission |
+| `dispatch.max_concurrent` | `2` | parallel task limit (clamped down by the channel's own `max_concurrent`) |
 | `dispatch.timeout_seconds` | `600` | per-task timeout |
 | `dispatch.modality` | `readonly` | global posture: readonly / supervised (local writes) / unrestricted (remote, phase D) |
+| `dispatch.egress_policy` | `public` | how far prompt content may travel: local / private (tailnet, LAN) / public (third-party APIs) |
 | `dispatch.report_dir` | `log` | mission report/JSON output dir (project-relative) |
 | `logging.dir` | `~/.nim/agency` | operator-local log directory |
 | `economy.xp_per_task` / `gold_per_task` | `25` / `10` | pay per completed task |
@@ -274,9 +276,44 @@ composed prompt on usage-policy grounds, the task fails with a
 (`conduct.violations`, per-provider counts) is incremented. Repeat offenders
 are flagged in `agent list` (VIOL column), `agent show`, and the mission
 briefing crew roster — so you know who keeps getting sent to HR. Note that the
-provider invokes `claude --print --dangerously-skip-permissions` for
-unattended runs — constraints are enforced via prompt injection, so point
+`claude_cli` syndicate invokes `claude --print --dangerously-skip-permissions`
+for unattended runs — constraints are enforced via prompt injection, so point
 missions only at targets you'd trust an intern with root... er, read access.
+
+### Syndicates: multiple model providers
+
+The **syndicate inventory** (`nim.agency syndicate list`) is the agency's
+model-provider registry: each entry is one endpoint speaking one transport
+and serving one or more **channels**. Channels declare **capabilities** —
+`tool_use`, `filesystem_read`, `shell_exec`, `vision`, and friends — and
+those declarations are load-bearing rather than decorative:
+
+- **Capabilities are dependency-closed.** `filesystem_write` requires
+  `filesystem_read` requires `tool_use`. A channel that grants a capability
+  without its dependencies is refused as inconsistently declared.
+- **Transports impose a ceiling.** A bare completion endpoint cannot read a
+  disk no matter what an operator types into the record, so
+  `ollama_native` refuses to carry `filesystem_read` at all.
+- **Missions derive their requirements.** `allowed_tools` maps to
+  capabilities through the `channel_capability` table, so adding `Bash` to
+  a mission automatically requires `shell_exec` of whatever serves it.
+- **The gate refuses at the briefing.** Routing a codebase analysis to a
+  text-only local model fails with an actionable message instead of
+  producing a confident, entirely imagined report. Declare genuinely
+  tool-free work with `--text-only`, and text-only channels are told
+  explicitly that they have no tools so they cannot narrate inspections
+  they never performed.
+
+Dispatch cheaply: `--provider mux_nova --text-only` routes to an owned
+workstation (`amortized` cost) instead of a metered API. Briefings always
+disclose the endpoint, egress, cost class, and the capability arithmetic.
+
+```bash
+nim.agency syndicate list                # inventory, channels, cost, egress
+nim.agency syndicate probe mux_nova      # reachability + advertised models
+nim.agency dispatch --provider mux_nova:qwen3_coder --text-only \
+  --task "Explain Lmod modulefiles" --crew some.codename -y
+```
 
 ## PROJECT STRUCTURE
 
@@ -284,9 +321,9 @@ missions only at targets you'd trust an intern with root... er, read access.
 bin/          canonical CLI entry point (nim.agency)
 tools/        auxiliary entry points (easme pipestream shim)
 etc/          source-controlled defaults (agency.json)
-lib/cli/      CLI command modules (dispatch, mission, project, agent, data)
+lib/cli/      CLI command modules (dispatch, mission, project, syndicate, agent, data)
 lib/data/     datastore, schema, agent generation & composition
-lib/dispatch/ missions, dispatcher, provider, briefing, logging
+lib/dispatch/ missions, dispatcher, syndicate inventory, providers, briefing, logging
 lib/remote/   ssh, vault, safety, audit
 data/agency/  JSON schemas + instance data
 lex/          lexicon/taxonomy CSVs

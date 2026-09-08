@@ -15,11 +15,12 @@ CONFIG_PATH = PROJECT_ROOT / "etc" / "agency.json"
 
 DEFAULTS = {
     "dispatch": {
-        "provider": "claude-cli",
+        "provider": "claude_cli",
         "max_concurrent": 2,
         "timeout_seconds": 600,
         "report_dir": "log",
         "modality": "readonly",
+        "egress_policy": "public",
     },
     "logging": {
         "dir": "~/.nim/agency",
@@ -70,6 +71,22 @@ def modality() -> str:
     """The agency's global dispatch posture (etc/agency.json)."""
     value = get_config()["dispatch"].get("modality", "readonly")
     return value if value in MODALITIES else "readonly"
+
+
+# How far prompt content may travel, least to most exposed. Independent of
+# MODALITIES: modality governs what a mission may DO, egress governs where
+# its prompts GO. A read-only local mission still ships its prompts (and
+# whatever the harness reads) to whichever syndicate serves it.
+#   local   - only syndicates on this host
+#   private - also operator-controlled networks (tailnet, LAN)
+#   public  - also third-party APIs (the default; claude_cli is public)
+EGRESS_POLICIES = ("local", "private", "public")
+
+
+def egress_policy() -> str:
+    """How far prompt content may travel (etc/agency.json)."""
+    value = get_config()["dispatch"].get("egress_policy", "public")
+    return value if value in EGRESS_POLICIES else "public"
 
 
 def modality_violation(read_only: bool, local_only: bool) -> Optional[str]:

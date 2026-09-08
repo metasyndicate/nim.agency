@@ -86,6 +86,8 @@ class DataStore:
         "project_status": {"type": "reference", "file": "project_status.json"},
         "role_title": {"type": "reference", "file": "role_title.json"},
         "task_preset": {"type": "reference", "file": "task_preset.json"},
+        "channel_capability": {"type": "reference", "file": "channel_capability.json"},
+        "transport": {"type": "reference", "file": "transport.json"},
         "config": {"type": "singleton", "file": "config.json"},
 
         # Entity data: stored in directories with individual files
@@ -93,6 +95,7 @@ class DataStore:
         "mission": {"type": "collection", "dir": "missions", "id_field": "id"},
         "group": {"type": "collection", "dir": "groups", "id_field": "id"},
         "project": {"type": "collection", "dir": "projects", "id_field": "id"},
+        "syndicate": {"type": "collection", "dir": "syndicates", "id_field": "id"},
         "transaction": {"type": "append", "file": "transactions/ledger.json"},
         "event": {"type": "append", "file": "events/log.json"},
         "peer_review": {"type": "append", "file": "reviews/reviews.json"},

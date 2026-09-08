@@ -12,7 +12,7 @@ import json
 
 from ..config import report_dir
 from ..data import get_datastore
-from ..dispatch import Mission, build_briefing, render_briefing, get_provider
+from ..dispatch import Mission, build_briefing, render_briefing
 
 from .common import (
     apply_preset, build_mission_from_args, mission_json_path,
@@ -26,6 +26,7 @@ def cmd_plan(args) -> int:
     apply_preset(ds, args)
     crew = resolve_crew(ds, args)
     mission = build_mission_from_args(args, crew)
+    mission.provider_address = getattr(args, "provider", None)
     report_path = resolve_report_path(args, mission)
 
     briefing = build_briefing(

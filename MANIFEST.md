@@ -12,9 +12,10 @@ nim.agency/
 │   └── agency.json source-controlled runtime defaults (read-only at runtime)
 ├── lib/
 │   ├── config.py   defaults loader (etc/agency.json)
-│   ├── cli/        CLI command modules (dispatch, mission, agent, data, tui)
+│   ├── cli/        CLI command modules (dispatch, mission, syndicate, agent, data, tui)
 │   ├── data/       datastore, schema, agent generation & composition
-│   ├── dispatch/   mission orchestration, provider, briefing, dispatch logging
+│   ├── dispatch/   mission orchestration, syndicate inventory, providers,
+│   │               briefing, dispatch logging
 │   └── remote/     SSH transport, credential vault, safety, audit logging
 ├── data/agency/
 │   ├── schema/     JSON Schema definitions (core, reference, meta)
@@ -36,6 +37,7 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 | `mission plan\|show\|list\|report` | `lib/cli/mission.py` | briefing preview, saved-mission inspection, reports | functional |
 | `project create\|list\|show\|edit\|assign\|release` | `lib/cli/project.py` | stateful scoped work units: crew engagements, host binding, objectives, directives | functional |
 | `project cycle\|pause\|resume\|complete` | `lib/cli/project.py` | briefing-gated cycle dispatch from project state; journal; per-project serialization; lifecycle verbs | functional (local host; remote awaits phase D) |
+| `syndicate list\|show\|probe` | `lib/cli/syndicate.py` | model provider inventory: transports, channels, capability grants, egress/cost disclosure; probe records reachability + advertised models and flags inventory drift | functional |
 | `easme agent` (pipe) | `tools/easme` | pipestream dispatch: stdin payload + `--hint`/`--preset`; clean stdout for pipelines; gate prompts on /dev/tty | functional |
 | `agent list\|show\|generate` | `lib/cli/agent.py` | roster operations | functional |
 | `agent credit\|train\|equip` | `lib/cli/agent.py` | economy: paymaster adjustments, dojo, depot | functional |
@@ -48,10 +50,17 @@ Shared mission flags (`dispatch`, `mission plan`):
 `--mission {codebase,security,task}`, `--task PROMPT`, `--preset SLUG`
 (one-action dispatch from the `task_preset` table; explicit flags win),
 `--target DIR`, `--crew a,b`, `--skill t1,t2`, `--count N`,
-`--timeout S`, `--output F`.
+`--timeout S`, `--output F`, `--provider SYNDICATE[:CHANNEL]`,
+`--text-only` (declares the task needs no tools, so text-only syndicates
+may serve it).
 Any command that spawns agent work renders the centralized mission briefing
 (`lib/dispatch/briefing.py`) first and requires confirmation (`-y` bypasses;
 non-TTY without `-y` refuses, exit 2).
+
+Dispatch is gated twice over: `modality_violation` (what a mission may DO)
+and `capability_violation` (what the target channel CAN do). A mission
+requiring filesystem or shell access is refused by a text-only channel at
+the briefing rather than answered from imagination.
 
 ## COMPONENTS
 
@@ -72,10 +81,11 @@ non-TTY without `-y` refuses, exit 2).
 | Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger; drives project engagement transitions for project-tagged missions | stable |
 | Briefing | `lib/dispatch/briefing.py` | centralized mission disclosure renderer (verbosity 0/-v/-vv); single scope authority (`mission_scope`) shared with dispatcher | stable |
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
-| Provider (claude-cli) | `lib/dispatch/provider.py` | executes tasks via `claude --print`; per-task timeout; `binary_path` disclosure; classifies failures (`policy_violation` vs generic) | stable |
+| Syndicate inventory | `lib/dispatch/syndicate.py` + `data/agency/data/syndicates/` | multivalued model-provider inventory: address resolution (`syndicate[:channel]`), capability derivation from mission constraints, dependency closure, channel validation (dependency gaps + transport ceiling), and the `capability_violation` dispatch gate | functional |
+| Providers | `lib/dispatch/provider.py` | one class per transport: `ClaudeCliProvider` (subprocess harness), `OllamaProvider` (`/api/generate`), `OpenAICompatProvider` (`/v1/chat/completions`); registry resolves the handler named by the `transport` table; stdlib-only HTTP (urllib on a worker thread); text-only channels get an explicit no-tools notice so they cannot narrate inspections they never performed | functional |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
 | Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, hq_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
-| TUI | `tui/builder.py` (core shell) + `tui/chrome.py` + `tui/mugshots.py` + `tui/views/*.py` (13 screen mixins) + `tui/textkit.py` | RPG-themed HUD, mixins over shared state (move-only split of the former 6k-line monolith); cell-accurate rendering; threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/skill_domain/ops_domain/qualifier | functional |
+| TUI | `tui/builder.py` (core shell) + `tui/chrome.py` + `tui/mugshots.py` + `tui/views/*.py` (13 screen mixins) + `tui/textkit.py` | RPG-themed HUD, mixins over shared state (move-only split of the former 6k-line monolith); cell-accurate rendering; threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/transport/channel_capability/skill_domain/ops_domain/qualifier | functional |
 
 ## CONVENTIONS & DEFAULTS
 
@@ -84,7 +94,8 @@ runtime — overrides via CLI flags):
 
 | Setting | Default | Consumer |
 |---|---|---|
-| `dispatch.provider` | `claude-cli` | dispatcher |
+| `dispatch.provider` | `claude_cli` | default syndicate address (`syndicate` or `syndicate:channel`) resolved through the inventory; `--provider` overrides per mission |
+| `dispatch.egress_policy` | `public` | how far prompt content may travel: `local` (this host only), `private` (also operator-controlled networks/tailnet), `public` (also third-party APIs). Independent of `modality`: modality governs what a mission may DO, egress governs where its prompts GO. Disclosed in every briefing |
 | `dispatch.max_concurrent` | `2` | `lib/cli/dispatch.py` |
 | `dispatch.timeout_seconds` | `600` | mission templates; `--timeout` overrides |
 | `dispatch.modality` | `readonly` | global posture: `readonly` (missions must be read-only + local), `supervised` (write-capable local allowed where explicitly configured), `unrestricted` (remote too - inert until phase D). Checked at the briefing AND by the dispatcher backstop; unknown values clamp to `readonly` |
@@ -105,7 +116,9 @@ Output artifacts per mission run:
 
 - Test coverage is seeded, not exhaustive: `tests/` covers the datastore,
   project aggregate, availability/matching, dispatch pipeline (stub
-  provider), attribution, and modality — TUI and remote layers are still
+  provider), attribution, modality, and the syndicate inventory
+  (resolution, capability truth table, channel validation, HTTP providers
+  against a stubbed transport) — TUI and remote layers are still
   untested. Run: `python3 -m unittest discover -s tests`.
 - TUI split landed move-only; deeper quality passes (mugshot art into
   data files, choice-helper consolidation, unused-import sweep) queue

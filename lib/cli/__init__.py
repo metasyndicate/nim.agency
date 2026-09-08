@@ -7,6 +7,7 @@ Components mirror the library nomenclature:
     dispatch    execute missions (lib.dispatch, gated by briefing + confirm)
     mission     briefing, inspection, and reports (lib.dispatch.mission)
     project     stateful scoped work units (lib.data.project)
+    syndicate   model provider inventory (lib.dispatch.syndicate)
     agent       roster operations (lib.data.generator)
     data        datastore init and schema inspection (lib.data)
     tui         interactive agent builder (tui.builder)
@@ -22,6 +23,7 @@ from . import data as data_cmd
 from . import dispatch as dispatch_cmd
 from . import mission as mission_cmd
 from . import project as project_cmd
+from . import syndicate as syndicate_cmd
 
 
 def cmd_tui(args) -> int:
@@ -66,6 +68,17 @@ def build_parser() -> argparse.ArgumentParser:
                                     "(default: 1 for task missions, 3 otherwise)")
     mission_flags.add_argument("--timeout", type=int,
                                help="Per-task timeout in seconds (default: etc/agency.json)")
+    mission_flags.add_argument("--text-only", action="store_true",
+                               help="Declare the task needs no tools: clears "
+                                    "allowed_tools so text-only syndicates "
+                                    "(local models) can serve it. The crew "
+                                    "reasons from the prompt alone - it "
+                                    "cannot read the target.")
+    mission_flags.add_argument("--provider", type=str,
+                               help="Syndicate to dispatch to, as 'syndicate' "
+                                    "or 'syndicate:channel' (default: "
+                                    "dispatch.provider in etc/agency.json). "
+                                    "List them: nim.agency data syndicates")
     mission_flags.add_argument("--output", type=str,
                                help="Report path (default: <report_dir>/mission-<id>-report.md)")
 
@@ -83,6 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
     dispatch_cmd.add_parser(sub, mission_flags, verbosity)
     mission_cmd.add_parser(sub, mission_flags, verbosity)
     project_cmd.add_parser(sub)
+    syndicate_cmd.add_parser(sub)
     agent_cmd.add_parser(sub)
     data_cmd.add_parser(sub)
 

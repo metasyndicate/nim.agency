@@ -134,6 +134,18 @@
         "description": "BAGMAN: CRÜE team composition templates with coordination patterns",
         "nim_id": 400027,
         "data_path": "../data/reference/crue_type.json"
+      },
+      "channel_capability": {
+        "path": "reference/channel_capability.schema.json",
+        "description": "Functional features a syndicate channel grants or withholds, with dependency closure",
+        "nim_id": 400034,
+        "data_path": "../data/reference/channel_capability.json"
+      },
+      "transport": {
+        "path": "reference/transport.schema.json",
+        "description": "Wire protocols for reaching a syndicate, with provider handler and capability ceiling",
+        "nim_id": 400035,
+        "data_path": "../data/reference/transport.json"
       }
     },
     "core": {
@@ -195,6 +207,12 @@
         "description": "Agent-to-agent evaluations",
         "nim_id": 400107,
         "data_path": "../data/reviews/"
+      },
+      "syndicate": {
+        "path": "core/syndicate.schema.json",
+        "description": "Model provider inventory entry - endpoint, transport, and dispatchable channels",
+        "nim_id": 400113,
+        "data_path": "../data/syndicates/"
       },
       "substation": {
         "path": "core/substation.schema.json",

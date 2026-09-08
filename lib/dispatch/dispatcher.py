@@ -25,7 +25,8 @@ from ..data.project import (
 )
 
 from .mission import Mission, MissionStatus, Task, TaskStatus, TaskResult
-from .provider import Provider, ClaudeCliProvider, get_provider, POLICY_VIOLATION_PREFIX
+from .provider import Provider, get_provider, POLICY_VIOLATION_PREFIX
+from .syndicate import capability_violation
 from .ops_log import DispatchLogger, get_dispatch_logger, AgentState
 
 
@@ -75,7 +76,7 @@ class Dispatcher:
     ):
         self.ds = datastore or get_datastore()
         self.composer = composer or get_composer()
-        self.provider = provider or get_provider("claude-cli")
+        self.provider = provider or get_provider(ds=self.ds)
         self.logger = logger or get_dispatch_logger()
 
         # Cache agents by ID
@@ -140,6 +141,15 @@ class Dispatcher:
         # nothing dispatches past the posture regardless of entry point
         refusal = modality_violation(mission.constraints.read_only,
                                      mission.constraints.local_only)
+        if not refusal:
+            # Capability backstop: a channel that cannot serve this mission's
+            # requirements would answer from imagination rather than fail.
+            # Providers built without inventory context (test stubs) skip it.
+            syndicate = getattr(self.provider, "syndicate", None)
+            channel = getattr(self.provider, "channel", None)
+            if syndicate and channel:
+                refusal = capability_violation(
+                    mission.constraints, syndicate, channel, self.ds)
         if refusal:
             emit("error", f"Dispatch refused: {refusal}")
             self.logger.log_mission_fail(
@@ -151,9 +161,11 @@ class Dispatcher:
             return mission
 
         # Stamp the spawn context (attribution: the operator/host/session
-        # identity this crew piggybacks on)
+        # identity this crew piggybacks on) and the syndicate that served it
         if mission.dispatched_by is None:
             mission.dispatched_by = spawn_context()
+        mission.provider_address = getattr(
+            getattr(self.provider, "config", None), "name", None)
 
         # Validate mission
         if not mission.tasks:
@@ -167,11 +179,13 @@ class Dispatcher:
             return mission
 
         if not self.provider.is_available():
-            emit("error", "Provider not available (claude CLI not found)")
+            reason = getattr(self.provider, "unavailable_reason",
+                             "provider not available")
+            emit("error", f"Provider not available: {reason}")
             self.logger.log_mission_fail(
                 dispatch_id=dispatch_id,
                 mission_id=mission.id,
-                error="Provider not available"
+                error=f"Provider not available: {reason}"
             )
             mission.status = MissionStatus.FAILED
             return mission
@@ -220,7 +234,15 @@ class Dispatcher:
         from .briefing import mission_scope
         scope = mission_scope(mission.constraints)
 
-        # Process tasks respecting dependencies
+        # Process tasks respecting dependencies. The channel's own ceiling
+        # wins: one workstation GPU serving a 30B model is not a fleet, and
+        # oversubscribing it only queues requests behind each other.
+        channel_limit = getattr(
+            getattr(self.provider, "config", None), "max_concurrent", 0)
+        if channel_limit and channel_limit < max_concurrent:
+            emit("provider", f"concurrency clamped {max_concurrent} -> "
+                             f"{channel_limit} by channel limit")
+            max_concurrent = channel_limit
         semaphore = asyncio.Semaphore(max_concurrent)
 
         async def run_task(task: Task, task_index: int):
@@ -262,7 +284,8 @@ class Dispatcher:
                     agent_codename=agent_name,
                     role=task.role,
                     task_index=task_index,
-                    tasks_total=len(mission.tasks)
+                    tasks_total=len(mission.tasks),
+                    provider=mission.provider_address or "",
                 )
 
                 emit("task_started", f"Task '{task.role}' assigned to {agent_name}", task.id, task.agent_id)
