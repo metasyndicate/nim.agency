@@ -37,12 +37,17 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 | `mission plan\|show\|list\|report` | `lib/cli/mission.py` | briefing preview, saved-mission inspection, reports | functional |
 | `project create\|list\|show\|edit\|assign\|release` | `lib/cli/project.py` | stateful scoped work units: crew engagements, host binding, objectives, directives | functional |
 | `project cycle\|pause\|resume\|complete` | `lib/cli/project.py` | briefing-gated cycle dispatch from project state; journal; per-project serialization; lifecycle verbs | functional (local host; remote awaits phase D) |
-| `syndicate list\|show\|probe` | `lib/cli/syndicate.py` | model provider inventory: transports, channels, capability grants, egress/cost disclosure; probe records reachability + advertised models and flags inventory drift | functional |
-| `easme agent` (pipe) | `tools/easme` | pipestream dispatch: stdin payload + `--hint`/`--preset`; clean stdout for pipelines; gate prompts on /dev/tty | functional |
+| `syndicate list\|show\|probe` | `lib/cli/syndicate.py` | model provider inventory: transports, channels, capability grants, egress/cost disclosure, recorded conformance; probe records reachability + advertised models and flags inventory drift (incl. tool_use granted on a model without the `tools` capability) | functional |
+| `syndicate conform` | `lib/cli/syndicate.py` → `lib/dispatch/conformance.py` | fixed known-answer suite (`kat-1`) against a fixture tree; harness cases when the gate admits read-only tool missions, text cases otherwise; scorecard to `log/`, pass rate onto `status.conformance` | functional |
+| `easme agent` (pipe) | `tools/easme` | pipestream dispatch: stdin payload + `--hint`/`--preset`; routed through the syndicate inventory (`--provider`, `--text-only`, `--tools`, `--expect[-json]`); capability gate at the briefing; clean stdout for pipelines; gate prompts on /dev/tty | functional |
 | `agent list\|show\|generate` | `lib/cli/agent.py` | roster operations | functional |
 | `agent credit\|train\|equip` | `lib/cli/agent.py` | economy: paymaster adjustments, dojo, depot | functional |
 | `agent enroll [--backfill]` | `lib/cli/agent.py` | badge + primary keypair issuance into the depot vault | functional |
 | `data verify\|seed\|schemas\|describe` | `lib/cli/data.py` | datastore init + schema inspection | functional |
+| `data check [ENTITY...] [-v]` | `lib/cli/data.py` → `lib/data/refs.py` | conformance of stored data: each record against its schema (needs jsonschema) and every declared reference (`x-nim-ref`, incl. `within`/`where` bounds); exit 1 on invalid or dangling | functional |
+| `data form\|options\|list\|show\|new\|edit\|delete ENTITY` | `lib/cli/compose.py` → `lib/data/forms.py`, `lib/data/drafts.py` | generic composition of ANY registered entity from its schema: field tree, choice options (reference tables, enums, dependent bounds), JSON Pointer edits (`--set/--add/--remove/--unset`), `--dry-run` diffs; read-only fields refused; deletes refused while referenced | functional |
+| `syndicate form\|options\|new\|edit\|delete` | `lib/cli/syndicate.py` (mounts `compose`) | compose syndicates; channel capabilities bounded by the transport ceiling; `show` prints the hosting substation | functional |
+| `substation list\|show\|form\|options\|new\|edit\|delete` | `lib/cli/substation.py` (mounts `compose`) | hosts under inventory (operator-local `~/.nim/agency/substations`); ssh/https/http/local connection kinds | functional |
 | `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional |
 | Programmatic (Python) | `lib.data`, `lib.dispatch` | see README "Programmatic" | functional |
 
@@ -52,7 +57,9 @@ Shared mission flags (`dispatch`, `mission plan`):
 `--target DIR`, `--crew a,b`, `--skill t1,t2`, `--count N`,
 `--timeout S`, `--output F`, `--provider SYNDICATE[:CHANNEL]`,
 `--text-only` (declares the task needs no tools, so text-only syndicates
-may serve it).
+may serve it), `--tools A,B` (narrow allowed_tools to named harness
+functions), `--expect TEXT` / `--expect-json JSON` (known-answer check per
+task, settled before payroll).
 Any command that spawns agent work renders the centralized mission briefing
 (`lib/dispatch/briefing.py`) first and requires confirmation (`-y` bypasses;
 non-TTY without `-y` refuses, exit 2).
@@ -82,7 +89,14 @@ the briefing rather than answered from imagination.
 | Briefing | `lib/dispatch/briefing.py` | centralized mission disclosure renderer (verbosity 0/-v/-vv); single scope authority (`mission_scope`) shared with dispatcher | stable |
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
 | Syndicate inventory | `lib/dispatch/syndicate.py` + `data/agency/data/syndicates/` | multivalued model-provider inventory: address resolution (`syndicate[:channel]`), capability derivation from mission constraints, dependency closure, channel validation (dependency gaps + transport ceiling), and the `capability_violation` dispatch gate | functional |
-| Providers | `lib/dispatch/provider.py` | one class per transport: `ClaudeCliProvider` (subprocess harness), `OllamaProvider` (`/api/generate`), `OpenAICompatProvider` (`/v1/chat/completions`); registry resolves the handler named by the `transport` table; stdlib-only HTTP (urllib on a worker thread); text-only channels get an explicit no-tools notice so they cannot narrate inspections they never performed | functional |
+| Providers | `lib/dispatch/provider.py` | one class per transport: `ClaudeCliProvider` (subprocess harness), `OllamaProvider` (`/api/generate`), `OllamaChatProvider` (`/api/chat`, tool calls), `OpenAICompatProvider` (`/v1/chat/completions`, tool calls); registry resolves the handler named by the `transport` table; stdlib-only HTTP (urllib on a worker thread); tool-call transports take the agency-harness path when a task is offered functions, single-shot otherwise; tasks without tools get an explicit no-tools notice so they cannot narrate inspections they never performed | functional |
+| Agency harness | `lib/dispatch/harness/` + `reference/harness_function.json` | client-side tool loop for rogue syndicates: offer join (functions ∩ allowed_tools ∩ channel capabilities ∩ depot grants), policy executor (working-directory confinement incl. symlinks, offer-only, read-only, per-call deadline, no network), bounded loop (turns, calls/turn, wall clock, token budget, context-window budgeting with wrap-up), every call audit-logged as `tool_call`; serves Read/LS/Glob/Grep | functional (read-only; shell/write deferred) |
+| Declared references | `lib/data/refs.py` + metaschema `$defs/x-nim-ref` | machine-readable foreign keys (`x-nim-ref {entity, key, within?, where?}`), integrity checks, inbound-reference lookup (deletes RESTRICT) | functional |
+| Composition kernel | `lib/data/forms.py`, `lib/data/drafts.py` | schema → form model (field kinds scored from constraints, DASH-style); Drafts check readOnly/required/types/bounds/enums/references/`if`-`then` without jsonschema, then save through the validating datastore | functional |
+| Validation modes | `lib/data/crud.py` `check()` + `etc/agency.json` `validation` | every write (create, update, replace, reference rows, ledger) validates when jsonschema is installed; per-entity `enforce` (refuse) or `warn` (log via `nim.data`) | functional |
+| BIRD relay | `lib/dispatch/bird.py` + `reference/anomaly.json` | Biomimetic Inference Relay Dewarbler: every HTTP exchange with a syndicate passes `transmit`; link/frame/context/content anomalies recorded per task as RFC 9457 problems (ops log `anomaly`, `[BIRD]` events, report section, conformance scorecard); link faults retransmitted with full-jitter backoff / Retry-After within row limits, a per-task budget, and the deadline | functional (groundwork: no reask/fix yet, no circuit breaker) |
+| Harness profiles + command policy | `reference/harness_profile.json`, `reference/command_policy.json` | channels name a profile (functions, commands, loop limits; missing profile fails closed); command_policy is the reviewed-before-use shell allowlist (allow/ask/deny, option allowlists, GTFOBins hazards) - inert until a Shell function exists | data + CRUD |
+| Verification | `lib/dispatch/verification.py` | known-answer checks (`contains`, `json_subset`) settled by the dispatcher before payroll; wrong answers fail the task without a conduct charge; verdicts in reports, mission JSON, and ops log (`task_verify`) | functional |
 | DispatchLogger | `lib/dispatch/ops_log.py` | CSV + JSON lifecycle logs → `~/.nim/agency/` | stable |
 | Remote ops | `lib/remote/` (ssh, vault, protocol, keys, safety, hq_log) | asyncssh transport, Fernet vault, command classification, audit trail | implemented; needs live validation |
 | TUI | `tui/builder.py` (core shell) + `tui/chrome.py` + `tui/mugshots.py` + `tui/views/*.py` (13 screen mixins) + `tui/textkit.py` | RPG-themed HUD, mixins over shared state (move-only split of the former 6k-line monolith); cell-accurate rendering; threaded live dispatch; substation Connect (suspends HUD, hands terminal to ssh(1), verbose failures); dossier Access view (A); foundry covers role_title/task_preset/transport/channel_capability/skill_domain/ops_domain/qualifier | functional |
@@ -134,6 +148,16 @@ Output artifacts per mission run:
   but does not yet execute; ships with phase D access grants. Capability
   foundry editing skipped (structurally complex rows).
 - Remote layer (`lib/remote/`) untested against live infrastructure this revision.
+- Validation needs `jsonschema` (pyproject extra `validation`); without it
+  writes rely on the composition kernel's stdlib checks only, and
+  `data check` reports references but skips schema conformance. Agent
+  and group records do not yet conform (entities in `warn` mode; plan
+  O4/O5); archetype has 17 unresolved references (plan O6).
+- Command policy is data only: no Shell harness function yet, and
+  `lib/remote/safety.py` still uses its own hardcoded command sets (plan O7).
+- BIRD remedies implemented: retransmit, record, fail. `reask` and `fix`
+  are vocabulary only; no per-syndicate circuit breaker yet.
+- Plan of record: `.nim/work/plan.101426.compose.md`.
 - `mission show -v/-vv` recomposes prompts from the current datastore, not
   dispatch-time state (caveat printed in output).
 - Resolved: the former `lib/remote/ops_log.py` (HQ remote-ops messaging) is

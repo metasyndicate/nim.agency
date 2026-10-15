@@ -304,16 +304,93 @@ those declarations are load-bearing rather than decorative:
   explicitly that they have no tools so they cannot narrate inspections
   they never performed.
 
-Dispatch cheaply: `--provider mux_nova --text-only` routes to an owned
-workstation (`amortized` cost) instead of a metered API. Briefings always
-disclose the endpoint, egress, cost class, and the capability arithmetic.
+#### Rogue syndicates and the agency harness
+
+A model is a pure function; tool use needs a loop on the client side. A
+*platformed* syndicate (`claude_cli`) brings its own. A *rogue* one - a
+bare endpoint such as `mux_nova` - emits tool calls and nothing runs them,
+so the agency supplies the loop (`lib/dispatch/harness/`):
+
+- **Transports:** `ollama_chat` (`/api/chat`) and `openai_compat` carry
+  function declarations and structured tool calls; `ollama_native`
+  (`/api/generate`) stays text-only.
+- **What a task is offered** is a join over existing data:
+  `harness_function` rows ∩ mission `allowed_tools` ∩ channel-granted
+  capabilities ∩ the agent's depot grants (e.g. `Grep` needs `grep`).
+- **The executor enforces, not the prompt:** every path resolves (symlinks
+  followed) under the working directory or is refused; only offered
+  functions run; mutating functions are refused on read-only missions;
+  per-call deadlines; no network. Refusals go back to the model as results.
+- **Bounded:** turns, calls per turn, wall clock, token budget, and the
+  context window - tool results are sized to the room left so Ollama never
+  silently truncates the task out of the conversation (`harness` in
+  `etc/agency.json`).
+- **Served today:** `Read`, `LS`, `Glob`, `Grep` (`filesystem_read`). No
+  shell, no writes - granting `shell_exec` waits on an executor that
+  implements it.
+
+#### Measuring correctness
+
+Grounding is not correctness: a model reading a real listing can still
+miscount it. Two measures:
+
+- `--expect TEXT` / `--expect-json '{...}'` attach a known-answer check to
+  every task; a wrong answer fails the task **before payroll** (no pay, no
+  conduct charge).
+- `nim.agency syndicate conform <ref>` runs a fixed known-answer suite
+  against a fixture tree and records the pass rate on the syndicate record
+  (shown by `syndicate list`/`show`).
 
 ```bash
-nim.agency syndicate list                # inventory, channels, cost, egress
+nim.agency syndicate list                # inventory, channels, cost, egress, conformance
 nim.agency syndicate probe mux_nova      # reachability + advertised models
-nim.agency dispatch --provider mux_nova:qwen3_coder --text-only \
+nim.agency syndicate conform mux_nova --runs 3   # accuracy scorecard
+nim.agency dispatch --provider mux_nova --tools Read,Glob,Grep,LS \
+  --task "How many .py files are in lib/dispatch?" --expect 9 -y
+nim.agency dispatch --provider mux_nova --text-only \
   --task "Explain Lmod modulefiles" --crew some.codename -y
+ls -1 | tools/easme agent --provider mux_nova --text-only --hint "count .json" -y
 ```
+
+#### The relay: BIRD
+
+Every HTTP exchange with a syndicate passes through `lib/dispatch/bird.py`
+(Biomimetic Inference Relay Dewarbler), which records what went wrong
+between request and answer, per task, as RFC 9457 problem details:
+
+| Layer | Detects | Remedy |
+|---|---|---|
+| link | timeout, unreachable, HTTP 429/502/503/504, other HTTP errors | retransmit with full-jitter backoff or `Retry-After`, within limits and the deadline |
+| frame | malformed body, empty reply, output cut at the token limit, malformed tool arguments | resend once / fail / return to the model |
+| context | prompt refused for the window, silent truncation suspected, window running low | fail / record |
+| content | known-answer mismatch, policy refusal | fail before payroll |
+
+Ollama requests carry `truncate: false, shift: false`: by default Ollama
+drops a too-long prompt's oldest messages and still answers HTTP 200
+(observed: 3040 tokens sent, 26 evaluated). The anomaly vocabulary is data
+(`data/agency/data/reference/anomaly.json`); findings appear as `[BIRD]`
+events, `anomaly` ops-log entries, a report section, and in conformance
+scorecards. Tune retransmission under `relay` in `etc/agency.json`.
+
+### Composing records from their schemas
+
+Every registered entity can be composed through its schema - no
+per-entity field code. Fields are addressed by JSON Pointer; choices come
+from reference tables (`x-nim-ref`) or enums; read-only (system) fields
+are refused; deletes are refused while other records point at the target.
+
+```bash
+nim.agency data form syndicate                           # field tree + value sources
+nim.agency syndicate options /channels/0/capabilities --record mux_nova
+nim.agency syndicate edit mux_nova --set /channels/0/harness_profile=readonly_fs_compact --dry-run
+nim.agency substation new --set /identity/name=bonsai --set /identity/codename=nim.substation.bonsai \
+  --set /connection/kind=https --set /connection/hostname=bonsai.example --set /connection/port=443
+nim.agency data options harness_profile /commands        # the shell allowlist, as a multi-select
+nim.agency data check                                    # schema conformance + reference integrity
+```
+
+The TUI's Composer (menu `P`) drives the same model: entity → records →
+form, with a picker for single and multi-select choices.
 
 ## PROJECT STRUCTURE
 
