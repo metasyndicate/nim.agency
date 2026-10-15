@@ -171,6 +171,36 @@
         "nim_id": 400039,
         "data_path": "../data/reference/anomaly.json"
       },
+      "tone_axis": {
+        "path": "reference/tone_axis.schema.json",
+        "description": "Persona layer B: bipolar communication dimensions (NN/g tone, Grice quantity, plain language, certainty) an agent sets from -2 to +2",
+        "nim_id": 400040,
+        "data_path": "../data/reference/tone_axis.json"
+      },
+      "trait": {
+        "path": "reference/trait.schema.json",
+        "description": "Persona trait reference: IPIP-NEO Big Five domains and 30 facets with keyed items (measurement only; public domain)",
+        "nim_id": 400041,
+        "data_path": "../data/reference/trait.json"
+      },
+      "work_style": {
+        "path": "reference/work_style.schema.json",
+        "description": "Persona layer A: O*NET 31.0 work styles with their higher-order Big Five / HEXACO dimension",
+        "nim_id": 400042,
+        "data_path": "../data/reference/work_style.json"
+      },
+      "work_role": {
+        "path": "reference/work_role.schema.json",
+        "description": "Persona layer C: O*NET occupations and NICE work roles grounding an archetype (tasks, work-style ratings)",
+        "nim_id": 400043,
+        "data_path": "../data/reference/work_role.json"
+      },
+      "work_task": {
+        "path": "reference/work_task.schema.json",
+        "description": "Task statements from O*NET and the NICE Framework, linked from work_role",
+        "nim_id": 400044,
+        "data_path": "../data/reference/work_task.json"
+      },
       "assignment_status": {
         "path": "reference/assignment_status.schema.json",
         "description": "BAGMAN: ASSIGNMENT lifecycle states (prov:Activity status vocabulary)",

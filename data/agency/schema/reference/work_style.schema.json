@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/work_style.schema.json",
+  "title": "Work Style",
+  "description": "O*NET 31.0 Work Styles: personality tendencies exhibited at work (persona layer A). Rated per occupation in work_role; an agent emphasizes up to four. Descriptions are O*NET's (CC BY 4.0, USDOL/ETA).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400042,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "work_style",
+      "type": "schema",
+      "path": "L2.agency.reference.work_style"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "element_id": { "type": "string", "pattern": "^1\\.D\\.[1-4]\\.[a-z]$", "description": "O*NET content model element (skos:notation)" },
+    "group": { "type": "string", "maxLength": 64, "description": "O*NET 31.0 group (1.D.1-1.D.4)" },
+    "higher_order": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Phase 1 higher-order dimension (Putka, Liu & Lewis 2025, Table 1): a Big Five domain, Honesty-Humility (HEXACO), or Compound Dimensions"
+    },
+    "trait_domain": {
+      "type": ["string", "null"],
+      "x-nim-ref": { "entity": "trait", "key": "slug", "where": { "level": ["domain"] } },
+      "description": "The IPIP domain the higher-order dimension names (Emotional Stability is low Neuroticism); null for Honesty-Humility and Compound Dimensions"
+    },
+    "lex_matches": {
+      "type": "array",
+      "description": "skos:closeMatch from lex/temperaments.csv words (editorial); migrates generated temperament words",
+      "items": { "type": "string", "maxLength": 32 }
+    },
+    "note": { "type": ["string", "null"], "maxLength": 400 }
+  },
+  "required": ["element_id", "group", "higher_order", "trait_domain"],
+  "unevaluatedProperties": false
+}

@@ -338,40 +338,44 @@
         },
         "personality": {
           "type": "object",
-          "description": "Personality traits and temperament",
+          "description": "Persona layers A (work styles) and B (tone), composed into the system prompt; descriptors are layer D flavor and stay out of it. Temperament is derived for display (lib/data/persona.py), not stored. Plan: .nim/work/plan.101426.persona.md",
           "properties": {
-            "temperament": {
-              "type": "string",
-              "enum": [
-                "analytical",
-                "driven",
-                "amiable",
-                "expressive"
-              ],
-              "description": "Primary temperament"
-            },
-            "traits": {
+            "work_styles": {
               "type": "array",
+              "maxItems": 4,
+              "description": "This agent's own emphases, on top of the styles its role demands (O*NET work styles)",
               "items": {
-                "type": "string",
-                "maxLength": 32
-              },
-              "maxItems": 5,
-              "description": "Personality trait keywords"
+                "type": "object",
+                "properties": {
+                  "style": { "type": "string", "x-nim-ref": { "entity": "work_style", "key": "slug" } },
+                  "level": { "type": "integer", "minimum": 1, "maximum": 2, "description": "1 leans, 2 strongly" }
+                },
+                "required": ["style", "level"],
+                "additionalProperties": false
+              }
             },
             "tone": {
-              "type": "string",
-              "enum": [
-                "formal",
-                "casual",
-                "terse",
-                "verbose",
-                "friendly",
-                "professional"
-              ],
-              "default": "professional"
+              "type": "array",
+              "maxItems": 7,
+              "description": "Communication settings: a level on each chosen tone axis",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "axis": { "type": "string", "x-nim-ref": { "entity": "tone_axis", "key": "slug" } },
+                  "level": { "type": "integer", "minimum": -2, "maximum": 2, "not": { "const": 0 }, "description": "-2 strongly the low pole .. +2 strongly the high pole" }
+                },
+                "required": ["axis", "level"],
+                "additionalProperties": false
+              }
+            },
+            "descriptors": {
+              "type": "array",
+              "maxItems": 8,
+              "items": { "type": "string", "maxLength": 32 },
+              "description": "Flavor words (lex/descriptor, temperament, tone words); not in the prompt"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "interests": {
           "type": "array",

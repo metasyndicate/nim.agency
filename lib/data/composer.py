@@ -12,6 +12,9 @@ Supports composable instruction blocks that are merged by priority:
 - Rank modifiers (novice, journeyman, expert, master)
 - Focus overlays (firewall, kubernetes, database, etc.)
 - Scope definitions (read_only, supervised, autonomous)
+
+Persona layers (lib/data/persona.py) add role grounding (O*NET / NICE work
+roles), working style (O*NET work styles), and tone (tone axes).
 """
 
 import json
@@ -21,6 +24,7 @@ from typing import Optional
 from textwrap import dedent, indent
 
 from .crud import DataStore, get_datastore
+from .persona import Grounding, Persona
 
 
 @dataclass
@@ -110,6 +114,44 @@ class OperationalProfile:
     # contributed to this profile
     sources: list[str] = field(default_factory=list)
 
+    # Persona layers C (grounding), A (work styles), B (tone)
+    grounding: Optional[Grounding] = None
+    style_emphases: list[tuple[dict, int]] = field(default_factory=list)
+    tone_guidance: list[str] = field(default_factory=list)
+
+    def _persona_sections(self) -> list[str]:
+        """ROLE GROUNDING and WORKING STYLE, when the archetype is grounded
+        or the agent has emphases."""
+        out = []
+        g = self.grounding
+        if g and (g.occupation or g.nice_roles):
+            out.append("\n# ROLE GROUNDING\n")
+            if g.occupation:
+                occ = g.occupation
+                out.append(f"Your role corresponds to the occupation {occ['label']} "
+                           f"(O*NET-SOC {occ['code']}): {occ['description']}")
+                if g.core_tasks:
+                    out.append("\nCore tasks of the occupation, most important first:")
+                    out.extend(f"- {t}" for t in g.core_tasks)
+            for role in g.nice_roles:
+                out.append(f"\nNICE Framework work role {role['label']} ({role['code']}): "
+                           f"{role['description']}")
+                out.extend(f"- {t}" for t in g.nice_tasks.get(role["slug"], []))
+        if (g and g.role_styles) or self.style_emphases:
+            out.append("\n# WORKING STYLE\n")
+            emphasized = {s["slug"] for s, _ in self.style_emphases}
+            role_styles = [s for s in (g.role_styles if g else [])
+                           if s["slug"] not in emphasized]
+            if role_styles:
+                out.append("Work styles this role depends on most:")
+                out.extend(f"- {Persona.style_line(s)}" for s in role_styles)
+            if self.style_emphases:
+                out.append("\nYour own emphases:")
+                for style, level in self.style_emphases:
+                    prefix = "Above all - " if level == 2 else ""
+                    out.append(f"- {prefix}{Persona.style_line(style)}")
+        return out
+
     def render_system_prompt(self) -> str:
         """Render the complete system prompt for LLM consumption."""
         sections = []
@@ -128,6 +170,9 @@ class OperationalProfile:
             sections.append("\n## Secondary Objectives\n")
             for role in self.secondary_roles:
                 sections.append(f"- {role}")
+
+        # Persona layers C and A
+        sections.extend(self._persona_sections())
 
         # Capabilities
         sections.append("\n# CAPABILITIES\n")
@@ -195,6 +240,11 @@ class OperationalProfile:
             sections.append(f"**Verbosity:** {cs['verbosity']}")
         if cs.get("tone"):
             sections.append(f"**Tone:** {cs['tone']}")
+        if self.tone_guidance:
+            # The output contract above wins where the two disagree
+            sections.append("\nVoice (where the format, verbosity, and tone above "
+                            "do not already decide):")
+            sections.extend(f"- {line}" for line in self.tone_guidance)
 
         return "\n".join(sections)
 
@@ -242,6 +292,14 @@ class OperationalProfile:
                 "decision_framework": self.decision_framework,
                 "communication_style": self.communication_style,
                 "sources": self.sources
+            },
+            "persona": {
+                "work_roles": self.grounding.sources if self.grounding else [],
+                "role_styles": [s["slug"] for s in (self.grounding.role_styles
+                                                    if self.grounding else [])],
+                "emphases": [{"style": s["slug"], "level": lvl}
+                             for s, lvl in self.style_emphases],
+                "tone": self.tone_guidance
             },
             "capabilities": [
                 {
@@ -307,6 +365,7 @@ class AgentComposer:
         self._qualifiers = {q["id"]: q for q in self.ds.load_reference("qualifier")}
         self._focuses = {f["id"]: f for f in self.ds.load_reference("focus")}
         self._instruction_blocks = self._load_instruction_blocks()
+        self._persona = Persona(self.ds)
 
     def _load_instruction_blocks(self) -> list[InstructionBlock]:
         """Load composable instruction blocks from filesystem."""
@@ -514,6 +573,10 @@ class AgentComposer:
         ident = agent.get("identity", {})
         role_title = ident.get("role_title", "Operative")
 
+        # Persona layers: grounding from the archetype, style and tone from the agent
+        grounding = self._persona.grounding(archetype)
+        personality = agent.get("profile", {}).get("personality", {})
+
         return OperationalProfile(
             agent_id=agent.get("id", "unknown"),
             agent_name=ident.get("name", "Unknown Agent"),
@@ -536,7 +599,11 @@ class AgentComposer:
             sources=(
                 [f"reference:instruction/{instruction_slug}"]
                 + [b.meta.get("source_path", b.slug) for b in applicable_blocks]
-            )
+                + grounding.sources
+            ),
+            grounding=grounding,
+            style_emphases=self._persona.emphases(personality),
+            tone_guidance=self._persona.tone_lines(personality)
         )
 
     def compose_from_archetype(

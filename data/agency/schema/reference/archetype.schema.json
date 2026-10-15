@@ -30,6 +30,11 @@
       "items": {"type": "integer", "x-nim-ref": {"entity": "focus", "key": "id"} },
       "description": "Primary focus areas for this archetype"
     },
+    "work_role_slugs": {
+      "type": "array",
+      "items": {"type": "string", "x-nim-ref": {"entity": "work_role", "key": "slug"} },
+      "description": "Persona layer C grounding: the O*NET occupation first (its tasks and work-style ratings scope the role), then any NICE work roles. Empty for lore archetypes."
+    },
     "core_capabilities": {
       "type": "array",
       "items": {

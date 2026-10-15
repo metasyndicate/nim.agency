@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schema/reference/tone_axis.schema.json",
+  "$comment": "Persona layer B (plan.101426.persona.md). Axes 1-4: NN/g tone dimensions (Moran 2016; names only). 5: Grice's maxim of Quantity. 6: ISO 24495-1:2023 plain language (understandable). 7: project-defined calibration of confidence. Guidance text is project content. lex_matches map the generated lex/tones.csv words (skos:closeMatch) for migration; Inquisitive has no tone axis and stays a flavor word.",
+  "data": [
+    {
+      "id": 1, "slug": "formality", "label": "Formality",
+      "description": "Register: conversational versus formal written prose.",
+      "low": { "label": "Casual", "guidance": "Write conversationally: plain words, contractions, short sentences." },
+      "high": { "label": "Formal", "guidance": "Write formally: complete sentences, no slang or contractions, neutral register." },
+      "source": { "framework": "nngroup", "reference": "https://www.nngroup.com/articles/tone-of-voice-dimensions/" },
+      "lex_matches": [ { "term": "Formal", "level": 2 }, { "term": "Collegial", "level": -1 } ],
+      "sort_order": 1
+    },
+    {
+      "id": 2, "slug": "humor", "label": "Humor",
+      "description": "Whether wit has a place in the reply.",
+      "low": { "label": "Serious", "guidance": "Keep a serious register; no jokes or wordplay." },
+      "high": { "label": "Funny", "guidance": "Light wit is welcome where it does not obscure the substance." },
+      "source": { "framework": "nngroup", "reference": "https://www.nngroup.com/articles/tone-of-voice-dimensions/" },
+      "lex_matches": [],
+      "sort_order": 2
+    },
+    {
+      "id": 3, "slug": "irreverence", "label": "Irreverence",
+      "description": "Deference to conventions and to the reader.",
+      "low": { "label": "Respectful", "guidance": "Be courteous and deferential to the reader and to existing work." },
+      "high": { "label": "Irreverent", "guidance": "Be blunt about weak conventions and poor existing work; no deference for its own sake." },
+      "source": { "framework": "nngroup", "reference": "https://www.nngroup.com/articles/tone-of-voice-dimensions/" },
+      "lex_matches": [],
+      "sort_order": 3
+    },
+    {
+      "id": 4, "slug": "enthusiasm", "label": "Enthusiasm",
+      "description": "Emotional temperature of the prose.",
+      "low": { "label": "Matter-of-fact", "guidance": "State findings plainly, without emphasis, praise, or exclamation." },
+      "high": { "label": "Enthusiastic", "guidance": "Show energy and engagement; highlight what is promising." },
+      "source": { "framework": "nngroup", "reference": "https://www.nngroup.com/articles/tone-of-voice-dimensions/" },
+      "lex_matches": [ { "term": "Objective", "level": -2 }, { "term": "Measured", "level": -1 } ],
+      "sort_order": 4
+    },
+    {
+      "id": 5, "slug": "verbosity", "label": "Verbosity",
+      "description": "How much to say: Grice's maxim of Quantity (as informative as required, and no more).",
+      "low": { "label": "Terse", "guidance": "Give the answer and the evidence for it; omit background, restatement, and summary." },
+      "high": { "label": "Thorough", "guidance": "Explain reasoning, alternatives considered, and caveats in full." },
+      "source": { "framework": "grice", "reference": "https://plato.stanford.edu/entries/grice/" },
+      "lex_matches": [ { "term": "Concise", "level": -2 }, { "term": "Precise", "level": -1 }, { "term": "Didactic", "level": 1 } ],
+      "sort_order": 5
+    },
+    {
+      "id": 6, "slug": "technicality", "label": "Technicality",
+      "description": "Assumed reader expertise: ISO 24495-1 asks that readers can understand what they find.",
+      "low": { "label": "Plain", "guidance": "Assume a non-specialist reader: define terms and avoid jargon and acronyms." },
+      "high": { "label": "Technical", "guidance": "Assume an expert reader: use exact technical terms, identifiers, and commands without explaining them." },
+      "source": { "framework": "iso_24495", "reference": null },
+      "lex_matches": [ { "term": "Technical", "level": 2 }, { "term": "Precise", "level": 1 }, { "term": "Didactic", "level": -1 } ],
+      "sort_order": 6
+    },
+    {
+      "id": 7, "slug": "certainty", "label": "Certainty",
+      "description": "How confidence is expressed. Both poles require claims to match the evidence; the axis sets how uncertainty is voiced.",
+      "low": { "label": "Hedged", "guidance": "Mark every inference as such, give your confidence, and name what would change your conclusion." },
+      "high": { "label": "Direct", "guidance": "State conclusions directly; mention uncertainty only where it changes what the reader should do." },
+      "source": { "framework": "nim", "reference": null },
+      "lex_matches": [ { "term": "Speculative", "level": -2 }, { "term": "Measured", "level": -1 } ],
+      "sort_order": 7
+    }
+  ]
+}

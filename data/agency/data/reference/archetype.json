@@ -59,7 +59,11 @@
       ],
       "icon": "\ud83d\udc27",
       "instruction_template": "linux_admin",
-      "sort_order": 1
+      "sort_order": 1,
+      "work_role_slugs": [
+        "onet_15_1244_00",
+        "nice_io_wrl_005"
+      ]
     },
     {
       "id": 2,
@@ -113,7 +117,10 @@
       ],
       "icon": "\ud83d\udd04",
       "instruction_template": "devops_engineer",
-      "sort_order": 2
+      "sort_order": 2,
+      "work_role_slugs": [
+        "onet_15_1252_00"
+      ]
     },
     {
       "id": 3,
@@ -168,7 +175,11 @@
       ],
       "icon": "\ud83c\udf10",
       "instruction_template": "network_engineer",
-      "sort_order": 3
+      "sort_order": 3,
+      "work_role_slugs": [
+        "onet_15_1241_00",
+        "nice_io_wrl_004"
+      ]
     },
     {
       "id": 4,
@@ -218,7 +229,12 @@
       ],
       "icon": "\ud83d\udd10",
       "instruction_template": "security_analyst",
-      "sort_order": 4
+      "sort_order": 4,
+      "work_role_slugs": [
+        "onet_15_1212_00",
+        "nice_pd_wrl_001",
+        "nice_pd_wrl_003"
+      ]
     },
     {
       "id": 5,
@@ -267,7 +283,11 @@
       ],
       "icon": "\ud83d\uddc4",
       "instruction_template": "dba",
-      "sort_order": 5
+      "sort_order": 5,
+      "work_role_slugs": [
+        "onet_15_1242_00",
+        "nice_io_wrl_002"
+      ]
     },
     {
       "id": 6,
@@ -314,7 +334,10 @@
       ],
       "icon": "\ud83c\udfd7",
       "instruction_template": "platform_engineer",
-      "sort_order": 6
+      "sort_order": 6,
+      "work_role_slugs": [
+        "onet_15_1299_08"
+      ]
     },
     {
       "id": 7,
@@ -368,7 +391,10 @@
       ],
       "icon": "\ud83d\udea8",
       "instruction_template": "sre",
-      "sort_order": 7
+      "sort_order": 7,
+      "work_role_slugs": [
+        "onet_15_1252_00"
+      ]
     },
     {
       "id": 8,
@@ -420,7 +446,11 @@
       ],
       "icon": "\u2699",
       "instruction_template": "backend_dev",
-      "sort_order": 8
+      "sort_order": 8,
+      "work_role_slugs": [
+        "onet_15_1252_00",
+        "nice_dd_wrl_003"
+      ]
     },
     {
       "id": 9,
@@ -468,7 +498,10 @@
       ],
       "icon": "\ud83d\udd27",
       "instruction_template": "data_engineer",
-      "sort_order": 9
+      "sort_order": 9,
+      "work_role_slugs": [
+        "onet_15_1243_00"
+      ]
     },
     {
       "id": 10,
@@ -512,7 +545,10 @@
       ],
       "icon": "\u2601",
       "instruction_template": "cloud_engineer",
-      "sort_order": 10
+      "sort_order": 10,
+      "work_role_slugs": [
+        "onet_15_1299_08"
+      ]
     },
     {
       "id": 11,

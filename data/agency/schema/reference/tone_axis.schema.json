@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/tone_axis.schema.json",
+  "title": "Tone Axis",
+  "description": "One bipolar dimension of how an agent communicates (persona layer B). An agent sets a level from -2 (strongly the low pole) to +2 (strongly the high pole); 0 gives no instruction. The composer renders each non-zero level as the pole's guidance.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400040,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "tone_axis",
+      "type": "schema",
+      "path": "L2.agency.reference.tone_axis"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "$defs": {
+    "pole": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "maxLength": 32 },
+        "guidance": { "type": "string", "maxLength": 400, "description": "Instruction rendered into the system prompt at this pole (second person, imperative)" }
+      },
+      "required": ["label", "guidance"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "low": { "$ref": "#/$defs/pole", "description": "The pole at level -2" },
+    "high": { "$ref": "#/$defs/pole", "description": "The pole at level +2" },
+    "source": {
+      "type": "object",
+      "description": "Where the axis comes from (prov:wasDerivedFrom). Axis names only are borrowed; guidance text is project content.",
+      "properties": {
+        "framework": { "type": "string", "oneOf": [
+          { "const": "nngroup", "title": "Nielsen Norman Group, The Four Dimensions of Tone of Voice (Moran, 2016)" },
+          { "const": "grice", "title": "Grice, cooperative principle (maxims)" },
+          { "const": "iso_24495", "title": "ISO 24495-1:2023 Plain language" },
+          { "const": "nim", "title": "Project-defined" }
+        ] },
+        "reference": { "type": ["string", "null"], "format": "uri" }
+      },
+      "required": ["framework"],
+      "additionalProperties": false
+    },
+    "lex_matches": {
+      "type": "array",
+      "description": "skos:closeMatch from lex/tones.csv words to a level on this axis; migrates generated tone words",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": { "type": "string", "maxLength": 32 },
+          "level": { "type": "integer", "minimum": -2, "maximum": 2 }
+        },
+        "required": ["term", "level"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["low", "high", "source"],
+  "unevaluatedProperties": false
+}

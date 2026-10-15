@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/work_task.schema.json",
+  "title": "Work Task",
+  "description": "A task statement from an occupational or work-role framework (O*NET task statements; NICE Framework tasks). Linked from work_role with per-role attributes (type, importance). Text is the publisher's.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400044,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "work_task",
+      "type": "schema",
+      "path": "L2.agency.reference.work_task"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "framework": { "type": "string", "enum": ["onet", "nice"] },
+    "code": { "type": "string", "maxLength": 16, "description": "The publisher's task id (skos:notation)" }
+  },
+  "required": ["framework", "code", "description"],
+  "unevaluatedProperties": false
+}

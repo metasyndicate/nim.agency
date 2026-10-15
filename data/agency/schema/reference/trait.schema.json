@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/trait.schema.json",
+  "title": "Trait",
+  "description": "Big Five personality domains and their 30 facets, from the International Personality Item Pool (IPIP-NEO, public domain). Facet items are a measurement instrument (self-report questionnaire items for people), kept for evaluating trait expression; they are never rendered into prompts. Work styles reference the domains (higher-order crosswalk).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400041,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "trait",
+      "type": "schema",
+      "path": "L2.agency.reference.trait"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "code": { "type": "string", "pattern": "^[NEOAC][1-6]?$", "description": "NEO code: domain letter, or letter and facet number (skos:notation)" },
+    "level": { "type": "string", "enum": ["domain", "facet"] },
+    "domain": {
+      "type": ["string", "null"],
+      "x-nim-ref": { "entity": "trait", "key": "slug", "where": { "level": ["domain"] } },
+      "description": "The facet's domain (skos:broader); null for a domain"
+    },
+    "neo_name": { "type": ["string", "null"], "maxLength": 64, "description": "NEO-PI-R facet name the IPIP scale targets, where it differs from the IPIP label" },
+    "items": {
+      "type": "array",
+      "description": "IPIP-NEO 300 keyed items for the facet; in_120 marks the IPIP-NEO-120 (Johnson 2014) subset",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string", "maxLength": 200 },
+          "key": { "type": "string", "enum": ["+", "-"] },
+          "in_120": { "type": "boolean" }
+        },
+        "required": ["text", "key", "in_120"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["code", "level", "domain"],
+  "if": { "properties": { "level": { "const": "facet" } } },
+  "then": { "properties": { "domain": { "type": "string" } } },
+  "unevaluatedProperties": false
+}

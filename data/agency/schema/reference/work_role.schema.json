@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/work_role.schema.json",
+  "title": "Work Role",
+  "description": "An occupation (O*NET-SOC) or cybersecurity work role (NICE Framework) that grounds an archetype (persona layer C): its description and tasks scope the role in the system prompt, and an occupation's work-style ratings set the styles the role demands.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400043,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "work_role",
+      "type": "schema",
+      "path": "L2.agency.reference.work_role"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "framework": { "type": "string", "oneOf": [
+      { "const": "onet", "title": "O*NET 31.0 (USDOL/ETA, CC BY 4.0)" },
+      { "const": "nice", "title": "NICE Framework components v2.2.0 (NIST)" }
+    ] },
+    "code": { "type": "string", "maxLength": 16, "description": "O*NET-SOC code or NICE work role id (skos:notation)" },
+    "category": { "type": ["string", "null"], "maxLength": 64, "description": "NICE work role category" },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task": { "type": "string", "x-nim-ref": { "entity": "work_task", "key": "slug" } },
+          "type": { "type": ["string", "null"], "enum": ["Core", "Supplemental", null], "description": "O*NET task type" },
+          "importance": { "type": ["number", "null"], "minimum": 1, "maximum": 5, "description": "O*NET task importance (IM, 1-5)" }
+        },
+        "required": ["task"],
+        "additionalProperties": false
+      }
+    },
+    "work_styles": {
+      "type": "array",
+      "description": "O*NET Work Styles ratings for the occupation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "style": { "type": "string", "x-nim-ref": { "entity": "work_style", "key": "slug" } },
+          "impact": { "type": "number", "minimum": -3, "maximum": 3, "description": "Work Styles Impact (WI)" },
+          "distinctiveness": { "type": "number", "minimum": 0, "maximum": 10, "description": "Distinctiveness Rank (DR)" }
+        },
+        "required": ["style", "impact"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["framework", "code", "description", "tasks"],
+  "unevaluatedProperties": false
+}

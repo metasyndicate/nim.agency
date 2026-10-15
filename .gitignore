@@ -55,3 +55,9 @@ data/agency/hive/depot/.vault/
 !data/agency/data/instruction/
 !data/agency/data/instruction/**
 
+
+# Persona source pipeline (tools/persona/README.md): publisher downloads and
+# intermediate normalized JSON are rebuilt locally, never committed
+tools/persona/raw/
+tools/persona/*.json
+tools/onet_pdf_text/

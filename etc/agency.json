@@ -23,11 +23,9 @@
     "max_retransmits_per_task": 4
   },
   "validation": {
-    "_": "Schema validation on datastore writes (requires jsonschema). enforce refuses a non-conforming write; warn writes it and records the errors. Entities in warn hold records that do not yet conform, pending operator decisions in .nim/work/plan.101426.compose.md (agent: O4 personality vocabulary). Move each to enforce when its records conform - see nim.agency data check.",
+    "_": "Schema validation on datastore writes (requires jsonschema). enforce refuses a non-conforming write; warn writes it and records the errors. An entity listed here as warn holds records that do not yet conform (a migration state); move it to enforce when its records conform - see nim.agency data check. Agents (O4) and groups (O5) conform since 2026-10-15.",
     "default": "enforce",
-    "entities": {
-      "agent": "warn"
-    }
+    "entities": {}
   },
   "install": {
     "_": "Instance home: records (substations, vault), logs, and venvs. null resolves --home > NIM_HOME > this value > legacy ~/.nim/agency (if it exists) > the platform data dir; see `nim.agency install env`. Plan: .nim/work/plan.101426.installer.md",

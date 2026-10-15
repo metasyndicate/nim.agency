@@ -11,12 +11,19 @@ import json
 from lib.config import report_dir
 from lib.data.composer import get_composer
 from lib.data.identity import is_enrolled, org_id
+from lib.data.persona import Persona
 from tui.chrome import Colors
 from tui.mugshots import MugshotLoader
 from tui.textkit import clip, display_width, pad
 
 class DossierMixin:
     """agent sheet, profile viewer, depth views (op profile, service record, access, ledger)."""
+
+    def _persona_view(self) -> Persona:
+        """Persona tables for labels (read once per screen session)."""
+        if getattr(self, "_persona_cache", None) is None:
+            self._persona_cache = Persona(self.ds)
+        return self._persona_cache
 
     def _draw_agent_view(self, height: int, width: int):
         """Draw detailed agent view - 3-column layout for 120+ columns."""
@@ -375,9 +382,9 @@ class DossierMixin:
                         pass
                     py += 1
 
-            # Traits
-            personality = profile.get("personality", {})
-            traits = personality.get("traits", [])
+            # Work styles (persona layer A), else flavor descriptors
+            described = self._persona_view().describe(profile.get("personality", {}))
+            traits = described["work_styles"] or described["descriptors"]
             if traits and py < profile_y + profile_height - 1:
                 try:
                     self.stdscr.addstr(py, profile_x + 2, f"Traits: {', '.join(traits[:4])}",
@@ -583,14 +590,16 @@ class DossierMixin:
                 lines.append("")
 
             if profile.get("personality"):
-                pers = profile["personality"]
+                pers = self._persona_view().describe(profile["personality"])
                 lines.append("#Personality:")
-                if pers.get("temperament"):
-                    lines.append(f"  Temperament: {pers['temperament']}")
-                if pers.get("traits"):
-                    lines.append(f"  Traits: {', '.join(pers['traits'])}")
-                if pers.get("tone"):
-                    lines.append(f"  Tone: {pers['tone']}")
+                if pers["work_styles"]:
+                    lines.append(f"  Work styles: {', '.join(pers['work_styles'])}")
+                if pers["tone"]:
+                    lines.append(f"  Voice: {', '.join(pers['tone'])}")
+                if pers["temperament"]:
+                    lines.append(f"  Temperament: {pers['temperament']} (derived)")
+                if pers["descriptors"]:
+                    lines.append(f"  Descriptors: {', '.join(pers['descriptors'])}")
                 lines.append("")
 
             if profile.get("interests"):

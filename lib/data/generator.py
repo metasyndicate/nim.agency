@@ -15,6 +15,7 @@ import os
 
 from . import lex
 from .crud import DataStore, get_datastore
+from .persona import Persona
 
 
 class LexLoader:
@@ -680,16 +681,12 @@ class AgentGenerator:
         return assignments, spent
 
     def random_personality(self) -> dict:
-        """Generate random personality attributes from lexicon."""
+        """Random persona layers A and B (work-style emphases, tone axis
+        levels) from the reference tables, plus lex descriptor words as
+        layer D flavor (lib/data/persona.py)."""
         traits = self._get_lex('traits')
-        temperaments = self._get_lex('temperaments')
-        tones = self._get_lex('tones')
-
-        return {
-            "temperament": random.choice(temperaments) if temperaments else "Analytical",
-            "traits": random.sample(traits, min(random.randint(2, 4), len(traits))) if traits else [],
-            "tone": random.choice(tones) if tones else "Formal"
-        }
+        descriptors = random.sample(traits, min(random.randint(2, 4), len(traits))) if traits else []
+        return Persona(self.datastore).generate(random.Random(random.random()), descriptors)
 
     def random_bio(self, name: str, missions: int = 0) -> str:
         """Generate a random biography using lexicon templates."""
