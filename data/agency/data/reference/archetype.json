@@ -94,7 +94,7 @@
       ],
       "tool_access": [
         "docker",
-        "docker-compose",
+        "docker_compose",
         "kubectl",
         "helm",
         "terraform",
@@ -251,7 +251,7 @@
         "psql",
         "mysql",
         "sqlite3",
-        "redis-cli",
+        "redis_cli",
         "mongo",
         "pg_dump",
         "mysqldump"
@@ -415,7 +415,6 @@
         "max": 6
       },
       "pairs_well_with": [
-        "frontend_dev",
         "dba",
         "devops_engineer"
       ],
@@ -465,8 +464,7 @@
       },
       "pairs_well_with": [
         "dba",
-        "backend_dev",
-        "ml_engineer"
+        "backend_dev"
       ],
       "icon": "\ud83d\udd27",
       "instruction_template": "data_engineer",
@@ -537,8 +535,6 @@
         }
       ],
       "tool_access": [
-        "nim.dispatch",
-        "nim.owl",
         "jq",
         "yq"
       ],
@@ -552,7 +548,6 @@
         "sre"
       ],
       "icon": "\ud83d\udc31",
-      "instruction_template": "cat",
       "sort_order": 11,
       "bagman": {
         "term": "CAT",
@@ -577,11 +572,7 @@
           "min_proficiency": 4
         }
       ],
-      "tool_access": [
-        "nim.dispatch",
-        "nim.sting",
-        "nim.smoker"
-      ],
+      "tool_access": [],
       "team_size": {
         "min": 1,
         "max": 1
@@ -591,7 +582,6 @@
         "queen"
       ],
       "icon": "\ud83e\udd89",
-      "instruction_template": "owl",
       "sort_order": 12,
       "bagman": {
         "term": "OWL",
@@ -616,11 +606,7 @@
           "min_proficiency": 3
         }
       ],
-      "tool_access": [
-        "nim.dispatch",
-        "nim.apiary",
-        "nim.comb"
-      ],
+      "tool_access": [],
       "team_size": {
         "min": 1,
         "max": 1
@@ -631,7 +617,6 @@
         "drone"
       ],
       "icon": "\ud83d\udc51",
-      "instruction_template": "queen",
       "sort_order": 13,
       "bagman": {
         "term": "QUEEN",
@@ -671,7 +656,6 @@
         "backend_dev"
       ],
       "icon": "\ud83d\udd0d",
-      "instruction_template": "forager",
       "sort_order": 14,
       "bagman": {
         "term": "FORAGER",
@@ -695,7 +679,6 @@
         "devops_engineer"
       ],
       "icon": "\ud83d\udd04",
-      "instruction_template": "drone",
       "sort_order": 15,
       "bagman": {
         "term": "DRONE",

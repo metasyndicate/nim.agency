@@ -5,9 +5,7 @@
   "label": "Web Development Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {
-    "focus_ids": [12, 13, 14]
-  },
+  "applies_when": {"focus_slugs": []},
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on web application development, from frontend interfaces to backend services.",
     "role_additions": [

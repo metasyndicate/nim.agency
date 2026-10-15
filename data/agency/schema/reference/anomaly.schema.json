@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/anomaly.schema.json",
+  "title": "Relay Anomaly",
+  "description": "A class of fault BIRD (the Biomimetic Inference Relay Dewarbler, lib/dispatch/bird.py) detects between the agency and a syndicate, and what it does about one. Layers loosely follow OSI: link (the request did not complete), frame (a reply arrived but is malformed or cut), context (the prompt did not fit), content (the answer is wrong or refused). Each detection is recorded as an RFC 9457 problem-details object whose type URI names the row. Adding an anomaly is a row here plus a detection site in code; tests hold the two in step.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400039,
+    "created": "2026-10-14T00:00:00Z",
+    "modified": "2026-10-14T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "anomaly",
+      "type": "schema",
+      "path": "L2.agency.reference.anomaly"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "layer": {
+      "type": "string",
+      "oneOf": [
+        { "const": "link", "title": "Link - the request did not complete (OSI 1-4)" },
+        { "const": "frame", "title": "Frame - a reply arrived but is malformed or cut (OSI 5-6)" },
+        { "const": "context", "title": "Context - the prompt did not fit the model's window" },
+        { "const": "content", "title": "Content - the answer is wrong, unusable, or refused" }
+      ]
+    },
+    "status_code": {
+      "type": "string",
+      "enum": ["CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED", "NOT_FOUND", "ALREADY_EXISTS", "PERMISSION_DENIED", "RESOURCE_EXHAUSTED", "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED", "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED"],
+      "description": "gRPC canonical status code: the shared failure taxonomy, and what retry guidance (AIP-194) keys on"
+    },
+    "http_status": {
+      "type": ["integer", "null"],
+      "minimum": 100,
+      "maximum": 599,
+      "description": "RFC 9457 `status` when the anomaly arrives as an HTTP status"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["error", "warning", "notice"],
+      "description": "RFC 5424 severity: error fails the exchange or task, warning degrades it, notice is informational"
+    },
+    "remedy": {
+      "type": "string",
+      "oneOf": [
+        { "const": "retransmit", "title": "Retransmit - send the same request again (ARQ), with backoff" },
+        { "const": "reask", "title": "Reask - return the problem to the model and ask again" },
+        { "const": "fix", "title": "Fix - repair the reply deterministically" },
+        { "const": "noop", "title": "Record only" },
+        { "const": "exception", "title": "Fail the task (before payroll)" }
+      ],
+      "description": "What BIRD does on detection; vocabulary after Guardrails AI OnFailAction plus ARQ retransmission"
+    },
+    "max_attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "default": 0,
+      "description": "Extra attempts the remedy may make for one exchange (retransmit / reask)"
+    },
+    "references": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" },
+      "description": "Specifications and evidence behind the row"
+    }
+  },
+  "required": ["layer", "status_code", "severity", "remedy"],
+  "unevaluatedProperties": false
+}

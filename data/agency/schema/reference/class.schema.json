@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/class.schema.json",
   "title": "Agent Class",
   "description": "Agent classification tier with rank requirements",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400012,
@@ -24,6 +24,7 @@
   "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
   "properties": {
     "min_rank_id": {
+      "x-nim-ref": {"entity": "rank", "key": "id"},
       "type": "integer",
       "minimum": 1,
       "description": "Minimum rank required for this class"

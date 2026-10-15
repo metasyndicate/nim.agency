@@ -74,6 +74,19 @@
             "maxLength": 64
           },
           "description": "Alternative names or handles"
+        },
+        "role_title": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Display title composed from qualifier, focus, and rank labels (derived; not a key into role_title)"
+        },
+        "specialty": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128,
+          "description": "Copy of the specialty label for display (derived from classification.specialty_id); null when none"
         }
       },
       "required": [
@@ -91,17 +104,77 @@
         "status_id": {
           "type": "integer",
           "minimum": 1,
-          "description": "Reference to status lookup"
+          "description": "Reference to status lookup",
+          "x-nim-ref": {
+            "entity": "status",
+            "key": "id"
+          }
         },
         "rank_id": {
           "type": "integer",
           "minimum": 1,
-          "description": "Reference to rank lookup"
+          "description": "Reference to rank lookup",
+          "x-nim-ref": {
+            "entity": "rank",
+            "key": "id"
+          }
         },
         "class_id": {
           "type": "integer",
           "minimum": 1,
-          "description": "Reference to class lookup"
+          "description": "Reference to class lookup",
+          "x-nim-ref": {
+            "entity": "class",
+            "key": "id"
+          }
+        },
+        "ops_domain_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Operational domain (stack layer) - generator-assigned",
+          "x-nim-ref": {
+            "entity": "ops_domain",
+            "key": "id"
+          }
+        },
+        "focus_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Focus area within the operational domain; selects focus instruction blocks",
+          "x-nim-ref": {
+            "entity": "focus",
+            "key": "id"
+          }
+        },
+        "qualifier_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Seniority/vibe qualifier",
+          "x-nim-ref": {
+            "entity": "qualifier",
+            "key": "id"
+          }
+        },
+        "specialty_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Specialty; null when none",
+          "x-nim-ref": {
+            "entity": "specialty",
+            "key": "id"
+          }
+        },
+        "archetype_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Team specialist archetype",
+          "x-nim-ref": {
+            "entity": "archetype",
+            "key": "id"
+          }
         }
       },
       "required": [
@@ -123,7 +196,11 @@
           "domain_id": {
             "type": "integer",
             "minimum": 1,
-            "description": "Reference to skill_domain lookup"
+            "description": "Reference to skill_domain lookup",
+            "x-nim-ref": {
+              "entity": "skill_domain",
+              "key": "id"
+            }
           },
           "points": {
             "type": "integer",
@@ -147,7 +224,11 @@
           "tool_id": {
             "type": "integer",
             "minimum": 1,
-            "description": "Reference to tool"
+            "description": "Reference to tool",
+            "x-nim-ref": {
+              "entity": "tool",
+              "key": "id"
+            }
           },
           "assigned_at": {
             "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
@@ -177,7 +258,11 @@
         "properties": {
           "achievement_id": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "x-nim-ref": {
+              "entity": "achievement",
+              "key": "id"
+            }
           },
           "awarded_at": {
             "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
@@ -238,9 +323,12 @@
           "description": "Narrative biography/backstory"
         },
         "avatar": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "maxLength": 512,
-          "description": "Avatar image path or URL"
+          "description": "Avatar image path or URL; null when none"
         },
         "motto": {
           "type": "string",
@@ -400,7 +488,11 @@
         "type": "object",
         "properties": {
           "group_id": {
-            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+            "x-nim-ref": {
+              "entity": "group",
+              "key": "id"
+            }
           },
           "role": {
             "type": "string",
@@ -423,6 +515,32 @@
     },
     "audit": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Capabilities held, with proficiency on the capability table proficiency_levels scale (1-5)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "capability_id": {
+            "type": "integer",
+            "minimum": 1,
+            "x-nim-ref": {
+              "entity": "capability",
+              "key": "id"
+            }
+          },
+          "proficiency": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "capability_id",
+          "proficiency"
+        ]
+      }
     }
   },
   "required": [

@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/task_preset.schema.json",
   "title": "Task Preset",
   "description": "Predefined dispatchable task: prompt plus crew-matching defaults, runnable in one action (dispatch --preset)",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400033,

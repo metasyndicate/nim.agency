@@ -5,9 +5,7 @@
   "label": "Firewall & Network Security Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {
-    "focus_ids": [3]
-  },
+  "applies_when": {"focus_slugs": ["firewall"]},
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on network security, firewall configuration, and traffic control.",
     "role_additions": [

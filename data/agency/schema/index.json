@@ -146,6 +146,66 @@
         "description": "Wire protocols for reaching a syndicate, with provider handler and capability ceiling",
         "nim_id": 400035,
         "data_path": "../data/reference/transport.json"
+      },
+      "harness_function": {
+        "path": "reference/harness_function.schema.json",
+        "description": "Functions the agency harness advertises to rogue syndicates and executes for them, with JSON Schema call signatures",
+        "nim_id": 400036,
+        "data_path": "../data/reference/harness_function.json"
+      },
+      "command_policy": {
+        "path": "reference/command_policy.schema.json",
+        "description": "Whether and how the agency harness may run one command (a tools row) for a model: the shell allowlist, one row per tool",
+        "nim_id": 400037,
+        "data_path": "../data/reference/command_policy.json"
+      },
+      "harness_profile": {
+        "path": "reference/harness_profile.schema.json",
+        "description": "A named bundle of what the agency harness offers a rogue syndicate and how far its loop may run: functions, commands (once a shell function exists), and loop li",
+        "nim_id": 400038,
+        "data_path": "../data/reference/harness_profile.json"
+      },
+      "anomaly": {
+        "path": "reference/anomaly.schema.json",
+        "description": "BIRD relay anomaly classes: layer, status code, severity, and remedy",
+        "nim_id": 400039,
+        "data_path": "../data/reference/anomaly.json"
+      },
+      "assignment_status": {
+        "path": "reference/assignment_status.schema.json",
+        "description": "BAGMAN: ASSIGNMENT lifecycle states (prov:Activity status vocabulary)",
+        "nim_id": 400017,
+        "data_path": "../data/reference/assignment_status.json"
+      },
+      "mission_status": {
+        "path": "reference/mission_status.schema.json",
+        "description": "Mission activity states (prov:Activity status vocabulary)",
+        "nim_id": 400028,
+        "data_path": "../data/reference/mission_status.json"
+      },
+      "project_status": {
+        "path": "reference/project_status.schema.json",
+        "description": "PROJECT program lifecycle states (schema:Project status vocabulary)",
+        "nim_id": 400031,
+        "data_path": "../data/reference/project_status.json"
+      },
+      "role_title": {
+        "path": "reference/role_title.schema.json",
+        "description": "Operator-defined role/title vocabulary assignable to agents (identity.role_title)",
+        "nim_id": 400032,
+        "data_path": "../data/reference/role_title.json"
+      },
+      "task_preset": {
+        "path": "reference/task_preset.schema.json",
+        "description": "Predefined dispatchable task: prompt plus crew-matching defaults, runnable in one action (dispatch --preset)",
+        "nim_id": 400033,
+        "data_path": "../data/reference/task_preset.json"
+      },
+      "instruction_block": {
+        "path": "reference/instruction_block.schema.json",
+        "description": "Modular instruction building blocks that compose agent behavior dynamically based on rank, focus, scope, and persona",
+        "nim_id": 400025,
+        "data_path": "../data/instruction/"
       }
     },
     "core": {
@@ -169,7 +229,6 @@
         "path": "core/case.schema.json",
         "description": "BAGMAN: CASE - Catalytic Epistle. Dispatchable unit of work for BEE deployment.",
         "nim_id": 400102,
-        "data_path": "../data/cases/",
         "bagman": {
           "term": "CASE",
           "expansion": "Catalytic Epistle",
@@ -188,7 +247,7 @@
         "path": "core/transaction.schema.json",
         "description": "Gold transaction ledger",
         "nim_id": 400104,
-        "data_path": "../data/transactions/"
+        "data_path": "../data/transactions/ledger.json"
       },
       "config": {
         "path": "core/config.schema.json",
@@ -200,19 +259,36 @@
         "path": "core/event_log.schema.json",
         "description": "Time-series audit events",
         "nim_id": 400106,
-        "data_path": "../data/events/"
+        "data_path": "../data/events/log.json"
       },
       "peer_review": {
         "path": "core/peer_review.schema.json",
         "description": "Agent-to-agent evaluations",
         "nim_id": 400107,
-        "data_path": "../data/reviews/"
+        "data_path": "../data/reviews/reviews.json"
       },
       "syndicate": {
         "path": "core/syndicate.schema.json",
         "description": "Model provider inventory entry - endpoint, transport, and dispatchable channels",
         "nim_id": 400113,
         "data_path": "../data/syndicates/"
+      },
+      "mission": {
+        "path": "core/mission.schema.json",
+        "description": "Dispatchable unit of work (prov:Activity)",
+        "nim_id": 400109,
+        "data_path": "../data/missions/"
+      },
+      "project": {
+        "path": "core/project.schema.json",
+        "description": "Stateful scoped work unit (schema:Project): crew engagements, host binding, objectives, directives, and cycle journal",
+        "nim_id": 400114,
+        "data_path": "../data/projects/"
+      },
+      "assignment": {
+        "path": "core/assignment.schema.json",
+        "description": "Dispatchable unit of work for BEE deployment (prov:Activity)",
+        "nim_id": 400108
       },
       "substation": {
         "path": "core/substation.schema.json",
@@ -226,6 +302,13 @@
         "description": "Encrypted credential stored in vault",
         "nim_id": 400111,
         "data_path": "~/.nim/agency/vault/credentials/",
+        "local_storage": true
+      },
+      "install": {
+        "path": "core/install.schema.json",
+        "description": "Install receipt for one agency instance: checkout, paths and why, interpreter, venv, dependency groups, health",
+        "nim_id": 400115,
+        "data_path": "~/.nim/agency/installs/",
         "local_storage": true
       },
       "remote_operation": {

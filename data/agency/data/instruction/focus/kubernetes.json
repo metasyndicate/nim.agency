@@ -5,9 +5,7 @@
   "label": "Kubernetes & Container Orchestration Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {
-    "focus_ids": [5]
-  },
+  "applies_when": {"focus_slugs": ["kubernetes"]},
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on Kubernetes orchestration, container management, and cloud-native operations.",
     "role_additions": [

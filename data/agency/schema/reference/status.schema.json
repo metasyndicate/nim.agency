@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/status.schema.json",
   "title": "Agent Status",
   "description": "Agent lifecycle states (FIPA-aligned)",
-  "@type": ["skos:ConceptScheme", "fipa:AgentState"],
+  "@type": ["skos:Concept", "fipa:AgentState"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400010,

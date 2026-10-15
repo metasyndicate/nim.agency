@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/meta/agency.metaschema.json",
   "title": "NIM Agency Metaschema",
   "description": "Base definitions and common patterns for biomimetic agent fleet management",
-  "@type": ["easme:Metaschema", "skos:ConceptScheme"],
+  "@type": ["nim:Metaschema", "skos:ConceptScheme"],
   "@context": {
     "nim": "https://nim.agency/ns#",
     "fipa": "http://www.fipa.org/specs/fipa00023#",
@@ -13,7 +13,12 @@
     "schema": "https://schema.org/",
     "dcterms": "http://purl.org/dc/terms/",
     "foaf": "http://xmlns.com/foaf/0.1/",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "process": "http://www.daml.org/services/owl-s/1.1/Process.owl#",
+    "profile": "http://www.daml.org/services/owl-s/1.1/Profile.owl#"
   },
   "$nim.meta": {
     "nim.id": 400000,
@@ -36,6 +41,51 @@
     "summary": "Biomimetic agent fleet management - core schema definitions"
   },
   "$defs": {
+    "x-nim-ref": {
+      "type": "object",
+      "description": "Shape of the x-nim-ref annotation keyword: the annotated value (or each array item, or each object key under propertyNames) is a key of another entity - the agency's foreign key. Checked by lib/data/refs.py and `nim.agency data check`; standard validators ignore it. Meaning follows SHACL sh:class and LinkML slot range; x- prefixed because JSON Schema 2020-12 reserves $ keywords for its core.",
+      "$comment": "rdf:property sh:class",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "description": "Target entity name as registered in the datastore (lib/data/crud.py ENTITY_CONFIG)"
+        },
+        "key": {
+          "type": "string",
+          "default": "id",
+          "description": "Target field the value must equal: id (surrogate), slug (skos:notation), or another unique field such as function_name"
+        },
+        "within": {
+          "type": "object",
+          "description": "Dependent bound: the value must also be listed in `field` of the record that the (declared) reference at `via` points to. A syndicate channel's capabilities are bounded by its transport's capability_ceiling this way. Forms offer only the bounded values; data check enforces the bound.",
+          "properties": {
+            "via": { "type": "string", "description": "JSON Pointer (RFC 6901) from the record root to a field that itself carries x-nim-ref" },
+            "field": { "type": "string", "description": "Array field on the referenced record listing the allowed keys" }
+          },
+          "required": ["via", "field"],
+          "additionalProperties": false
+        },
+        "where": {
+          "type": "object",
+          "description": "Only target records whose fields take one of the listed values qualify, e.g. {\"decision\": [\"allow\", \"ask\"]} so a profile cannot name a denied command. Forms offer only qualifying records; data check enforces it.",
+          "additionalProperties": { "type": "array", "items": { "type": ["string", "number", "boolean"] }, "minItems": 1 }
+        }
+      },
+      "required": ["entity", "key"],
+      "additionalProperties": false
+    },
+    "tool_annotations": {
+      "type": "object",
+      "description": "Behaviour hints for something a model can invoke, after the Model Context Protocol ToolAnnotations (spec 2026-07-28). Hints describe; the agency harness enforces - never the reverse.",
+      "$comment": "MCP ToolAnnotations",
+      "properties": {
+        "readOnlyHint": { "type": "boolean", "default": false, "description": "Does not modify its environment" },
+        "destructiveHint": { "type": "boolean", "default": true, "description": "May perform destructive updates (meaningful only when not read-only)" },
+        "idempotentHint": { "type": "boolean", "default": false, "description": "Repeating it with the same arguments has no further effect" },
+        "openWorldHint": { "type": "boolean", "default": true, "description": "Interacts with entities outside a closed domain (network, other hosts)" }
+      },
+      "additionalProperties": false
+    },
     "uuid": {
       "type": "string",
       "format": "uuid",
@@ -101,9 +151,9 @@
         },
         "discovery": {
           "type": "string",
-          "enum": ["created", "scanned", "imported", "migrated"],
+          "enum": ["created", "scanned", "imported", "migrated", "drafted"],
           "default": "created",
-          "description": "Discovery/creation method"
+          "description": "Discovery/creation method (drafted: recruited from the candidate pool, lib/data/roster.py)"
         },
         "timestamp": {
           "$ref": "#/$defs/timestamp",
@@ -111,11 +161,12 @@
           "$comment": "rdf:property prov:atTime"
         },
         "provider": {
-          "type": "string",
-          "description": "Agent model/service provider (anthropic, openai, etc.)"
+          "type": ["string", "null"],
+          "description": "Agent model/service provider (anthropic, openai, etc.); null when not bound to one"
         },
         "model": {
-          "type": "object",
+          "type": ["object", "null"],
+          "description": "Model binding; null when not bound to one",
           "properties": {
             "name": { "type": "string", "description": "Model name (opus, sonnet, gpt-4)" },
             "version": { "type": "string", "description": "Model version" }
@@ -126,7 +177,8 @@
     },
     "audit_timestamps": {
       "type": "object",
-      "description": "Standard audit timestamp fields",
+      "readOnly": true,
+      "description": "Standard audit timestamp fields, maintained by the datastore (readOnly: composition interfaces do not set them)",
       "properties": {
         "created_at": {
           "$ref": "#/$defs/timestamp",
@@ -154,7 +206,8 @@
         "id": {
           "type": "integer",
           "minimum": 1,
-          "description": "Numeric identifier"
+          "readOnly": true,
+          "description": "Numeric identifier, assigned by the datastore (next free id)"
         },
         "slug": {
           "$ref": "#/$defs/slug",

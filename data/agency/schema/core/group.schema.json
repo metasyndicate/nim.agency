@@ -53,12 +53,12 @@
       "properties": {
         "domains": {
           "type": "array",
-          "items": { "type": "integer" },
+          "items": { "type": "integer", "x-nim-ref": {"entity": "skill_domain", "key": "id"} },
           "description": "Primary skill domain IDs"
         },
         "tools": {
           "type": "array",
-          "items": { "type": "integer" },
+          "items": { "type": "integer", "x-nim-ref": {"entity": "tool", "key": "id"} },
           "description": "Specialized tool IDs"
         },
         "mission_types": {

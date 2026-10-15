@@ -21,12 +21,10 @@ def verify_reference_data(ds: DataStore) -> dict:
     """Verify all reference data is loaded correctly."""
     results = {}
 
-    reference_types = [
-        "status", "rank", "class", "skill_domain",
-        "tool_category", "achievement", "mission_status", "tool",
-        "assignment_status", "project_status", "role_title", "task_preset",
-        "transport", "channel_capability"
-    ]
+    # Every registered reference table, not a hand-kept list (which had
+    # drifted to 15 of 26)
+    reference_types = [name for name, config in ds.ENTITY_CONFIG.items()
+                       if config["type"] == "reference"]
 
     for ref_type in reference_types:
         try:

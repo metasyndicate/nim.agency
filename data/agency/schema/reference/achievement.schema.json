@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/achievement.schema.json",
   "title": "Achievement Definition",
   "description": "Achievement/badge catalog with trigger conditions",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400015,

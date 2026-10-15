@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/lexicon.schema.json",
   "title": "BAGMAN Protocol Lexicon",
   "description": "NIM Biomimetic Agency vernacular - codified terminology for structured linguistic control",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$nim.meta": {
     "nim.id": 400030,
     "created": "2026-04-13T00:00:00Z",
@@ -37,9 +37,9 @@
       "description": "Short form identifier"
     },
     "expansion": {
-      "type": "string",
+      "type": ["string", "null"],
       "maxLength": 256,
-      "description": "Full expansion of acronym or formal name"
+      "description": "Full expansion of acronym or formal name; null for terms that are neither"
     },
     "phonetic": {
       "type": "string",

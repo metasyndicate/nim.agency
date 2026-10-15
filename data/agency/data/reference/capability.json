@@ -70,7 +70,7 @@
         "4": "Helm, operators, custom resources",
         "5": "Cluster administration, networking, security"
       },
-      "unlocks_tools": ["docker", "docker-compose", "kubectl", "helm", "podman"],
+      "unlocks_tools": ["docker", "docker_compose", "kubectl", "helm", "podman"],
       "icon": "🐳",
       "sort_order": 4
     },
@@ -88,7 +88,7 @@
         "4": "Complex modules, providers, CI/CD integration",
         "5": "Custom providers, policy as code"
       },
-      "unlocks_tools": ["ansible", "ansible-playbook", "terraform", "packer"],
+      "unlocks_tools": ["ansible", "ansible_playbook", "terraform", "packer"],
       "icon": "📋",
       "sort_order": 5
     },
@@ -106,7 +106,7 @@
         "4": "Performance tuning, explain plans",
         "5": "High availability, disaster recovery"
       },
-      "unlocks_tools": ["psql", "mysql", "sqlite3", "redis-cli", "mongo"],
+      "unlocks_tools": ["psql", "mysql", "sqlite3", "redis_cli", "mongo"],
       "icon": "🗄",
       "sort_order": 6
     },

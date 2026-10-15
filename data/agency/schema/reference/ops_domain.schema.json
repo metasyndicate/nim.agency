@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/ops_domain.schema.json",
   "title": "Operational Domain",
   "description": "Infrastructure layer hierarchy: Facility → Network → Platform → Application",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400019,
@@ -25,13 +25,13 @@
   "properties": {
     "layer": {
       "type": "integer",
-      "minimum": 1,
-      "maximum": 4,
-      "description": "Position in the stack (1=facility, 2=network, 3=platform, 4=application)"
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Position in the stack (1=facility, 2=network, 3=platform, 4=application, 5=data); 0 = cross-cutting, outside the stack (system)"
     },
     "abbrev": {
       "type": "string",
-      "maxLength": 4,
+      "maxLength": 8,
       "description": "Short abbreviation for compact display"
     },
     "icon": {

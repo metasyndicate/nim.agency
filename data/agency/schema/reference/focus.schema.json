@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/focus.schema.json",
   "title": "Operational Focus",
   "description": "Subspecialty within an operational domain. The specific area of expertise.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400021,
@@ -24,6 +24,7 @@
   "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
   "properties": {
     "ops_domain_id": {
+      "x-nim-ref": {"entity": "ops_domain", "key": "id"},
       "type": "integer",
       "minimum": 1,
       "description": "Parent operational domain this focus belongs to"

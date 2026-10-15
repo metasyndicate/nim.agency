@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/project_status.schema.json",
   "title": "Project Status",
   "description": "PROJECT program lifecycle states (schema:Project status vocabulary). A project is a program, not an episode - episodic engagement state lives in assignment_status.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400031,

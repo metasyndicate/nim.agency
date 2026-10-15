@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/core/tool.schema.json",
   "title": "Agent Tool",
   "description": "Global tool catalog - agents assigned from this inventory",
-  "@type": ["sosa:Actuator", "owl-s:AtomicProcess"],
+  "@type": ["sosa:Actuator", "process:AtomicProcess"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400101,
@@ -24,7 +24,9 @@
   "properties": {
     "id": {
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "readOnly": true,
+      "description": "Numeric identifier, assigned by the datastore"
     },
     "slug": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
@@ -40,6 +42,7 @@
       "description": "Tool description and capabilities"
     },
     "category_id": {
+      "x-nim-ref": {"entity": "tool_category", "key": "id"},
       "type": "integer",
       "minimum": 1,
       "description": "Reference to tool_category"
@@ -67,6 +70,7 @@
       "type": "object",
       "properties": {
         "min_rank_id": {
+          "x-nim-ref": {"entity": "rank", "key": "id"},
           "type": "integer",
           "description": "Minimum rank required to use"
         },
@@ -75,7 +79,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "domain_id": { "type": "integer" },
+              "domain_id": { "type": "integer", "x-nim-ref": {"entity": "skill_domain", "key": "id"} },
               "min_points": { "type": "integer", "minimum": 1 }
             }
           }
@@ -85,6 +89,41 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Display ordering (assigned on add, as for every reference table)"
+    },
+    "risk": {
+      "type": "object",
+      "description": "What running this tool can do to the host. Declared from the values in use; the per-invocation rules an agency harness enforces live in command_policy, not here.",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["safe", "moderate", "elevated", "high", "critical"],
+          "description": "Severity tier, aligned with tool_category.risk_level"
+        },
+        "reversibility": {
+          "type": "string",
+          "enum": ["read_only", "reversible", "partially_reversible", "irreversible", "varies"]
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["local", "remote", "distributed"],
+          "description": "How far its effects reach"
+        },
+        "requires_confirmation": { "type": "boolean", "default": false },
+        "dangerous_subcommands": { "type": "array", "items": { "type": "string" } },
+        "dangerous_flags": { "type": "array", "items": { "type": "string" } },
+        "dangerous_commands": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["level", "reversibility", "scope"]
+    },
+    "cost": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Gold an agent pays to equip it (lib/data/economy.py)"
     },
     "icon": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/harness_profile.schema.json",
+  "title": "Harness Profile",
+  "description": "A named bundle of what the agency harness offers a rogue syndicate and how far its loop may run: functions, commands (once a shell function exists), and loop limits. A syndicate channel names its profile; agent depot grants and mission allowed_tools can only narrow what the profile offers.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400038,
+    "created": "2026-10-14T00:00:00Z",
+    "modified": "2026-10-14T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "harness_profile",
+      "type": "schema",
+      "path": "L2.agency.reference.harness_profile"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "functions": {
+      "type": "array",
+      "items": { "type": "string", "x-nim-ref": { "entity": "harness_function", "key": "function_name" } },
+      "description": "Harness functions this profile may offer (harness_function.function_name)"
+    },
+    "commands": {
+      "type": "array",
+      "items": { "type": "string", "x-nim-ref": { "entity": "command_policy", "key": "slug", "where": { "decision": ["allow", "ask"] } } },
+      "description": "Command policies this profile may run, once a shell function is offered. Inert until then."
+    },
+    "limits": {
+      "type": "object",
+      "description": "Loop bounds; any omitted falls to the harness block of etc/agency.json",
+      "properties": {
+        "max_iterations": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "max_calls_per_turn": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "call_timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 600 },
+        "max_result_chars": { "type": "integer", "minimum": 512 },
+        "token_budget": { "type": "integer", "minimum": 1000 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["functions"],
+  "unevaluatedProperties": false
+}

@@ -50,7 +50,7 @@
       "slug": "data",
       "label": "Data",
       "description": "The 'why'. The actual reason any of this exists. Bits with meaning.",
-      "layer": 0,
+      "layer": 5,
       "abbrev": "DAT",
       "icon": "\ud83d\udcbe",
       "color": "#00ced1",

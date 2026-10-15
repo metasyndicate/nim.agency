@@ -39,17 +39,33 @@
       "id": 3,
       "slug": "openai_compat",
       "label": "OpenAI-Compatible Chat",
-      "description": "The /v1/chat/completions lingua franca - Ollama, vLLM, llama.cpp, LM Studio, OpenRouter, and the commercial APIs all answer here. Tool-call emission is in the protocol, but execution belongs to whatever harness wraps it.",
+      "description": "The /v1/chat/completions lingua franca - Ollama, vLLM, llama.cpp, LM Studio, OpenRouter, and the commercial APIs all answer here. Tool calls are in the protocol; the agency harness (lib/dispatch/harness) executes them, so the ceiling extends exactly as far as the executor implements: filesystem_read, not write or shell.",
       "kind": "http",
       "handler": "OpenAICompatProvider",
       "default_path": "/v1/chat/completions",
       "auth_mode": "bearer",
       "capability_ceiling": [
-        "text_generation", "system_prompt", "tool_use", "structured_output",
-        "streaming", "vision"
+        "text_generation", "system_prompt", "tool_use", "filesystem_read",
+        "structured_output", "streaming", "vision"
       ],
       "icon": "🔌",
       "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "ollama_chat",
+      "label": "Ollama Chat",
+      "description": "Ollama's own /api/chat: message history plus function declarations. The model emits structured tool calls and the agency harness (lib/dispatch/harness) executes them under mission policy. The ceiling extends exactly as far as the executor implements: filesystem_read, not write or shell. Tasks offered no function take a single text turn.",
+      "kind": "http",
+      "handler": "OllamaChatProvider",
+      "default_path": "/api/chat",
+      "auth_mode": "none",
+      "capability_ceiling": [
+        "text_generation", "system_prompt", "tool_use", "filesystem_read",
+        "structured_output", "streaming", "vision"
+      ],
+      "icon": "🦙",
+      "sort_order": 4
     }
   ]
 }

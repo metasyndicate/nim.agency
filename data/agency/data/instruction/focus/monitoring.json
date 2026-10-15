@@ -5,9 +5,7 @@
   "label": "Monitoring & Observability Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {
-    "focus_ids": [9, 10]
-  },
+  "applies_when": {"focus_slugs": []},
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on system monitoring, metrics collection, and observability.",
     "role_additions": [

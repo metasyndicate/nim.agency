@@ -1,0 +1,1762 @@
+{
+  "$schema": "../../schema/reference/command_policy.schema.json",
+  "$comment": "Starter shell allowlist for the agency harness (plan D-CMD). Reviewed by the operator before any Shell function is offered. decision: allow | ask | deny; options are allowlisted per tool; hazards cite GTFOBins.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "ls",
+      "label": "ls - list directory",
+      "tool": "ls",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-l",
+        "-a",
+        "-A",
+        "-h",
+        "-R",
+        "-1",
+        "-t",
+        "-r",
+        "-S",
+        "-d",
+        "-F"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "cat",
+      "label": "cat - print files",
+      "tool": "cat",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-n",
+        "-b",
+        "-s"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "head",
+      "label": "head - first lines",
+      "tool": "head",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-n",
+        "-c",
+        "-q"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-n",
+        "-c"
+      ],
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "tail",
+      "label": "tail - last lines",
+      "tool": "tail",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-n",
+        "-c",
+        "-q"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-n",
+        "-c"
+      ],
+      "hazards": [
+        {
+          "argument": "-f",
+          "effect": "hang",
+          "detail": "follows the file forever; the call would only end at its deadline"
+        },
+        {
+          "argument": "-F",
+          "effect": "hang",
+          "detail": "as -f, reopening on rotation"
+        }
+      ],
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "wc",
+      "label": "wc - count lines, words, bytes",
+      "tool": "wc",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-l",
+        "-w",
+        "-c",
+        "-m"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "hazards": [
+        {
+          "argument": "--files0-from",
+          "effect": "read_outside",
+          "detail": "reads a list of paths the operand rules never see"
+        }
+      ],
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "stat",
+      "label": "stat - file metadata",
+      "tool": "stat",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-L"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "du",
+      "label": "du - disk usage",
+      "tool": "du",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-s",
+        "-h",
+        "-a",
+        "-c",
+        "-k",
+        "-d"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-d"
+      ],
+      "hazards": [
+        {
+          "argument": "--files0-from",
+          "effect": "read_outside",
+          "detail": "reads a list of paths the operand rules never see"
+        }
+      ],
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "df",
+      "label": "df - filesystem space",
+      "tool": "df",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-h",
+        "-k",
+        "-P"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "file",
+      "label": "file - identify file types",
+      "tool": "file",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-b",
+        "-i",
+        "-L",
+        "--mime-type"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "hazards": [
+        {
+          "argument": "-m",
+          "effect": "read_outside",
+          "detail": "loads a magic file from any path",
+          "reference": "https://gtfobins.github.io/gtfobins/file/"
+        },
+        {
+          "argument": "-C",
+          "effect": "write",
+          "detail": "compiles a magic file to disk"
+        },
+        {
+          "argument": "-f",
+          "effect": "read_outside",
+          "detail": "reads names to examine from a file"
+        }
+      ],
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "find",
+      "label": "find - search a tree by name, type, size, time",
+      "tool": "find",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-name",
+        "-iname",
+        "-type",
+        "-maxdepth",
+        "-mindepth",
+        "-size",
+        "-mtime",
+        "-newer",
+        "-path",
+        "-empty",
+        "-print"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "description": "find takes primaries after its paths; the executor treats every token after the paths as a primary and allowlists those.",
+      "flags_with_value": [
+        "-name",
+        "-iname",
+        "-type",
+        "-maxdepth",
+        "-mindepth",
+        "-size",
+        "-mtime",
+        "-newer",
+        "-path"
+      ],
+      "hazards": [
+        {
+          "argument": "-exec",
+          "effect": "exec",
+          "detail": "runs any command per match",
+          "reference": "https://gtfobins.github.io/gtfobins/find/"
+        },
+        {
+          "argument": "-execdir",
+          "effect": "exec",
+          "detail": "runs any command per match",
+          "reference": "https://gtfobins.github.io/gtfobins/find/"
+        },
+        {
+          "argument": "-ok",
+          "effect": "exec",
+          "detail": "runs any command per match"
+        },
+        {
+          "argument": "-okdir",
+          "effect": "exec",
+          "detail": "runs any command per match"
+        },
+        {
+          "argument": "-delete",
+          "effect": "write",
+          "detail": "removes every match"
+        },
+        {
+          "argument": "-fprint",
+          "effect": "write",
+          "detail": "writes results to any path",
+          "reference": "https://gtfobins.github.io/gtfobins/find/"
+        },
+        {
+          "argument": "-fprintf",
+          "effect": "write",
+          "detail": "writes results to any path"
+        },
+        {
+          "argument": "-fls",
+          "effect": "write",
+          "detail": "writes results to any path"
+        },
+        {
+          "argument": "-L",
+          "effect": "read_outside",
+          "detail": "follows symlinks out of the working directory"
+        }
+      ],
+      "sort_order": 10
+    },
+    {
+      "id": 11,
+      "slug": "grep",
+      "label": "grep - search file contents",
+      "tool": "grep",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-r",
+        "-R",
+        "-i",
+        "-n",
+        "-l",
+        "-c",
+        "-v",
+        "-w",
+        "-x",
+        "-E",
+        "-F",
+        "-o",
+        "-h",
+        "-H",
+        "-s",
+        "-q",
+        "--include",
+        "--exclude",
+        "-A",
+        "-B",
+        "-C",
+        "-m"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true,
+        "expressions": 1
+      },
+      "flags_with_value": [
+        "--include",
+        "--exclude",
+        "-A",
+        "-B",
+        "-C",
+        "-m"
+      ],
+      "hazards": [
+        {
+          "argument": "-f",
+          "effect": "read_outside",
+          "detail": "reads patterns from any file"
+        },
+        {
+          "argument": "-e",
+          "effect": "read_outside",
+          "detail": "moves the pattern into an option, so the operand rules would treat the pattern as a path; excluded to keep operands unambiguous"
+        }
+      ],
+      "sort_order": 11
+    },
+    {
+      "id": 12,
+      "slug": "rg",
+      "label": "rg - ripgrep search",
+      "tool": "rg",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-i",
+        "-n",
+        "-l",
+        "-c",
+        "-v",
+        "-w",
+        "-F",
+        "-o",
+        "-g",
+        "-t",
+        "-A",
+        "-B",
+        "-C",
+        "-m",
+        "--hidden",
+        "--no-ignore"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true,
+        "expressions": 1
+      },
+      "flags_with_value": [
+        "-g",
+        "-t",
+        "-A",
+        "-B",
+        "-C",
+        "-m"
+      ],
+      "hazards": [
+        {
+          "argument": "--pre",
+          "effect": "exec",
+          "detail": "runs a preprocessor command on every file"
+        },
+        {
+          "argument": "--pre-glob",
+          "effect": "exec",
+          "detail": "selects files for --pre"
+        },
+        {
+          "argument": "-z",
+          "effect": "exec",
+          "detail": "runs decompressors on every file"
+        },
+        {
+          "argument": "--search-zip",
+          "effect": "exec",
+          "detail": "as -z"
+        }
+      ],
+      "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "fd",
+      "label": "fd - find files by name",
+      "tool": "fd",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-t",
+        "-e",
+        "-H",
+        "-I",
+        "-d",
+        "-g"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true,
+        "expressions": 1
+      },
+      "flags_with_value": [
+        "-t",
+        "-e",
+        "-d"
+      ],
+      "hazards": [
+        {
+          "argument": "-x",
+          "effect": "exec",
+          "detail": "runs a command per match"
+        },
+        {
+          "argument": "--exec",
+          "effect": "exec",
+          "detail": "runs a command per match"
+        },
+        {
+          "argument": "-X",
+          "effect": "exec",
+          "detail": "runs one command with all matches"
+        },
+        {
+          "argument": "--exec-batch",
+          "effect": "exec",
+          "detail": "runs one command with all matches"
+        }
+      ],
+      "sort_order": 13
+    },
+    {
+      "id": 14,
+      "slug": "tree",
+      "label": "tree - directory tree",
+      "tool": "tree",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-L",
+        "-a",
+        "-d",
+        "-f",
+        "-I",
+        "-P"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-L",
+        "-I",
+        "-P"
+      ],
+      "hazards": [
+        {
+          "argument": "-o",
+          "effect": "write",
+          "detail": "writes the listing to any path"
+        },
+        {
+          "argument": "-R",
+          "effect": "write",
+          "detail": "with -H writes 00Tree.html into every directory"
+        }
+      ],
+      "sort_order": 14
+    },
+    {
+      "id": 15,
+      "slug": "sort",
+      "label": "sort - sort lines",
+      "tool": "sort",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-n",
+        "-r",
+        "-u",
+        "-k",
+        "-t",
+        "-f",
+        "-h",
+        "-V"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-k",
+        "-t"
+      ],
+      "hazards": [
+        {
+          "argument": "-o",
+          "effect": "write",
+          "detail": "writes output to any path",
+          "reference": "https://gtfobins.github.io/gtfobins/sort/"
+        },
+        {
+          "argument": "--output",
+          "effect": "write",
+          "detail": "writes output to any path",
+          "reference": "https://gtfobins.github.io/gtfobins/sort/"
+        },
+        {
+          "argument": "--compress-program",
+          "effect": "exec",
+          "detail": "runs any program to compress temporaries"
+        },
+        {
+          "argument": "-T",
+          "effect": "write",
+          "detail": "places temporary files in any directory"
+        }
+      ],
+      "sort_order": 15
+    },
+    {
+      "id": 16,
+      "slug": "uniq",
+      "label": "uniq - repeated lines",
+      "tool": "uniq",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-c",
+        "-d",
+        "-u",
+        "-i"
+      ],
+      "operands": {
+        "max": 1,
+        "paths": true
+      },
+      "hazards": [
+        {
+          "argument": "second operand",
+          "effect": "write",
+          "detail": "uniq writes its output to a second operand",
+          "reference": "https://gtfobins.github.io/gtfobins/uniq/"
+        }
+      ],
+      "sort_order": 16
+    },
+    {
+      "id": 17,
+      "slug": "cut",
+      "label": "cut - select fields",
+      "tool": "cut",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-d",
+        "-f",
+        "-c",
+        "-b",
+        "-s"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-d",
+        "-f",
+        "-c",
+        "-b"
+      ],
+      "sort_order": 17
+    },
+    {
+      "id": 18,
+      "slug": "nl",
+      "label": "nl - number lines",
+      "tool": "nl",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-b",
+        "-n"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-b",
+        "-n"
+      ],
+      "sort_order": 18
+    },
+    {
+      "id": 19,
+      "slug": "comm",
+      "label": "comm - compare sorted files",
+      "tool": "comm",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-1",
+        "-2",
+        "-3",
+        "-i"
+      ],
+      "operands": {
+        "max": 2,
+        "paths": true
+      },
+      "sort_order": 19
+    },
+    {
+      "id": 20,
+      "slug": "column",
+      "label": "column - align into columns",
+      "tool": "column",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-t",
+        "-s"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-s"
+      ],
+      "sort_order": 20
+    },
+    {
+      "id": 21,
+      "slug": "diff",
+      "label": "diff - compare files",
+      "tool": "diff",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-u",
+        "-U",
+        "-r",
+        "-q",
+        "-i",
+        "-w",
+        "-b",
+        "-N"
+      ],
+      "operands": {
+        "max": 2,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-U"
+      ],
+      "sort_order": 21
+    },
+    {
+      "id": 22,
+      "slug": "cmp",
+      "label": "cmp - compare bytes",
+      "tool": "cmp",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-l",
+        "-s"
+      ],
+      "operands": {
+        "max": 2,
+        "paths": true
+      },
+      "sort_order": 22
+    },
+    {
+      "id": 23,
+      "slug": "od",
+      "label": "od - octal/hex dump",
+      "tool": "od",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-A",
+        "-t",
+        "-N",
+        "-j",
+        "-c",
+        "-x"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-A",
+        "-t",
+        "-N",
+        "-j"
+      ],
+      "sort_order": 23
+    },
+    {
+      "id": 24,
+      "slug": "xxd",
+      "label": "xxd - hex dump",
+      "tool": "xxd",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-l",
+        "-s",
+        "-c",
+        "-g",
+        "-p"
+      ],
+      "operands": {
+        "max": 1,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-l",
+        "-s",
+        "-c",
+        "-g"
+      ],
+      "hazards": [
+        {
+          "argument": "-r",
+          "effect": "write",
+          "detail": "reverses a dump into binary",
+          "reference": "https://gtfobins.github.io/gtfobins/xxd/"
+        },
+        {
+          "argument": "second operand",
+          "effect": "write",
+          "detail": "xxd writes its output to a second operand",
+          "reference": "https://gtfobins.github.io/gtfobins/xxd/"
+        }
+      ],
+      "sort_order": 24
+    },
+    {
+      "id": 25,
+      "slug": "sha256sum",
+      "label": "sha256sum - checksums",
+      "tool": "sha256sum",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-c"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 25
+    },
+    {
+      "id": 26,
+      "slug": "shasum",
+      "label": "shasum - checksums",
+      "tool": "shasum",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-a",
+        "-c"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "flags_with_value": [
+        "-a"
+      ],
+      "sort_order": 26
+    },
+    {
+      "id": 27,
+      "slug": "realpath",
+      "label": "realpath - canonical path",
+      "tool": "realpath",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [],
+      "operands": {
+        "max": null,
+        "paths": true
+      },
+      "sort_order": 27
+    },
+    {
+      "id": 28,
+      "slug": "basename",
+      "label": "basename - strip directory",
+      "tool": "basename",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [],
+      "operands": {
+        "max": 2,
+        "paths": false
+      },
+      "sort_order": 28
+    },
+    {
+      "id": 29,
+      "slug": "dirname",
+      "label": "dirname - strip last component",
+      "tool": "dirname",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [],
+      "operands": {
+        "max": null,
+        "paths": false
+      },
+      "sort_order": 29
+    },
+    {
+      "id": 30,
+      "slug": "pwd",
+      "label": "pwd - working directory",
+      "tool": "pwd",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [],
+      "operands": {
+        "max": 0,
+        "paths": false
+      },
+      "sort_order": 30
+    },
+    {
+      "id": 31,
+      "slug": "uname",
+      "label": "uname - system information",
+      "tool": "uname",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-a",
+        "-s",
+        "-r",
+        "-m"
+      ],
+      "operands": {
+        "max": 0,
+        "paths": false
+      },
+      "sort_order": 31
+    },
+    {
+      "id": 32,
+      "slug": "which",
+      "label": "which - locate a command",
+      "tool": "which",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [],
+      "operands": {
+        "max": null,
+        "paths": false
+      },
+      "sort_order": 32
+    },
+    {
+      "id": 33,
+      "slug": "date",
+      "label": "date - print the date",
+      "tool": "date",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-u",
+        "-R"
+      ],
+      "operands": {
+        "max": 1,
+        "paths": false,
+        "expressions": 1
+      },
+      "hazards": [
+        {
+          "argument": "-s",
+          "effect": "write",
+          "detail": "sets the system clock (as root)"
+        },
+        {
+          "argument": "--set",
+          "effect": "write",
+          "detail": "sets the system clock (as root)"
+        }
+      ],
+      "sort_order": 33
+    },
+    {
+      "id": 34,
+      "slug": "jq",
+      "label": "jq - JSON processor",
+      "tool": "jq",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "-r",
+        "-c",
+        "-S",
+        "-e",
+        "-s",
+        "-n",
+        "--arg",
+        "--argjson"
+      ],
+      "operands": {
+        "max": null,
+        "paths": true,
+        "expressions": 1
+      },
+      "flags_with_value": [
+        "--arg",
+        "--argjson"
+      ],
+      "hazards": [
+        {
+          "argument": "--rawfile",
+          "effect": "read_outside",
+          "detail": "reads any file into a variable",
+          "reference": "https://gtfobins.github.io/gtfobins/jq/"
+        },
+        {
+          "argument": "--slurpfile",
+          "effect": "read_outside",
+          "detail": "reads any file into a variable",
+          "reference": "https://gtfobins.github.io/gtfobins/jq/"
+        },
+        {
+          "argument": "-L",
+          "effect": "read_outside",
+          "detail": "loads modules from any directory"
+        },
+        {
+          "argument": "$ENV / env",
+          "effect": "secret_exposure",
+          "detail": "the filter language can read the process environment"
+        }
+      ],
+      "sort_order": 34
+    },
+    {
+      "id": 35,
+      "slug": "git",
+      "label": "git - read-only repository inspection",
+      "tool": "git",
+      "decision": "allow",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "flags": [
+        "--oneline",
+        "-n",
+        "--stat",
+        "--name-only",
+        "--name-status",
+        "-p",
+        "--format",
+        "--since",
+        "--until",
+        "--author",
+        "--grep",
+        "-i",
+        "--cached",
+        "--abbrev-commit",
+        "--graph",
+        "--all",
+        "-l",
+        "-r",
+        "--short"
+      ],
+      "operands": {
+        "max": null,
+        "paths": false
+      },
+      "description": "Operands are revisions or paths, so they are not path-confined; the repository is the working directory and -C/--git-dir/--work-tree are refused. Repo-local config is an exec vector, hence the injected overrides.",
+      "flags_with_value": [
+        "-n",
+        "--format",
+        "--since",
+        "--until",
+        "--author",
+        "--grep"
+      ],
+      "subcommands": [
+        "status",
+        "log",
+        "show",
+        "diff",
+        "blame",
+        "ls-files",
+        "ls-tree",
+        "rev-parse",
+        "grep",
+        "describe"
+      ],
+      "inject": [
+        "--no-pager",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.pager=cat",
+        "-c",
+        "diff.external="
+      ],
+      "hazards": [
+        {
+          "argument": "-c",
+          "effect": "exec",
+          "detail": "sets config such as core.pager or core.sshCommand to any command",
+          "reference": "https://gtfobins.github.io/gtfobins/git/"
+        },
+        {
+          "argument": "--config-env",
+          "effect": "exec",
+          "detail": "as -c, from the environment"
+        },
+        {
+          "argument": "-C",
+          "effect": "read_outside",
+          "detail": "runs against any directory"
+        },
+        {
+          "argument": "--git-dir",
+          "effect": "read_outside",
+          "detail": "runs against any repository"
+        },
+        {
+          "argument": "--work-tree",
+          "effect": "read_outside",
+          "detail": "runs against any directory"
+        },
+        {
+          "argument": "--output",
+          "effect": "write",
+          "detail": "writes a diff or log to any path"
+        },
+        {
+          "argument": "--ext-diff",
+          "effect": "exec",
+          "detail": "runs the configured external diff"
+        },
+        {
+          "argument": "--textconv",
+          "effect": "exec",
+          "detail": "runs configured text conversion filters"
+        },
+        {
+          "argument": "help",
+          "effect": "exec",
+          "detail": "opens a pager, which can run a shell",
+          "reference": "https://gtfobins.github.io/gtfobins/git/"
+        }
+      ],
+      "sort_order": 35
+    },
+    {
+      "id": 36,
+      "slug": "sed",
+      "label": "sed - stream editor",
+      "tool": "sed",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "e command / s///e",
+          "effect": "exec",
+          "detail": "executes the pattern space as a command",
+          "reference": "https://gtfobins.github.io/gtfobins/sed/"
+        },
+        {
+          "argument": "w, W, s///w",
+          "effect": "write",
+          "detail": "writes to any file",
+          "reference": "https://gtfobins.github.io/gtfobins/sed/"
+        },
+        {
+          "argument": "-i",
+          "effect": "write",
+          "detail": "edits files in place"
+        },
+        {
+          "argument": "r, R",
+          "effect": "read_outside",
+          "detail": "reads any file into the output"
+        }
+      ],
+      "description": "Expression-level commands execute and write; BSD sed (macOS) has no --sandbox. Revisit with an expression parser or GNU sed --sandbox.",
+      "sort_order": 36
+    },
+    {
+      "id": 37,
+      "slug": "awk",
+      "label": "awk - pattern language",
+      "tool": "awk",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "system()",
+          "effect": "exec",
+          "detail": "runs any command",
+          "reference": "https://gtfobins.github.io/gtfobins/awk/"
+        },
+        {
+          "argument": "print > file, | command, getline",
+          "effect": "exec",
+          "detail": "writes files, pipes to commands, reads command output",
+          "reference": "https://gtfobins.github.io/gtfobins/awk/"
+        }
+      ],
+      "description": "A programming language; only gawk --sandbox would contain it.",
+      "sort_order": 37
+    },
+    {
+      "id": 38,
+      "slug": "less",
+      "label": "less - pager",
+      "tool": "less",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "!",
+          "effect": "exec",
+          "detail": "runs a shell command",
+          "reference": "https://gtfobins.github.io/gtfobins/less/"
+        },
+        {
+          "argument": "v",
+          "effect": "exec",
+          "detail": "opens an editor"
+        }
+      ],
+      "description": "Interactive pager with shell escapes; output is returned to the model anyway.",
+      "sort_order": 38
+    },
+    {
+      "id": 39,
+      "slug": "more",
+      "label": "more - pager",
+      "tool": "more",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "!",
+          "effect": "exec",
+          "detail": "runs a shell command",
+          "reference": "https://gtfobins.github.io/gtfobins/more/"
+        }
+      ],
+      "description": "Interactive pager with shell escapes.",
+      "sort_order": 39
+    },
+    {
+      "id": 40,
+      "slug": "man",
+      "label": "man - manual pages",
+      "tool": "man",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "pager !",
+          "effect": "exec",
+          "detail": "pages through less, which runs shell commands",
+          "reference": "https://gtfobins.github.io/gtfobins/man/"
+        }
+      ],
+      "description": "Pages through a pager.",
+      "sort_order": 40
+    },
+    {
+      "id": 41,
+      "slug": "xargs",
+      "label": "xargs - build command lines",
+      "tool": "xargs",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "command",
+          "effect": "exec",
+          "detail": "its purpose is to run commands",
+          "reference": "https://gtfobins.github.io/gtfobins/xargs/"
+        }
+      ],
+      "description": "Runs commands built from input.",
+      "sort_order": 41
+    },
+    {
+      "id": 42,
+      "slug": "env",
+      "label": "env - environment / run command",
+      "tool": "env",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "command",
+          "effect": "exec",
+          "detail": "runs any command",
+          "reference": "https://gtfobins.github.io/gtfobins/env/"
+        },
+        {
+          "argument": "no operands",
+          "effect": "secret_exposure",
+          "detail": "prints every environment variable"
+        }
+      ],
+      "description": "Runs commands and prints secrets.",
+      "sort_order": 42
+    },
+    {
+      "id": 43,
+      "slug": "printenv",
+      "label": "printenv - environment",
+      "tool": "printenv",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "hazards": [
+        {
+          "argument": "no operands",
+          "effect": "secret_exposure",
+          "detail": "prints every environment variable"
+        }
+      ],
+      "description": "Credentials commonly live in the environment.",
+      "sort_order": 43
+    },
+    {
+      "id": 44,
+      "slug": "tee",
+      "label": "tee - copy to files",
+      "tool": "tee",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "hazards": [
+        {
+          "argument": "file operands",
+          "effect": "write",
+          "detail": "writes to any file",
+          "reference": "https://gtfobins.github.io/gtfobins/tee/"
+        }
+      ],
+      "description": "Its purpose is writing files.",
+      "sort_order": 44
+    },
+    {
+      "id": 45,
+      "slug": "tar",
+      "label": "tar - archives",
+      "tool": "tar",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "--to-command",
+          "effect": "exec",
+          "detail": "pipes members to any command",
+          "reference": "https://gtfobins.github.io/gtfobins/tar/"
+        },
+        {
+          "argument": "--checkpoint-action=exec",
+          "effect": "exec",
+          "detail": "runs any command",
+          "reference": "https://gtfobins.github.io/gtfobins/tar/"
+        },
+        {
+          "argument": "-x",
+          "effect": "write",
+          "detail": "extracts over existing files"
+        }
+      ],
+      "description": "Archive options run commands and overwrite files.",
+      "sort_order": 45
+    },
+    {
+      "id": 46,
+      "slug": "bash",
+      "label": "bash - shell",
+      "tool": "bash",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "-c",
+          "effect": "exec",
+          "detail": "a shell runs anything",
+          "reference": "https://gtfobins.github.io/gtfobins/bash/"
+        }
+      ],
+      "description": "A shell defeats every rule in this table.",
+      "sort_order": 46
+    },
+    {
+      "id": 47,
+      "slug": "sh",
+      "label": "sh - POSIX shell",
+      "tool": "sh",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "-c",
+          "effect": "exec",
+          "detail": "a shell runs anything",
+          "reference": "https://gtfobins.github.io/gtfobins/sh/"
+        }
+      ],
+      "description": "A shell defeats every rule in this table.",
+      "sort_order": 47
+    },
+    {
+      "id": 48,
+      "slug": "zsh",
+      "label": "zsh - Z shell",
+      "tool": "zsh",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "-c",
+          "effect": "exec",
+          "detail": "a shell runs anything",
+          "reference": "https://gtfobins.github.io/gtfobins/zsh/"
+        }
+      ],
+      "description": "A shell defeats every rule in this table.",
+      "sort_order": 48
+    },
+    {
+      "id": 49,
+      "slug": "python",
+      "label": "python - interpreter",
+      "tool": "python",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "-c",
+          "effect": "exec",
+          "detail": "an interpreter runs anything",
+          "reference": "https://gtfobins.github.io/gtfobins/python/"
+        }
+      ],
+      "description": "An interpreter defeats every rule in this table.",
+      "sort_order": 49
+    },
+    {
+      "id": 50,
+      "slug": "curl",
+      "label": "curl - HTTP client",
+      "tool": "curl",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "any URL",
+          "effect": "network",
+          "detail": "the harness makes no network calls"
+        },
+        {
+          "argument": "-o",
+          "effect": "write",
+          "detail": "writes downloads to any path",
+          "reference": "https://gtfobins.github.io/gtfobins/curl/"
+        }
+      ],
+      "description": "The harness makes no network calls; egress belongs to the syndicate, not the model.",
+      "sort_order": 50
+    },
+    {
+      "id": 51,
+      "slug": "wget",
+      "label": "wget - downloader",
+      "tool": "wget",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "hazards": [
+        {
+          "argument": "any URL",
+          "effect": "network",
+          "detail": "the harness makes no network calls"
+        },
+        {
+          "argument": "-O",
+          "effect": "write",
+          "detail": "writes downloads to any path",
+          "reference": "https://gtfobins.github.io/gtfobins/wget/"
+        }
+      ],
+      "description": "The harness makes no network calls.",
+      "sort_order": 51
+    },
+    {
+      "id": 52,
+      "slug": "rm",
+      "label": "rm - remove files",
+      "tool": "rm",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "hazards": [
+        {
+          "argument": "operands",
+          "effect": "write",
+          "detail": "removes files"
+        }
+      ],
+      "description": "The harness is read-only (write tools: plan open decision 3).",
+      "sort_order": 52
+    },
+    {
+      "id": 53,
+      "slug": "chmod",
+      "label": "chmod - change modes",
+      "tool": "chmod",
+      "decision": "deny",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "hazards": [
+        {
+          "argument": "operands",
+          "effect": "write",
+          "detail": "changes permissions"
+        }
+      ],
+      "description": "The harness is read-only.",
+      "sort_order": 53
+    }
+  ]
+}

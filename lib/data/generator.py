@@ -127,18 +127,14 @@ class LexLoader:
         if not filepath.exists():
             return values
 
-        with open(filepath, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            for i, row in enumerate(f):
-                # Skip header
+        # RFC 4180 parsing: a value containing commas is quoted in the file,
+        # so splitting on bare commas would cut it (every bio template and
+        # two mottos were truncated at their first comma)
+        with open(filepath, 'r', encoding='utf-8', newline='') as f:
+            for i, row in enumerate(csv.reader(f)):
                 if i == 0:
-                    continue
-                # Handle CSV with multiple columns
-                if ',' in row:
-                    parts = row.split(',')
-                    value = parts[column].strip() if len(parts) > column else ''
-                else:
-                    value = row.strip()
+                    continue        # header
+                value = row[column].strip() if len(row) > column else ''
                 if value:
                     values.append(value)
 
@@ -1000,7 +996,7 @@ class AgentGenerator:
         from .identity import try_enroll
 
         agent = self.generate(**kwargs)
-        agent = self.datastore.create("agent", agent, validate=False)
+        agent = self.datastore.create("agent", agent)
         enrollment = try_enroll(self.datastore, agent)
         return enrollment.agent if enrollment else agent
 

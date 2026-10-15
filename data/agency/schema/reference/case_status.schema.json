@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/case_status.schema.json",
   "title": "Case Status",
   "description": "BAGMAN: CASE lifecycle states (prov:Activity status vocabulary)",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400016,

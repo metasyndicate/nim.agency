@@ -884,7 +884,7 @@
       "domain": "structure",
       "subdomain": "organization",
       "definition": "The totality of NIM biomimetic operations infrastructure. The HIVE of HIVEs. The organizational whole.",
-      "usage_context": ["instruction", "schema", "ui", "public"],
+      "usage_context": ["instruction", "schema", "ui"],
       "standard_equiv": "organization / enterprise",
       "semantic_relations": {
         "broader": ["NIM"],

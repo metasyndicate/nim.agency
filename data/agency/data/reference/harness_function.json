@@ -1,0 +1,84 @@
+{
+  "$schema": "../schema/reference/harness_function.schema.json",
+  "$comment": "Functions the agency harness serves to rogue syndicates. One row per function the executor actually implements - a row without a handler would make the capability gate lie. `function_name` must appear in a channel_capability's harness_tools; that table maps the name to the capability it implies. Paths in every function resolve under the mission's working directory and are refused outside it.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "read",
+      "label": "Read File",
+      "description": "Read one text file under the working directory. Returns numbered lines; use offset and limit to page through large files. Read only files whose contents the task needs - names and counts come from LS and Glob.",
+      "function_name": "Read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "File path, relative to the working directory"},
+          "offset": {"type": "integer", "minimum": 1, "description": "First line to return (1-based, default 1)"},
+          "limit": {"type": "integer", "minimum": 1, "description": "Maximum number of lines to return (default 400)"}
+        },
+        "required": ["path"]
+      },
+      "depot_tool": null,
+      "handler": "read",
+      "icon": "📄",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "ls",
+      "label": "List Directory",
+      "description": "List the entries of a directory under the working directory, one per line, directories marked with a trailing slash. Returns the exact entry count.",
+      "function_name": "LS",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "Directory path, relative to the working directory (default: the working directory itself)"}
+        },
+        "required": []
+      },
+      "depot_tool": null,
+      "handler": "ls",
+      "icon": "🗂",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "glob",
+      "label": "Find Files",
+      "description": "Find files whose paths match a glob pattern (e.g. '**/*.py'), searched under the working directory (.git directories are not walked). Returns matching paths and the exact match count.",
+      "function_name": "Glob",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {"type": "string", "description": "Glob pattern; ** matches across directories"},
+          "path": {"type": "string", "description": "Directory to search from, relative to the working directory (default: the working directory)"}
+        },
+        "required": ["pattern"]
+      },
+      "depot_tool": null,
+      "handler": "glob",
+      "icon": "🔎",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "grep",
+      "label": "Search File Contents",
+      "description": "Search inside file contents (not file names - use Glob for names) for a regular expression (Python re syntax) under the working directory (.git directories, binary files, and files over 2 MB are skipped). Returns path:line:text for each match and the exact match count.",
+      "function_name": "Grep",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {"type": "string", "description": "Regular expression to search for"},
+          "path": {"type": "string", "description": "File or directory to search, relative to the working directory (default: the working directory)"},
+          "glob": {"type": "string", "description": "Only search files whose name matches this glob (e.g. '*.py')"},
+          "ignore_case": {"type": "boolean", "description": "Case-insensitive match (default false)"}
+        },
+        "required": ["pattern"]
+      },
+      "depot_tool": "grep",
+      "handler": "grep",
+      "icon": "🧵",
+      "sort_order": 4
+    }
+  ]
+}

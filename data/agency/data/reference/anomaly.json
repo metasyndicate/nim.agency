@@ -1,0 +1,118 @@
+{
+  "$schema": "../../schema/reference/anomaly.schema.json",
+  "$comment": "BIRD anomaly vocabulary (lib/dispatch/bird.py). Starter set from the 2026-10-14 discovery findings against bonsai (Ollama 0.33.2) plus the standard link-layer failures.",
+  "data": [
+    {
+      "id": 1, "slug": "link_timeout", "label": "Request timed out",
+      "description": "No reply within the deadline. Not resent: a request that times out has spent the time it had, and a resend would start with none (AIP-194 retries DEADLINE_EXCEEDED only with a fresh deadline). Raise the task timeout or narrow the task.",
+      "layer": "link", "status_code": "DEADLINE_EXCEEDED", "http_status": null,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": ["https://www.rfc-editor.org/rfc/rfc9110#section-9.2.2", "https://google.aip.dev/194"],
+      "sort_order": 1
+    },
+    {
+      "id": 2, "slug": "link_unreachable", "label": "Endpoint unreachable",
+      "description": "Connection refused, reset, or name not resolved. A workstation syndicate may be asleep or its model service down.",
+      "layer": "link", "status_code": "UNAVAILABLE", "http_status": null,
+      "severity": "warning", "remedy": "retransmit", "max_attempts": 2,
+      "references": ["https://google.aip.dev/194"],
+      "sort_order": 2
+    },
+    {
+      "id": 3, "slug": "link_rate_limited", "label": "Rate limited",
+      "description": "HTTP 429. Resend after the server's Retry-After, or capped exponential backoff with full jitter.",
+      "layer": "link", "status_code": "RESOURCE_EXHAUSTED", "http_status": 429,
+      "severity": "warning", "remedy": "retransmit", "max_attempts": 3,
+      "references": ["https://www.rfc-editor.org/rfc/rfc6585#section-4", "https://www.rfc-editor.org/rfc/rfc9110#section-10.2.3"],
+      "sort_order": 3
+    },
+    {
+      "id": 4, "slug": "link_unavailable", "label": "Service unavailable",
+      "description": "HTTP 502, 503, or 504 from the endpoint or a proxy in front of it (tailscale serve).",
+      "layer": "link", "status_code": "UNAVAILABLE", "http_status": 503,
+      "severity": "warning", "remedy": "retransmit", "max_attempts": 2,
+      "references": ["https://www.rfc-editor.org/rfc/rfc9110#section-15.6.4"],
+      "sort_order": 4
+    },
+    {
+      "id": 5, "slug": "link_http_error", "label": "HTTP error",
+      "description": "Any other HTTP error status. Not resent: the same request would fail the same way.",
+      "layer": "link", "status_code": "INTERNAL", "http_status": null,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": ["https://www.rfc-editor.org/rfc/rfc9457"],
+      "sort_order": 5
+    },
+    {
+      "id": 6, "slug": "frame_malformed_body", "label": "Malformed reply body",
+      "description": "The reply is not JSON, or lacks the fields the transport defines.",
+      "layer": "frame", "status_code": "DATA_LOSS", "http_status": null,
+      "severity": "error", "remedy": "retransmit", "max_attempts": 1,
+      "references": ["https://docs.ollama.com/api/chat"],
+      "sort_order": 6
+    },
+    {
+      "id": 7, "slug": "frame_empty_message", "label": "Empty reply",
+      "description": "A complete reply with neither text nor tool calls.",
+      "layer": "frame", "status_code": "DATA_LOSS", "http_status": null,
+      "severity": "warning", "remedy": "retransmit", "max_attempts": 1,
+      "references": [],
+      "sort_order": 7
+    },
+    {
+      "id": 8, "slug": "frame_output_truncated", "label": "Output cut at the limit",
+      "description": "The model stopped at its output-token limit (finish reason length / max_tokens): HTTP 200 with a partial answer. Observed on bonsai 2026-10-14.",
+      "layer": "frame", "status_code": "OUT_OF_RANGE", "http_status": null,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": ["https://opentelemetry.io/docs/specs/semconv/gen-ai/", "https://docs.ollama.com/api/chat"],
+      "sort_order": 8
+    },
+    {
+      "id": 9, "slug": "frame_malformed_arguments", "label": "Malformed tool arguments",
+      "description": "A tool call whose arguments are not a JSON object. Returned to the model as a refused call so it can correct itself (MCP isError).",
+      "layer": "frame", "status_code": "INVALID_ARGUMENT", "http_status": null,
+      "severity": "notice", "remedy": "reask", "max_attempts": 0,
+      "references": ["https://modelcontextprotocol.io/specification/2026-07-28/server/tools"],
+      "sort_order": 9
+    },
+    {
+      "id": 10, "slug": "context_exceeded", "label": "Prompt exceeds the context window",
+      "description": "The endpoint refused a prompt larger than its window. Ollama does this only with truncate:false; by default it drops the oldest messages and answers 200 (observed on bonsai: 3040 tokens sent, 26 evaluated).",
+      "layer": "context", "status_code": "RESOURCE_EXHAUSTED", "http_status": 400,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": ["https://docs.ollama.com/api/chat"],
+      "sort_order": 10
+    },
+    {
+      "id": 11, "slug": "context_truncation_suspected", "label": "Prompt truncation suspected",
+      "description": "The endpoint reports far fewer prompt tokens than were sent (under 40% of a characters/4 estimate), the signature of silent truncation on endpoints that cannot be told to refuse.",
+      "layer": "context", "status_code": "DATA_LOSS", "http_status": null,
+      "severity": "warning", "remedy": "noop", "max_attempts": 0,
+      "references": [],
+      "sort_order": 11
+    },
+    {
+      "id": 12, "slug": "context_low_water", "label": "Context running low",
+      "description": "The harness told the model to stop calling functions and answer, because the window was nearly full.",
+      "layer": "context", "status_code": "RESOURCE_EXHAUSTED", "http_status": null,
+      "severity": "notice", "remedy": "noop", "max_attempts": 0,
+      "references": [],
+      "sort_order": 12
+    },
+    {
+      "id": 13, "slug": "content_known_answer_mismatch", "label": "Known-answer mismatch",
+      "description": "The answer failed the task's known-answer check; the task fails before payroll.",
+      "layer": "content", "status_code": "FAILED_PRECONDITION", "http_status": null,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": [],
+      "sort_order": 13
+    },
+    {
+      "id": 14, "slug": "content_refusal", "label": "Policy refusal",
+      "description": "The model declined the composed prompt (usage-policy refusal); attributed to the assigned agent's conduct.",
+      "layer": "content", "status_code": "PERMISSION_DENIED", "http_status": null,
+      "severity": "error", "remedy": "exception", "max_attempts": 0,
+      "references": [],
+      "sort_order": 14
+    }
+  ]
+}

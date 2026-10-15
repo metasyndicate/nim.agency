@@ -6,7 +6,7 @@
   "@type": ["schema:Project", "prov:Activity"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
-    "nim.id": 400113,
+    "nim.id": 400114,
     "created": "2026-08-31T00:00:00Z",
     "modified": "2026-08-31T00:00:00Z",
     "version": "1.0.0",
@@ -40,6 +40,7 @@
       "type": "string"
     },
     "status_id": {
+      "x-nim-ref": {"entity": "project_status", "key": "id"},
       "type": "integer",
       "minimum": 1,
       "description": "Reference to project_status lookup"
@@ -48,6 +49,7 @@
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/priority"
     },
     "crue_id": {
+      "x-nim-ref": {"entity": "group", "key": "id"},
       "oneOf": [
         { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
         { "type": "null" }
@@ -61,6 +63,7 @@
         "type": "object",
         "properties": {
           "agent_id": {
+            "x-nim-ref": {"entity": "agent", "key": "id"},
             "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
           },
           "role": {
@@ -75,6 +78,7 @@
             "description": "Become per-agent task prompts at cycle composition"
           },
           "status_id": {
+            "x-nim-ref": {"entity": "assignment_status", "key": "id"},
             "type": "integer",
             "minimum": 1,
             "description": "Reference to assignment_status lookup - mission outcomes drive transitions"
@@ -102,6 +106,7 @@
       "description": "Where the work happens - null substation_id means the local host",
       "properties": {
         "substation_id": {
+          "x-nim-ref": {"entity": "substation", "key": "id"},
           "oneOf": [
             { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
             { "type": "null" }

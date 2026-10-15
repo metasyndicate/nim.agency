@@ -49,9 +49,9 @@
           "description": "Agency tagline/motto"
         },
         "logo_path": {
-          "type": "string",
+          "type": ["string", "null"],
           "maxLength": 512,
-          "description": "Path to logo asset"
+          "description": "Path to logo asset; null for none"
         }
       },
       "required": ["name", "short"]
@@ -174,9 +174,9 @@
       "description": "Operator overrides (defaults derived from system/environment)",
       "properties": {
         "display_name": {
-          "type": "string",
+          "type": ["string", "null"],
           "maxLength": 256,
-          "description": "Override display name (default: system username)"
+          "description": "Override display name; null = system username"
         },
         "role": {
           "type": "string",

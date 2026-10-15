@@ -1183,6 +1183,1446 @@
         ]
       },
       "cost": 250
+    },
+    {
+      "slug": "ls",
+      "label": "ls",
+      "category_id": 2,
+      "is_active": true,
+      "description": "List directory contents",
+      "icon": "\ud83d\udcc1",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "ls [options] [path...]"
+      },
+      "id": 36,
+      "sort_order": 36
+    },
+    {
+      "slug": "cat",
+      "label": "cat",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Print file contents",
+      "icon": "\ud83d\udcc4",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "cat [file...]"
+      },
+      "id": 37,
+      "sort_order": 37
+    },
+    {
+      "slug": "head",
+      "label": "head",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Print the first lines of a file",
+      "icon": "\u2b06",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "head [-n N] [file...]"
+      },
+      "id": 38,
+      "sort_order": 38
+    },
+    {
+      "slug": "tail",
+      "label": "tail",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Print the last lines of a file; -f follows the file and never ends",
+      "icon": "\u2b07",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "tail [-n N] [file...]"
+      },
+      "id": 39,
+      "sort_order": 39
+    },
+    {
+      "slug": "wc",
+      "label": "wc",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Count lines, words, and bytes",
+      "icon": "\ud83d\udd22",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "wc [-lwc] [file...]"
+      },
+      "id": 40,
+      "sort_order": 40
+    },
+    {
+      "slug": "stat",
+      "label": "stat",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Show file metadata (size, mode, owner, times)",
+      "icon": "\u2139",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "stat [path...]"
+      },
+      "id": 41,
+      "sort_order": 41
+    },
+    {
+      "slug": "du",
+      "label": "du",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Estimate disk usage of files and directories",
+      "icon": "\ud83d\udcbd",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "du [-sh] [path...]"
+      },
+      "id": 42,
+      "sort_order": 42
+    },
+    {
+      "slug": "df",
+      "label": "df",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Report filesystem space usage",
+      "icon": "\ud83d\udcbe",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "df [-h] [path...]"
+      },
+      "id": 43,
+      "sort_order": 43
+    },
+    {
+      "slug": "file",
+      "label": "file",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Identify file types by content",
+      "icon": "\ud83c\udff7",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "file [path...]"
+      },
+      "id": 44,
+      "sort_order": 44
+    },
+    {
+      "slug": "find",
+      "label": "find",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Search a directory tree by name, type, size, or time; -exec and -delete run commands and remove files",
+      "icon": "\ud83d\udd0e",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "find [path...] [expression]"
+      },
+      "id": 45,
+      "sort_order": 45
+    },
+    {
+      "slug": "rg",
+      "label": "rg",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Recursive regular-expression search (ripgrep)",
+      "icon": "\ud83d\udd0d",
+      "cost": 25,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "rg [options] pattern [path...]"
+      },
+      "id": 46,
+      "sort_order": 46
+    },
+    {
+      "slug": "fd",
+      "label": "fd",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Find files by name (fd); -x/-X run commands per match",
+      "icon": "\ud83d\udd0e",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "fd [options] [pattern] [path...]"
+      },
+      "id": 47,
+      "sort_order": 47
+    },
+    {
+      "slug": "tree",
+      "label": "tree",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Display a directory tree",
+      "icon": "\ud83c\udf32",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "tree [-L depth] [path]"
+      },
+      "id": 48,
+      "sort_order": 48
+    },
+    {
+      "slug": "sort",
+      "label": "sort",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Sort lines of text; -o writes to a file",
+      "icon": "\u2195",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "sort [options] [file...]"
+      },
+      "id": 49,
+      "sort_order": 49
+    },
+    {
+      "slug": "uniq",
+      "label": "uniq",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Report or filter repeated adjacent lines; a second operand is an output file",
+      "icon": "\ud83e\uddee",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "uniq [options] [input [output]]"
+      },
+      "id": 50,
+      "sort_order": 50
+    },
+    {
+      "slug": "cut",
+      "label": "cut",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Select fields or columns from each line",
+      "icon": "\u2702",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "cut -d DELIM -f FIELDS [file...]"
+      },
+      "id": 51,
+      "sort_order": 51
+    },
+    {
+      "slug": "tr",
+      "label": "tr",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Translate or delete characters",
+      "icon": "\ud83d\udd24",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "tr SET1 [SET2]"
+      },
+      "id": 52,
+      "sort_order": 52
+    },
+    {
+      "slug": "nl",
+      "label": "nl",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Number the lines of a file",
+      "icon": "\ud83d\udd22",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "nl [file...]"
+      },
+      "id": 53,
+      "sort_order": 53
+    },
+    {
+      "slug": "comm",
+      "label": "comm",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Compare two sorted files line by line",
+      "icon": "\u2696",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "comm [-123] file1 file2"
+      },
+      "id": 54,
+      "sort_order": 54
+    },
+    {
+      "slug": "column",
+      "label": "column",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Format input into aligned columns",
+      "icon": "\u25a6",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "column [-t] [file...]"
+      },
+      "id": 55,
+      "sort_order": 55
+    },
+    {
+      "slug": "diff",
+      "label": "diff",
+      "category_id": 5,
+      "is_active": true,
+      "description": "Compare files line by line",
+      "icon": "\u00b1",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "diff [-u] file1 file2"
+      },
+      "id": 56,
+      "sort_order": 56
+    },
+    {
+      "slug": "cmp",
+      "label": "cmp",
+      "category_id": 5,
+      "is_active": true,
+      "description": "Compare files byte by byte",
+      "icon": "\u225f",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "cmp file1 file2"
+      },
+      "id": 57,
+      "sort_order": 57
+    },
+    {
+      "slug": "xxd",
+      "label": "xxd",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Hex dump a file; -r reverses a dump back into binary",
+      "icon": "\ud83e\uddec",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "xxd [options] [infile [outfile]]"
+      },
+      "id": 58,
+      "sort_order": 58
+    },
+    {
+      "slug": "od",
+      "label": "od",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Dump a file in octal, hex, or other formats",
+      "icon": "\ud83e\uddec",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "od [options] [file...]"
+      },
+      "id": 59,
+      "sort_order": 59
+    },
+    {
+      "slug": "sha256sum",
+      "label": "sha256sum",
+      "category_id": 4,
+      "is_active": true,
+      "description": "Compute or verify SHA-256 checksums (GNU coreutils)",
+      "icon": "#",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "sha256sum [file...]"
+      },
+      "id": 60,
+      "sort_order": 60
+    },
+    {
+      "slug": "shasum",
+      "label": "shasum",
+      "category_id": 4,
+      "is_active": true,
+      "description": "Compute or verify SHA checksums (BSD/macOS)",
+      "icon": "#",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "shasum -a 256 [file...]"
+      },
+      "id": 61,
+      "sort_order": 61
+    },
+    {
+      "slug": "which",
+      "label": "which",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Locate a command on PATH",
+      "icon": "\ud83d\udccd",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "which command..."
+      },
+      "id": 62,
+      "sort_order": 62
+    },
+    {
+      "slug": "pwd",
+      "label": "pwd",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Print the working directory",
+      "icon": "\ud83d\udccd",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "pwd"
+      },
+      "id": 63,
+      "sort_order": 63
+    },
+    {
+      "slug": "uname",
+      "label": "uname",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Print system information (kernel, architecture)",
+      "icon": "\ud83d\udda5",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "uname [-a]"
+      },
+      "id": 64,
+      "sort_order": 64
+    },
+    {
+      "slug": "basename",
+      "label": "basename",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Strip the directory (and optionally a suffix) from a path",
+      "icon": "\ud83d\udcce",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "basename path [suffix]"
+      },
+      "id": 65,
+      "sort_order": 65
+    },
+    {
+      "slug": "dirname",
+      "label": "dirname",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Strip the last component from a path",
+      "icon": "\ud83d\udcce",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "dirname path"
+      },
+      "id": 66,
+      "sort_order": 66
+    },
+    {
+      "slug": "realpath",
+      "label": "realpath",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Resolve a path to its absolute canonical form",
+      "icon": "\ud83d\udcce",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "realpath path..."
+      },
+      "id": 67,
+      "sort_order": 67
+    },
+    {
+      "slug": "date",
+      "label": "date",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Print the date; with -s/--set (as root) sets the system clock",
+      "icon": "\ud83d\udcc5",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "date [+FORMAT]"
+      },
+      "id": 68,
+      "sort_order": 68
+    },
+    {
+      "slug": "less",
+      "label": "less",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Interactive pager; !, |, and v run shell commands",
+      "icon": "\ud83d\udcd6",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "less [file...]"
+      },
+      "id": 69,
+      "sort_order": 69
+    },
+    {
+      "slug": "more",
+      "label": "more",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Interactive pager; ! runs shell commands",
+      "icon": "\ud83d\udcd6",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "more [file...]"
+      },
+      "id": 70,
+      "sort_order": 70
+    },
+    {
+      "slug": "man",
+      "label": "man",
+      "category_id": 5,
+      "is_active": true,
+      "description": "Display manual pages through a pager",
+      "icon": "\ud83d\udcda",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "man [section] page"
+      },
+      "id": 71,
+      "sort_order": 71
+    },
+    {
+      "slug": "xargs",
+      "label": "xargs",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Build and execute command lines from standard input",
+      "icon": "\u2699",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "xargs [options] [command [args...]]"
+      },
+      "id": 72,
+      "sort_order": 72
+    },
+    {
+      "slug": "env",
+      "label": "env",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Print the environment, or run a command in a modified one",
+      "icon": "\ud83c\udf10",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "env [NAME=VALUE...] [command [args...]]"
+      },
+      "id": 73,
+      "sort_order": 73
+    },
+    {
+      "slug": "tee",
+      "label": "tee",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Copy standard input to standard output and to files",
+      "icon": "\ud83d\udd00",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "tee [-a] file..."
+      },
+      "id": 74,
+      "sort_order": 74
+    },
+    {
+      "slug": "tar",
+      "label": "tar",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Create and extract archives; options can run commands and overwrite files",
+      "icon": "\ud83d\udce6",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "tar [options] [archive] [path...]"
+      },
+      "id": 75,
+      "sort_order": 75
+    },
+    {
+      "slug": "printenv",
+      "label": "printenv",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Print environment variables (exposes any secrets held there)",
+      "icon": "\ud83c\udf10",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "printenv [NAME...]"
+      },
+      "id": 76,
+      "sort_order": 76
+    },
+    {
+      "slug": "sh",
+      "label": "sh",
+      "category_id": 3,
+      "is_active": true,
+      "description": "POSIX shell",
+      "icon": "\ud83d\udcbb",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "sh [-c command] [script]"
+      },
+      "id": 77,
+      "sort_order": 77
+    },
+    {
+      "slug": "zsh",
+      "label": "zsh",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Z shell",
+      "icon": "\ud83d\udcbb",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "zsh [-c command] [script]"
+      },
+      "id": 78,
+      "sort_order": 78
+    },
+    {
+      "slug": "pstree",
+      "label": "pstree",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Show running processes as a tree",
+      "icon": "\ud83c\udf33",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "pstree [pid|user]"
+      },
+      "id": 79,
+      "sort_order": 79
+    },
+    {
+      "slug": "dmesg",
+      "label": "dmesg",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Print the kernel ring buffer",
+      "icon": "\ud83d\udcdc",
+      "cost": 25,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "dmesg [options]"
+      },
+      "id": 80,
+      "sort_order": 80
+    },
+    {
+      "slug": "ltrace",
+      "label": "ltrace",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Trace library calls of a process",
+      "icon": "\ud83d\udd2c",
+      "cost": 200,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "ltrace [options] command | -p pid"
+      },
+      "id": 81,
+      "sort_order": 81
+    },
+    {
+      "slug": "nslookup",
+      "label": "nslookup",
+      "category_id": 1,
+      "is_active": true,
+      "description": "Query DNS name servers",
+      "icon": "\ud83d\udcd6",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "nslookup name [server]"
+      },
+      "id": 82,
+      "sort_order": 82
+    },
+    {
+      "slug": "wget",
+      "label": "wget",
+      "category_id": 1,
+      "is_active": true,
+      "description": "Download files over HTTP, HTTPS, or FTP (writes files)",
+      "icon": "\u2b07",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "wget [options] url..."
+      },
+      "id": 83,
+      "sort_order": 83
+    },
+    {
+      "slug": "httpie",
+      "label": "httpie",
+      "category_id": 1,
+      "is_active": true,
+      "description": "HTTP client for APIs (command: http)",
+      "icon": "\ud83c\udf10",
+      "cost": 25,
+      "risk": {
+        "level": "safe",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "http [METHOD] url [items...]"
+      },
+      "id": 84,
+      "sort_order": 84
+    },
+    {
+      "slug": "scp",
+      "label": "scp",
+      "category_id": 1,
+      "is_active": true,
+      "description": "Copy files between hosts over SSH",
+      "icon": "\ud83d\udd11",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "scp [options] source... target"
+      },
+      "id": 85,
+      "sort_order": 85
+    },
+    {
+      "slug": "chown",
+      "label": "chown",
+      "category_id": 2,
+      "is_active": true,
+      "description": "Change file owner and group",
+      "icon": "\ud83d\udc64",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "chown [-R] owner[:group] path..."
+      },
+      "id": 86,
+      "sort_order": 86
+    },
+    {
+      "slug": "useradd",
+      "label": "useradd",
+      "category_id": 4,
+      "is_active": true,
+      "description": "Create a user account",
+      "icon": "\ud83d\udc64",
+      "cost": 500,
+      "risk": {
+        "level": "high",
+        "reversibility": "partially_reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "useradd [options] login"
+      },
+      "id": 87,
+      "sort_order": 87
+    },
+    {
+      "slug": "auditctl",
+      "label": "auditctl",
+      "category_id": 4,
+      "is_active": true,
+      "description": "Control the Linux audit system and its rules",
+      "icon": "\ud83d\udee1",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "auditctl [options]"
+      },
+      "id": 88,
+      "sort_order": 88
+    },
+    {
+      "slug": "fail2ban",
+      "label": "fail2ban",
+      "category_id": 4,
+      "is_active": true,
+      "description": "Ban hosts after repeated authentication failures (fail2ban-client)",
+      "icon": "\ud83d\udee1",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "fail2ban-client [command]"
+      },
+      "id": 89,
+      "sort_order": 89
+    },
+    {
+      "slug": "apt",
+      "label": "apt",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Debian/Ubuntu package manager",
+      "icon": "\ud83d\udce6",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "apt [install|remove|update|list] [package...]"
+      },
+      "id": 90,
+      "sort_order": 90
+    },
+    {
+      "slug": "dnf",
+      "label": "dnf",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Fedora/RHEL package manager",
+      "icon": "\ud83d\udce6",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "dnf [install|remove|list] [package...]"
+      },
+      "id": 91,
+      "sort_order": 91
+    },
+    {
+      "slug": "yum",
+      "label": "yum",
+      "category_id": 3,
+      "is_active": true,
+      "description": "RHEL/CentOS package manager (predecessor of dnf)",
+      "icon": "\ud83d\udce6",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "partially_reversible",
+        "scope": "local",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "yum [install|remove|list] [package...]"
+      },
+      "id": 92,
+      "sort_order": 92
+    },
+    {
+      "slug": "pip",
+      "label": "pip",
+      "category_id": 5,
+      "is_active": true,
+      "description": "Python package installer",
+      "icon": "\ud83d\udc0d",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "pip [install|uninstall|list] [package...]"
+      },
+      "id": 93,
+      "sort_order": 93
+    },
+    {
+      "slug": "venv",
+      "label": "venv",
+      "category_id": 5,
+      "is_active": true,
+      "description": "Create Python virtual environments (python -m venv)",
+      "icon": "\ud83d\udc0d",
+      "cost": 0,
+      "risk": {
+        "level": "safe",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "python -m venv path"
+      },
+      "id": 94,
+      "sort_order": 94
+    },
+    {
+      "slug": "podman",
+      "label": "podman",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Daemonless container engine",
+      "icon": "\ud83e\uddad",
+      "cost": 200,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "podman [command] [options]"
+      },
+      "id": 95,
+      "sort_order": 95
+    },
+    {
+      "slug": "docker_compose",
+      "label": "docker-compose",
+      "category_id": 3,
+      "is_active": true,
+      "description": "Define and run multi-container Docker applications",
+      "icon": "\ud83d\udc33",
+      "cost": 200,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "reversible",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "docker compose [command]"
+      },
+      "id": 96,
+      "sort_order": 96
+    },
+    {
+      "slug": "sqlite3",
+      "label": "sqlite3",
+      "category_id": 6,
+      "is_active": true,
+      "description": "SQLite command-line shell",
+      "icon": "\ud83d\uddc3",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "sqlite3 [database] [sql]"
+      },
+      "id": 97,
+      "sort_order": 97
+    },
+    {
+      "slug": "mongo",
+      "label": "mongo",
+      "category_id": 6,
+      "is_active": true,
+      "description": "MongoDB shell",
+      "icon": "\ud83c\udf43",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "mongosh [connection-string]"
+      },
+      "id": 98,
+      "sort_order": 98
+    },
+    {
+      "slug": "redis_cli",
+      "label": "redis-cli",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Redis command-line client",
+      "icon": "\ud83e\uddf1",
+      "cost": 200,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "redis-cli [-h host] [command]"
+      },
+      "id": 99,
+      "sort_order": 99
+    },
+    {
+      "slug": "pg_dump",
+      "label": "pg_dump",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Dump a PostgreSQL database to a file",
+      "icon": "\ud83d\udc18",
+      "cost": 150,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "pg_dump [options] dbname"
+      },
+      "id": 100,
+      "sort_order": 100
+    },
+    {
+      "slug": "mysqldump",
+      "label": "mysqldump",
+      "category_id": 6,
+      "is_active": true,
+      "description": "Dump a MySQL database to a file",
+      "icon": "\ud83d\udc2c",
+      "cost": 150,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "read_only",
+        "scope": "remote",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "mysqldump [options] database"
+      },
+      "id": 101,
+      "sort_order": 101
+    },
+    {
+      "slug": "yq",
+      "label": "yq",
+      "category_id": 6,
+      "is_active": true,
+      "description": "YAML, JSON, and XML processor; -i edits files in place",
+      "icon": "\ud83d\udcca",
+      "cost": 75,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "local",
+        "requires_confirmation": false
+      },
+      "usage": {
+        "syntax": "yq [options] expression [file...]"
+      },
+      "id": 102,
+      "sort_order": 102
+    },
+    {
+      "slug": "gh",
+      "label": "gh",
+      "category_id": 5,
+      "is_active": true,
+      "description": "GitHub CLI",
+      "icon": "\ud83d\udc19",
+      "cost": 100,
+      "risk": {
+        "level": "moderate",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "gh [command] [subcommand]"
+      },
+      "id": 103,
+      "sort_order": 103
+    },
+    {
+      "slug": "ansible_playbook",
+      "label": "ansible-playbook",
+      "category_id": 8,
+      "is_active": true,
+      "description": "Run Ansible playbooks against inventory hosts",
+      "icon": "\ud83d\udccb",
+      "cost": 500,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "distributed",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "ansible-playbook [options] playbook.yml"
+      },
+      "id": 104,
+      "sort_order": 104
+    },
+    {
+      "slug": "packer",
+      "label": "packer",
+      "category_id": 8,
+      "is_active": true,
+      "description": "Build machine images (HashiCorp Packer)",
+      "icon": "\ud83c\udfd7",
+      "cost": 350,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "reversible",
+        "scope": "distributed",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "packer build template"
+      },
+      "id": 105,
+      "sort_order": 105
+    },
+    {
+      "slug": "az",
+      "label": "az",
+      "category_id": 8,
+      "is_active": true,
+      "description": "Azure command-line interface",
+      "icon": "\u2601",
+      "cost": 350,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "az [group] [command]"
+      },
+      "id": 106,
+      "sort_order": 106
+    },
+    {
+      "slug": "gcloud",
+      "label": "gcloud",
+      "category_id": 8,
+      "is_active": true,
+      "description": "Google Cloud command-line interface",
+      "icon": "\u2601",
+      "cost": 350,
+      "risk": {
+        "level": "elevated",
+        "reversibility": "varies",
+        "scope": "remote",
+        "requires_confirmation": true
+      },
+      "usage": {
+        "syntax": "gcloud [group] [command]"
+      },
+      "id": 107,
+      "sort_order": 107
     }
   ]
 }

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/command_policy.schema.json",
+  "title": "Command Policy",
+  "description": "Whether and how the agency harness may run one command (a tools row) for a model: the shell allowlist, one row per tool. Commands run as argv with no shell - no pipes, redirects, or substitution - so `cd` is the mission working directory, not a command. Options are allowlisted, not denylisted: GNU long-option abbreviation and short-flag bundling defeat denylists. Hazards record why options or whole tools are excluded, citing GTFOBins. Decisions use the rule vocabulary of Claude Code permissions (allow/ask/deny) and Codex rules (allow/prompt/forbidden).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400037,
+    "created": "2026-10-14T00:00:00Z",
+    "modified": "2026-10-14T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "command_policy",
+      "type": "schema",
+      "path": "L2.agency.reference.command_policy"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "tool": {
+      "type": "string",
+      "x-nim-ref": { "entity": "tool", "key": "slug" },
+      "description": "The command this policy governs (tools.slug)"
+    },
+    "program": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Executable name when it differs from the tool slug (tool httpie runs `http`); resolved to an absolute path on PATH before running"
+    },
+    "decision": {
+      "type": "string",
+      "oneOf": [
+        { "const": "allow", "title": "Allow - the harness runs it within these rules" },
+        { "const": "ask", "title": "Ask - an operator confirms each invocation" },
+        { "const": "deny", "title": "Deny - never run for a model (see hazards)" }
+      ],
+      "description": "Whether the harness may run it at all"
+    },
+    "annotations": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/tool_annotations"
+    },
+    "subcommands": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 32 },
+      "description": "Allowed first operands (git: status, log, ...). Absent: the tool takes none. A subcommand not listed is refused."
+    },
+    "flags": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^-", "maxLength": 32 },
+      "description": "Allowlisted options, exact tokens (-n, --max-count). Any other option is refused, including abbreviations and bundles."
+    },
+    "flags_with_value": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^-", "maxLength": 32 },
+      "description": "The subset of flags that take a value (next token, or --flag=value)"
+    },
+    "operands": {
+      "type": "object",
+      "description": "Non-option arguments",
+      "properties": {
+        "max": { "type": ["integer", "null"], "minimum": 0, "description": "Most operands allowed; null for no limit" },
+        "expressions": { "type": "integer", "minimum": 0, "default": 0, "description": "Leading operands that are expressions, not paths (grep PATTERN, jq FILTER, date +FORMAT)" },
+        "paths": { "type": "boolean", "default": true, "description": "Remaining operands are paths and must resolve inside the mission working directory (symlinks followed)" }
+      },
+      "additionalProperties": false
+    },
+    "inject": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 64 },
+      "description": "Arguments placed right after the program, before the model's (git: --no-pager -c core.fsmonitor=false -c core.pager=cat)"
+    },
+    "hazards": {
+      "type": "array",
+      "description": "Why options, operands, or the whole tool are excluded",
+      "items": {
+        "type": "object",
+        "properties": {
+          "argument": { "type": "string", "maxLength": 64, "description": "The option or form (-exec, s///e, !)" },
+          "effect": { "type": "string", "enum": ["exec", "write", "read_outside", "network", "secret_exposure", "hang"], "description": "What it would let a model do" },
+          "detail": { "type": "string", "maxLength": 256 },
+          "reference": { "type": "string", "format": "uri" }
+        },
+        "required": ["argument", "effect"],
+        "additionalProperties": false
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 600, "default": 30 },
+        "max_output_bytes": { "type": "integer", "minimum": 1024, "default": 65536 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["tool", "decision", "annotations"],
+  "if": { "properties": { "decision": { "const": "deny" } } },
+  "then": { "required": ["hazards"] },
+  "unevaluatedProperties": false
+}

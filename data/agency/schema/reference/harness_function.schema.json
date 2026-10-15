@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/harness_function.schema.json",
+  "title": "Harness Function",
+  "description": "A function the agency's own harness advertises to a rogue (unplatformed) syndicate and executes on its behalf. The call signature is the function-calling convention shared by Ollama /api/chat and OpenAI /v1/chat/completions: a name, a description, and a JSON Schema for the arguments.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400036,
+    "created": "2026-10-14T00:00:00Z",
+    "modified": "2026-10-14T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "harness_function",
+      "type": "schema",
+      "path": "L2.agency.reference.harness_function"
+    }
+  },
+  "type": "object",
+  "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
+  "properties": {
+    "function_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+      "maxLength": 64,
+      "description": "The name the model calls and a mission lists in allowed_tools. Must appear in some channel_capability's harness_tools: that table, not this one, decides which capability the function implies."
+    },
+    "parameters": {
+      "type": "object",
+      "description": "JSON Schema (type: object) for the call arguments, sent to the model verbatim as tools[].function.parameters. Shaped like MCP Tool.inputSchema; constrained structurally so validation stays offline.",
+      "properties": {
+        "type": { "const": "object" },
+        "properties": { "type": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "additionalProperties": { "type": "boolean" }
+      },
+      "required": ["type", "properties"]
+    },
+    "depot_tool": {
+      "x-nim-ref": {"entity": "tool", "key": "slug"},
+      "oneOf": [
+        { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" },
+        { "type": "null" }
+      ],
+      "description": "Slug of the depot tool (tools.json) an agent must hold to be offered this function, or null when the function is a basic faculty every agent has."
+    },
+    "handler": {
+      "type": "string",
+      "pattern": "^[a-z_][a-z0-9_]*$",
+      "description": "Executor method in lib/dispatch/harness/executor.py that runs the call."
+    },
+    "icon": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"
+    }
+  },
+  "required": ["id", "slug", "label", "function_name", "parameters", "handler"]
+}

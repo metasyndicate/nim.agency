@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schema/reference/harness_profile.schema.json",
+  "$comment": "Starter harness profiles. A syndicate channel names one (channels[].harness_profile); limits omitted here fall to the harness block of etc/agency.json.",
+  "data": [
+    {
+      "id": 1,
+      "slug": "readonly_fs",
+      "label": "Read-only filesystem",
+      "description": "Read, list, glob, and search files under the mission working directory. The loop limits of etc/agency.json.",
+      "functions": ["Read", "LS", "Glob", "Grep"],
+      "commands": [],
+      "limits": {
+        "max_iterations": 12,
+        "max_calls_per_turn": 8,
+        "call_timeout_seconds": 30,
+        "max_result_chars": 16000,
+        "token_budget": 200000
+      },
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "readonly_fs_compact",
+      "label": "Read-only filesystem, compact context",
+      "description": "As readonly_fs, sized for channels with 32k-token windows: fewer calls per turn and smaller results, so one turn of reads cannot fill the window (observed on mux_nova, which read every file at once and lost the question).",
+      "functions": ["Read", "LS", "Glob", "Grep"],
+      "commands": [],
+      "limits": {
+        "max_iterations": 12,
+        "max_calls_per_turn": 4,
+        "call_timeout_seconds": 30,
+        "max_result_chars": 8000,
+        "token_budget": 120000
+      },
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "readonly_shell_staged",
+      "label": "Read-only shell (staged)",
+      "description": "The read-only filesystem functions plus the starter command allowlist. The commands are inert until a Shell function exists and the operator has reviewed command_policy.",
+      "functions": ["Read", "LS", "Glob", "Grep"],
+      "commands": ["ls", "cat", "head", "tail", "wc", "stat", "du", "file", "find", "grep", "rg", "tree", "sort", "uniq", "cut", "diff", "jq", "git"],
+      "sort_order": 3
+    }
+  ]
+}

@@ -24,7 +24,8 @@
   "properties": {
     "id": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
-      "description": "Unique substation identifier"
+      "readOnly": true,
+      "description": "Unique substation identifier, assigned by the datastore"
     },
     "identity": {
       "type": "object",
@@ -48,9 +49,10 @@
         },
         "environment": {
           "type": "string",
-          "enum": ["development", "staging", "production", "testing", "research"],
+          "maxLength": 64,
+          "examples": ["development", "staging", "production", "testing", "research"],
           "default": "development",
-          "description": "Deployment environment classification"
+          "description": "Deployment environment, an open classification (OpenTelemetry deployment.environment.name: a string with well-known values, not a closed set)"
         },
         "tags": {
           "type": "array",
@@ -62,26 +64,38 @@
     },
     "connection": {
       "type": "object",
-      "description": "SSH connection parameters",
+      "description": "How the agency reaches this host. Syndicate endpoints it hosts carry their own URIs; this is the host itself.",
       "properties": {
+        "kind": {
+          "type": "string",
+          "oneOf": [
+            { "const": "ssh", "title": "SSH - shell access (remote operations, deploy)" },
+            { "const": "https", "title": "HTTPS - API endpoints only, no shell" },
+            { "const": "http", "title": "HTTP - API endpoints only, no shell, unencrypted" },
+            { "const": "local", "title": "Local - this machine" }
+          ],
+          "default": "ssh",
+          "description": "Connection kind, after Ansible ansible_connection. Absent means ssh (records predating this field)."
+        },
         "hostname": {
           "type": "string",
           "maxLength": 256,
-          "description": "Hostname or IP address"
+          "description": "Hostname or IP address (OpenTelemetry server.address / host.name)"
         },
         "port": {
           "type": "integer",
           "minimum": 1,
           "maximum": 65535,
           "default": 22,
-          "description": "SSH port"
+          "description": "Port the connection kind uses (ssh 22, https 443)"
         },
         "username": {
           "type": "string",
           "maxLength": 64,
-          "description": "SSH username"
+          "description": "SSH username (required when kind is ssh)"
         },
         "credential_id": {
+          "x-nim-ref": {"entity": "credential", "key": "id"},
           "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
           "description": "Reference to credential in vault"
         },
@@ -92,7 +106,7 @@
             "hostname": {"type": "string"},
             "port": {"type": "integer", "default": 22},
             "username": {"type": "string"},
-            "credential_id": {"$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"}
+            "credential_id": {"$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid", "x-nim-ref": {"entity": "credential", "key": "id"} }
           }
         },
         "timeout": {
@@ -103,7 +117,9 @@
           "description": "Connection timeout in seconds"
         }
       },
-      "required": ["hostname", "username"]
+      "required": ["hostname"],
+      "if": { "properties": { "kind": { "const": "ssh" } } },
+      "then": { "required": ["username"] }
     },
     "permissions": {
       "type": "object",
@@ -143,7 +159,8 @@
     },
     "status": {
       "type": "object",
-      "description": "Current connection/health status",
+      "readOnly": true,
+      "description": "Current connection/health status - observed, not composed",
       "properties": {
         "state": {
           "type": "string",
@@ -168,11 +185,13 @@
     },
     "deployments": {
       "type": "array",
-      "description": "Agents deployed to this substation",
+      "readOnly": true,
+      "description": "Agents deployed to this substation - recorded by deploy, not composed",
       "items": {
         "type": "object",
         "properties": {
           "agent_id": {
+            "x-nim-ref": {"entity": "agent", "key": "id"},
             "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
           },
           "deployed_at": {

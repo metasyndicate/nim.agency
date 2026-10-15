@@ -3,9 +3,9 @@
   "$id": "https://nim.agency/schema/reference/crue_type.schema.json",
   "title": "Crüe Type",
   "description": "Pre-configured agent group templates with thematic specializations",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$nim.meta": {
-    "nim.id": 400025,
+    "nim.id": 400027,
     "created": "2026-04-08T00:00:00Z",
     "modified": "2026-04-08T00:00:00Z",
     "version": "1.0.0",
@@ -21,7 +21,7 @@
   },
   "type": "object",
   "properties": {
-    "id": {"type": "integer"},
+    "id": {"type": "integer", "minimum": 1, "readOnly": true, "description": "Numeric identifier, assigned by the datastore"},
     "slug": {"type": "string"},
     "label": {"type": "string"},
     "description": {"type": "string"},

@@ -337,16 +337,14 @@ class AgentComposer:
         if not applies:
             return False
 
-        # Check archetype_ids
-        if "archetype_ids" in applies:
-            arch_id = context.get("archetype_id")
-            if arch_id not in applies["archetype_ids"]:
-                return False
-
-        # Check focus_ids
-        if "focus_ids" in applies:
-            focus_id = context.get("focus_id")
-            if focus_id not in applies["focus_ids"]:
+        # Concept selectors match by slug (skos:notation), never by
+        # surrogate id: ids are renumbered when a table is edited, and
+        # id-keyed selectors once sent firewall doctrine to power agents.
+        # Absent = no constraint; present = must match one; [] = none.
+        for selector, key in (("archetype_slugs", "archetype_slug"),
+                              ("focus_slugs", "focus_slug"),
+                              ("qualifier_slugs", "qualifier_slug")):
+            if selector in applies and context.get(key) not in applies[selector]:
                 return False
 
         # Check rank_ids (can be list or range)
@@ -484,10 +482,11 @@ class AgentComposer:
         # Build context for instruction block matching
         cls = agent.get("classification", {})
         context = {
-            "archetype_id": archetype.get("id"),
             "archetype_slug": archetype_slug,
             "rank_id": cls.get("rank_id", 1),
-            "focus_id": cls.get("focus_id"),
+            "focus_slug": self._focuses.get(cls.get("focus_id"), {}).get("slug"),
+            "qualifier_slug": self._qualifiers.get(
+                cls.get("qualifier_id"), {}).get("slug"),
             "scope": scope
         }
 

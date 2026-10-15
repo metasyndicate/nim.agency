@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/skill_domain.schema.json",
   "title": "Skill Domain",
   "description": "Routable capability dimensions for agent dispatch",
-  "@type": ["skos:ConceptScheme", "sosa:ObservableProperty"],
+  "@type": ["skos:Concept", "sosa:ObservableProperty"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400013,

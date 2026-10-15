@@ -127,7 +127,7 @@ def _record_transaction(
         "reference": reference or {"type": "manual", "id": ""},
         "notes": notes,
         "created_at": datetime.now(timezone.utc).isoformat(),
-    }, validate=False)
+    })
 
 
 def apply_award(

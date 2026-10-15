@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/channel_capability.schema.json",
   "title": "Channel Capability",
   "description": "A functional feature a syndicate channel either grants or withholds. Missions derive required capabilities from their constraints; dispatch refuses a channel that cannot serve them.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400034,
@@ -26,7 +26,7 @@
     "requires": {
       "type": "array",
       "description": "Capability slugs this one functionally depends on. A channel declaring this capability without its dependencies is an inconsistent declaration and is refused at validation.",
-      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug", "x-nim-ref": {"entity": "channel_capability", "key": "slug"} }
     },
     "category": {
       "type": "string",

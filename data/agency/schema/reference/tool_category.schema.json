@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/tool_category.schema.json",
   "title": "Tool Category",
   "description": "Tool classification for agent inventory",
-  "@type": ["skos:ConceptScheme", "owl-s:ServiceCategory"],
+  "@type": ["skos:Concept", "profile:ServiceCategory"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400014,

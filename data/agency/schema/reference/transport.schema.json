@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/transport.schema.json",
   "title": "Transport",
   "description": "How the agency speaks to a syndicate: the wire protocol, its default path and auth mode, and the ceiling of capabilities that protocol can physically support.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400035,
@@ -46,7 +46,7 @@
     "capability_ceiling": {
       "type": "array",
       "description": "The most any channel on this transport may declare. A channel granting a capability outside its transport ceiling is refused at validation - the protocol simply cannot carry it.",
-      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+      "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug", "x-nim-ref": {"entity": "channel_capability", "key": "slug"} }
     },
     "icon": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/icon_ref"

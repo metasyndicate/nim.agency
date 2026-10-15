@@ -6,6 +6,7 @@ for all entity types in the agency data model.
 """
 
 import json
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -14,6 +15,25 @@ from typing import Any, Callable, Optional, Union
 from dataclasses import dataclass, field
 
 from .schema import SchemaManager, get_schema_manager
+
+# Library logging (Python logging HOWTO): a NullHandler so warn-mode
+# validation never writes into a curses screen unless an application
+# configures a handler. `nim.agency data check` reports the same errors.
+log = logging.getLogger("nim.data")
+log.addHandler(logging.NullHandler())
+
+
+def slugify(label: str) -> str:
+    """The slug a reference row gets from its label when none is given."""
+    return "".join(c if c.isalnum() else "_" for c in label.lower()).strip("_")
+
+
+class ValidationError(ValueError):
+    """A write refused because the record does not conform to its schema."""
+
+    def __init__(self, entity: str, errors: list[str]):
+        self.entity, self.errors = entity, errors
+        super().__init__(f"Validation failed ({entity}): {'; '.join(errors)}")
 
 
 @dataclass
@@ -88,6 +108,12 @@ class DataStore:
         "task_preset": {"type": "reference", "file": "task_preset.json"},
         "channel_capability": {"type": "reference", "file": "channel_capability.json"},
         "transport": {"type": "reference", "file": "transport.json"},
+        "harness_function": {"type": "reference", "file": "harness_function.json"},
+        "command_policy": {"type": "reference", "file": "command_policy.json"},
+        "harness_profile": {"type": "reference", "file": "harness_profile.json"},
+        "anomaly": {"type": "reference", "file": "anomaly.json"},
+        "case_status": {"type": "reference", "file": "case_status.json"},
+        "lexicon": {"type": "reference", "file": "lexicon.json"},
         "config": {"type": "singleton", "file": "config.json"},
 
         # Entity data: stored in directories with individual files
@@ -96,8 +122,13 @@ class DataStore:
         "group": {"type": "collection", "dir": "groups", "id_field": "id"},
         "project": {"type": "collection", "dir": "projects", "id_field": "id"},
         "syndicate": {"type": "collection", "dir": "syndicates", "id_field": "id"},
+        # Composable instruction overlays, filed by category: layout names
+        # the file under dir (fields of the record), so files keep their
+        # place when the datastore writes them
+        "instruction_block": {"type": "collection", "dir": "instruction",
+                              "id_field": "id", "layout": "{category}/{slug}"},
         "transaction": {"type": "append", "file": "transactions/ledger.json"},
-        "event": {"type": "append", "file": "events/log.json"},
+        "event": {"type": "append", "file": "events/log.json", "schema": "event_log"},
         "peer_review": {"type": "append", "file": "reviews/reviews.json"},
 
         # Remote/Substations: stored in operator-local path (~/.nim/agency/)
@@ -105,6 +136,7 @@ class DataStore:
             "type": "collection",
             "dir": "substations",
             "id_field": "id",
+            "lookup": ["identity.codename", "identity.name"],
             "local_storage": True
         },
         "credential": {
@@ -114,6 +146,13 @@ class DataStore:
             "local_storage": True,
             "encrypted": True  # Note: actual encryption handled by vault module
         },
+        "install": {
+            "type": "collection",
+            "dir": "installs",
+            "id_field": "id",
+            "lookup": ["name"],
+            "local_storage": True
+        },
         "remote_operation": {
             "type": "append",
             "file": "remote_operations.json",
@@ -121,8 +160,8 @@ class DataStore:
         },
     }
 
-    # Local storage base path (operator-scoped)
-    LOCAL_STORAGE_BASE = Path.home() / ".nim" / "agency"
+    # Operator-local records (substations, credentials) live in the
+    # instance home, resolved once for the whole agency (lib/install/paths.py)
 
     def __init__(self, base_path: Optional[str] = None, schema_manager: Optional[SchemaManager] = None):
         """
@@ -137,7 +176,8 @@ class DataStore:
             base_path = lib_dir / "data" / "agency" / "data"
 
         self.base_path = Path(base_path)
-        self.local_path = self.LOCAL_STORAGE_BASE
+        from ..install import home
+        self.local_path = home()
         self.schema_manager = schema_manager or get_schema_manager()
 
         # Cache for reference data
@@ -251,9 +291,7 @@ class DataStore:
         data = list(self.load_reference(entity_type, force_reload=True))
 
         if not entry.get("slug"):
-            label = entry.get("label", "")
-            entry["slug"] = "".join(
-                c if c.isalnum() else "_" for c in label.lower()).strip("_")
+            entry["slug"] = slugify(entry.get("label", ""))
         if not entry["slug"]:
             raise ValueError("Entry needs a label or slug")
         if any(e.get("slug") == entry["slug"] for e in data):
@@ -263,6 +301,7 @@ class DataStore:
         entry.setdefault("id", next_id)
         entry.setdefault("sort_order", entry["id"])
 
+        self.check(entity_type, entry)
         data.append(entry)
         self._write_reference(entity_type, data)
         return entry
@@ -275,13 +314,61 @@ class DataStore:
         data = list(self.load_reference(entity_type, force_reload=True))
         for entry in data:
             if entry.get("id") == entry_id:
+                candidate = dict(entry)
                 for key, value in updates.items():
                     if key in ("id", "slug"):
                         continue
-                    entry[key] = value
+                    candidate[key] = value
+                self.check(entity_type, candidate)
+                entry.update(candidate)
                 self._write_reference(entity_type, data)
                 return entry
         return None
+
+    def check(self, entity_type: str, data: dict) -> list[str]:
+        """Validate a record about to be written, under the entity's
+        validation mode (lib/config.py validation_mode): enforce raises
+        ValidationError, warn logs and returns the errors. Core stays
+        stdlib-only, so without jsonschema nothing is checked."""
+        if not self.schema_manager.can_validate():
+            return []
+        name = self.ENTITY_CONFIG.get(entity_type, {}).get("schema", entity_type)
+        errors = self.schema_manager.validate(name, data)
+        if not errors:
+            return []
+        from ..config import validation_mode
+        if validation_mode(entity_type) == "enforce":
+            raise ValidationError(entity_type, errors)
+        log.warning("%s %s written with %d schema error(s): %s", entity_type,
+                    data.get("slug") or data.get("id"), len(errors),
+                    "; ".join(errors[:3]))
+        return errors
+
+    def replace_reference_entry(self, entity_type: str, entry_id: int,
+                                entry: dict) -> Optional[dict]:
+        """Replace a reference row wholesale (fields absent from `entry` are
+        removed). `id` and `slug` stay as they were - records point at them."""
+        data = list(self.load_reference(entity_type, force_reload=True))
+        for i, row in enumerate(data):
+            if row.get("id") == entry_id:
+                candidate = {**entry, "id": row["id"], "slug": row.get("slug")}
+                if candidate["slug"] is None:
+                    candidate.pop("slug")
+                self.check(entity_type, candidate)
+                data[i] = candidate
+                self._write_reference(entity_type, data)
+                return candidate
+        return None
+
+    def delete_reference_entry(self, entity_type: str, entry_id: int) -> bool:
+        """Remove a reference row. Callers check inbound references first
+        (lib/data/drafts.py inbound): records may point at the row."""
+        data = list(self.load_reference(entity_type, force_reload=True))
+        kept = [row for row in data if row.get("id") != entry_id]
+        if len(kept) == len(data):
+            return False
+        self._write_reference(entity_type, kept)
+        return True
 
     def get_config(self) -> dict:
         """Get the agency configuration."""
@@ -321,16 +408,17 @@ class DataStore:
         data["audit"]["updated_at"] = now
         data["audit"]["retired_at"] = None
 
-        # Validate if requested. Core stays stdlib-only: without the
-        # optional jsonschema dependency, validate() returns a skip notice
-        # that would otherwise read as a hard failure.
-        if validate and self.schema_manager.can_validate():
-            errors = self.schema_manager.validate(entity_type, data)
-            if errors:
-                raise ValueError(f"Validation failed: {'; '.join(errors)}")
+        if validate:
+            self.check(entity_type, data)
 
         # Save based on storage type
         if config["type"] == "collection":
+            # A layout names files by record fields, so two records can map
+            # to one file; never let a create overwrite another record
+            target = self._collection_file(entity_type, data)
+            if config.get("layout") and target.exists():
+                raise ValueError(f"{entity_type}: {target.relative_to(self._get_storage_path(entity_type))} "
+                                 f"already holds another record")
             self._save_collection_item(entity_type, data)
         elif config["type"] == "append":
             self._append_to_log(entity_type, data)
@@ -351,6 +439,11 @@ class DataStore:
         config = self.ENTITY_CONFIG.get(entity_type)
         if not config or config["type"] != "collection":
             raise ValueError(f"Cannot read single item for type: {entity_type}")
+
+        if config.get("layout"):
+            id_field = config.get("id_field", "id")
+            return next((r for r in self._load_collection(entity_type)
+                         if r.get(id_field) == entity_id), None)
 
         base = self._get_storage_path(entity_type)
         file_path = base / config["dir"] / f"{entity_id}.json"
@@ -390,11 +483,27 @@ class DataStore:
             data["audit"] = {}
         data["audit"]["updated_at"] = self._get_timestamp()
 
-        # Save
-        config = self.ENTITY_CONFIG[entity_type]
-        self._save_collection_item(entity_type, data)
+        self.check(entity_type, data)
+        self._move_collection_item(entity_type, existing, data)
 
         return data
+
+    def replace(self, entity_type: str, entity_id: str, data: dict) -> Optional[dict]:
+        """Replace a collection record wholesale: keys absent from `data` are
+        removed (update() merges and cannot remove). The id and the audit
+        creation time are kept."""
+        existing = self.read(entity_type, entity_id)
+        if existing is None:
+            return None
+        id_field = self.ENTITY_CONFIG[entity_type].get("id_field", "id")
+        record = dict(data)
+        record[id_field] = existing[id_field]
+        audit = dict(existing.get("audit") or {})
+        audit["updated_at"] = self._get_timestamp()
+        record["audit"] = audit
+        self.check(entity_type, record)
+        self._move_collection_item(entity_type, existing, record)
+        return record
 
     def delete(self, entity_type: str, entity_id: str, hard: bool = False) -> bool:
         """
@@ -412,8 +521,10 @@ class DataStore:
         if not config or config["type"] != "collection":
             raise ValueError(f"Cannot delete for type: {entity_type}")
 
-        base = self._get_storage_path(entity_type)
-        file_path = base / config["dir"] / f"{entity_id}.json"
+        existing = self.read(entity_type, entity_id)
+        if existing is None:
+            return False
+        file_path = self._collection_file(entity_type, existing)
         if not file_path.exists():
             return False
 
@@ -643,8 +754,8 @@ class DataStore:
         if config.get("local_storage") and os.name != 'nt':
             os.chmod(dir_path, 0o700)
 
-        entity_id = data[config.get("id_field", "id")]
-        file_path = dir_path / f"{entity_id}.json"
+        file_path = self._collection_file(entity_type, data)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "w") as f:
             json.dump(data, f, indent=2)
@@ -652,6 +763,30 @@ class DataStore:
         # Set restrictive permissions for local storage files
         if config.get("local_storage") and os.name != 'nt':
             os.chmod(file_path, 0o600)
+
+    def _move_collection_item(self, entity_type: str, existing: dict,
+                              data: dict) -> None:
+        """Save an updated record. Under a layout its fields may move it to
+        another file: refuse to land on a different record's file, and
+        remove the old one so the record never exists twice."""
+        old_file = self._collection_file(entity_type, existing)
+        new_file = self._collection_file(entity_type, data)
+        if old_file != new_file and new_file.exists():
+            raise ValueError(f"{entity_type}: {new_file.name} already holds "
+                             f"another record")
+        self._save_collection_item(entity_type, data)
+        if old_file != new_file and old_file.exists():
+            old_file.unlink()
+
+    def _collection_file(self, entity_type: str, data: dict) -> Path:
+        """Where a collection record is stored: <dir>/<id>.json, or the
+        config's layout (a format string over the record's fields)."""
+        config = self.ENTITY_CONFIG[entity_type]
+        dir_path = self._get_storage_path(entity_type) / config["dir"]
+        layout = config.get("layout")
+        if layout:
+            return dir_path / f"{layout.format(**data)}.json"
+        return dir_path / f"{data[config.get('id_field', 'id')]}.json"
 
     def _load_collection(self, entity_type: str) -> list[dict]:
         """Load all items from a collection directory."""
@@ -663,7 +798,8 @@ class DataStore:
             return []
 
         entities = []
-        for file_path in dir_path.glob("*.json"):
+        pattern = "*/" * config.get("layout", "").count("/") + "*.json"
+        for file_path in sorted(dir_path.glob(pattern)):
             try:
                 with open(file_path, "r") as f:
                     entities.append(json.load(f))

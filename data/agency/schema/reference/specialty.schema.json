@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/specialty.schema.json",
   "title": "Agent Specialty",
   "description": "Specific role flavor within operational domains. The 'Hall of Shame' titles.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400020,
@@ -24,6 +24,7 @@
   "allOf": [{ "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept" }],
   "properties": {
     "ops_domain_id": {
+      "x-nim-ref": {"entity": "ops_domain", "key": "id"},
       "type": "integer",
       "minimum": 1,
       "description": "Reference to the operational domain this specialty belongs to"

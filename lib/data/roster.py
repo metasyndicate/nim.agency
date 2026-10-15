@@ -188,7 +188,7 @@ def draft_hire(ds: Optional[DataStore] = None) -> dict:
     agent = AgentGenerator(ds).generate()
     agent["origin"]["client"] = "dispatch"
     agent["origin"]["discovery"] = "drafted"
-    agent = ds.create("agent", agent, validate=False)
+    agent = ds.create("agent", agent)
 
     from .identity import try_enroll
     enrollment = try_enroll(ds, agent)

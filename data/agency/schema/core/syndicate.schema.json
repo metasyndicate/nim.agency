@@ -24,7 +24,8 @@
   "properties": {
     "id": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
-      "description": "Unique syndicate identifier"
+      "readOnly": true,
+      "description": "Unique syndicate identifier, assigned by the datastore"
     },
     "slug": {
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
@@ -57,6 +58,7 @@
       "required": ["label"]
     },
     "transport_slug": {
+      "x-nim-ref": {"entity": "transport", "key": "slug"},
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
       "description": "Reference into the transport table - selects the provider handler and the capability ceiling"
     },
@@ -85,6 +87,7 @@
           "description": "Fixed arguments for subprocess transports"
         },
         "credential_id": {
+          "x-nim-ref": {"entity": "credential", "key": "id"},
           "oneOf": [
             { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
             { "type": "null" }
@@ -92,6 +95,7 @@
           "description": "Vault credential holding the bearer token or API key. Null when auth_mode is none or inherited - secrets never live in this record."
         },
         "substation_id": {
+          "x-nim-ref": {"entity": "substation", "key": "id"},
           "oneOf": [
             { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
             { "type": "null" }
@@ -139,7 +143,7 @@
           "capabilities": {
             "type": "array",
             "description": "Capability slugs this channel grants. Must be dependency-closed and within the transport ceiling.",
-            "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" }
+            "items": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug", "x-nim-ref": {"entity": "channel_capability", "key": "slug", "within": {"via": "/transport_slug", "field": "capability_ceiling"}} }
           },
           "limits": {
             "type": "object",
@@ -190,6 +194,14 @@
               "output_per_mtok": { "type": "number", "minimum": 0 }
             }
           },
+          "harness_profile": {
+            "x-nim-ref": {"entity": "harness_profile", "key": "slug"},
+            "oneOf": [
+              { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug" },
+              { "type": "null" }
+            ],
+            "description": "Harness profile the agency runs this channel under (functions, commands, loop limits). Null: every harness function the channel's capabilities grant, under the etc/agency.json harness limits. Meaningful only when the channel grants tool_use."
+          },
           "notes": {
             "type": "string",
             "maxLength": 512,
@@ -201,7 +213,8 @@
     },
     "status": {
       "type": "object",
-      "description": "Reachability state, refreshed by `nim.agency syndicate probe`",
+      "readOnly": true,
+      "description": "Reachability state, refreshed by `nim.agency syndicate probe` (and conformance, by `syndicate conform`) - observed, not composed",
       "properties": {
         "state": {
           "type": "string",
@@ -217,6 +230,23 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Models the endpoint advertised at last probe - drift from `channels` means the inventory is stale"
+        },
+        "conformance": {
+          "type": "object",
+          "description": "Known-answer suite results by channel slug, refreshed by `nim.agency syndicate conform`. Reachability says the endpoint answers; conformance says how often it answers correctly.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "suite": { "type": "string", "description": "Suite identifier (SUITE in lib/dispatch/conformance.py)" },
+              "mode": { "type": "string", "enum": ["harness", "text"] },
+              "runs": { "type": "integer", "minimum": 1 },
+              "passed": { "type": "integer", "minimum": 0 },
+              "total": { "type": "integer", "minimum": 0 },
+              "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+              "at": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp" }
+            },
+            "required": ["suite", "passed", "total", "at"]
+          }
         }
       }
     },

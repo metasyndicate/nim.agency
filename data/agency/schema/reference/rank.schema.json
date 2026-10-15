@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/rank.schema.json",
   "title": "Agent Rank",
   "description": "Rank hierarchy with XP-gated progression",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400011,

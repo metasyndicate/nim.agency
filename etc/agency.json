@@ -8,8 +8,35 @@
     "modality": "readonly",
     "egress_policy": "public"
   },
+  "harness": {
+    "_": "Bounds on the agency's own tool loop for rogue syndicates. max_iterations caps model turns; max_calls_per_turn refuses calls beyond it within one turn; call_timeout_seconds is per tool call, independent of the mission timeout; max_result_chars clips what one call returns to the model; token_budget caps prompt+completion tokens summed across all turns of one task.",
+    "max_iterations": 12,
+    "max_calls_per_turn": 8,
+    "call_timeout_seconds": 30,
+    "max_result_chars": 16000,
+    "token_budget": 200000
+  },
+  "relay": {
+    "_": "BIRD relay (lib/dispatch/bird.py): link-layer faults are resent with capped exponential backoff and full jitter (or the server's Retry-After), within each anomaly row's max_attempts and this per-task budget. Anomaly classes and remedies live in data/agency/data/reference/anomaly.json.",
+    "base_delay_seconds": 1.0,
+    "max_delay_seconds": 20.0,
+    "max_retransmits_per_task": 4
+  },
+  "validation": {
+    "_": "Schema validation on datastore writes (requires jsonschema). enforce refuses a non-conforming write; warn writes it and records the errors. Entities in warn hold records that do not yet conform, pending operator decisions in .nim/work/plan.101426.compose.md (agent: O4 personality vocabulary; group: O5 type). Move each to enforce when its records conform - see nim.agency data check.",
+    "default": "enforce",
+    "entities": {
+      "agent": "warn",
+      "group": "warn"
+    }
+  },
+  "install": {
+    "_": "Instance home: records (substations, vault), logs, and venvs. null resolves --home > NIM_HOME > this value > legacy ~/.nim/agency (if it exists) > the platform data dir; see `nim.agency install env`. Plan: .nim/work/plan.101426.installer.md",
+    "home": null
+  },
   "logging": {
-    "dir": "~/.nim/agency",
+    "_": "dir null: the instance home (see install)",
+    "dir": null,
     "dispatch_csv": "dispatch.log",
     "dispatch_json": "dispatch.json"
   },

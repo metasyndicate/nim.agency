@@ -12,11 +12,19 @@ from typing import Any, Optional, Union
 from datetime import datetime
 
 try:
-    import jsonschema
-    from jsonschema import Draft202012Validator, RefResolver
+    from jsonschema import Draft202012Validator
     HAS_JSONSCHEMA = True
 except ImportError:
     HAS_JSONSCHEMA = False
+
+# jsonschema >= 4.18 resolves $refs through the `referencing` library;
+# RefResolver is deprecated there and kept only for older installs.
+try:
+    from referencing import Registry, Resource
+    from referencing.jsonschema import DRAFT202012
+    HAS_REFERENCING = True
+except ImportError:
+    HAS_REFERENCING = False
 
 
 class SchemaManager:
@@ -58,6 +66,7 @@ class SchemaManager:
         self._index: Optional[dict] = None
         self._loaded = False
         self._ref_store: Optional[dict[str, dict]] = None
+        self._registry = None
 
     def load_all(self) -> "SchemaManager":
         """Load all schemas from the schema directory."""
@@ -66,9 +75,12 @@ class SchemaManager:
         for category in ["meta", "reference", "core"]:
             category_path = self.schema_path / category
             if category_path.exists():
-                for schema_file in category_path.glob("*.schema.json"):
-                    name = schema_file.stem.replace(".schema", "")
-                    self._load_schema(name, schema_file)
+                # The metaschema is agency.metaschema.json, which the
+                # *.schema.json glob misses; it registers as "agency"
+                for schema_file in sorted(category_path.glob("*.json")):
+                    stem, _, kind = schema_file.name[:-len(".json")].partition(".")
+                    if kind in ("schema", "metaschema"):
+                        self._load_schema(stem, schema_file)
 
         self._loaded = True
         return self
@@ -137,6 +149,18 @@ class SchemaManager:
             self._ref_store = store
         return self._ref_store
 
+    def _validator(self, schema: dict):
+        if HAS_REFERENCING:
+            if self._registry is None:
+                self._registry = Registry().with_resources(
+                    (uri, Resource.from_contents(doc, default_specification=DRAFT202012))
+                    for uri, doc in self._resolver_store().items())
+            return Draft202012Validator(schema, registry=self._registry)
+        from jsonschema import RefResolver
+        resolver = RefResolver(base_uri=f"file://{self.schema_path}/",
+                               referrer=schema, store=self._resolver_store())
+        return Draft202012Validator(schema, resolver=resolver)
+
     def validate(self, schema_name: str, data: dict) -> list[str]:
         """
         Validate data against a schema.
@@ -157,14 +181,8 @@ class SchemaManager:
 
         errors = []
         try:
-            # Create resolver for $ref handling; the store keeps
-            # https://nim.agency $refs local instead of fetching
-            resolver = RefResolver(
-                base_uri=f"file://{self.schema_path}/",
-                referrer=schema,
-                store=self._resolver_store()
-            )
-            validator = Draft202012Validator(schema, resolver=resolver)
+            # $refs resolve from the loaded schemas by $id, never fetched
+            validator = self._validator(schema)
 
             for error in validator.iter_errors(data):
                 path = ".".join(str(p) for p in error.path) or "(root)"
@@ -188,13 +206,12 @@ class SchemaManager:
         if schema is None:
             return {}
 
-        properties = schema.get("properties", {})
-
-        # Also check allOf for inherited properties
+        # A new dict: merging into schema["properties"] would rewrite the
+        # cached schema. Inherited (allOf) first, so own properties win.
+        properties = {}
         for item in schema.get("allOf", []):
-            if "properties" in item:
-                properties.update(item["properties"])
-
+            properties.update(item.get("properties", {}))
+        properties.update(schema.get("properties", {}))
         return properties
 
     def get_required(self, schema_name: str) -> list[str]:

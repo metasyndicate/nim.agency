@@ -5,9 +5,7 @@
   "label": "Database Administration Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {
-    "focus_ids": [4]
-  },
+  "applies_when": {"focus_slugs": ["database"]},
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on database administration, query optimization, and data integrity.",
     "role_additions": [

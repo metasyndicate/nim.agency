@@ -3,10 +3,10 @@
   "$id": "https://nim.agency/schema/reference/assignment_status.schema.json",
   "title": "Assignment Status",
   "description": "BAGMAN: ASSIGNMENT lifecycle states (prov:Activity status vocabulary)",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
-    "nim.id": 400016,
+    "nim.id": 400017,
     "created": "2026-04-06T00:00:00Z",
     "modified": "2026-04-13T00:00:00Z",
     "version": "1.1.0",

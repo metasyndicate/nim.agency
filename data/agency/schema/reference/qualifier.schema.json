@@ -3,7 +3,7 @@
   "$id": "https://nim.agency/schema/reference/qualifier.schema.json",
   "title": "Agent Qualifier",
   "description": "Seniority/vibe modifier for agent titles. The seasoning on the rank.",
-  "@type": "skos:ConceptScheme",
+  "@type": "skos:Concept",
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400018,

@@ -22,8 +22,27 @@ DEFAULTS = {
         "modality": "readonly",
         "egress_policy": "public",
     },
+    "harness": {
+        "max_iterations": 12,
+        "max_calls_per_turn": 8,
+        "call_timeout_seconds": 30,
+        "max_result_chars": 16000,
+        "token_budget": 200000,
+    },
+    "validation": {
+        "default": "enforce",
+        "entities": {},
+    },
+    "install": {
+        "home": None,         # None: resolved (lib/install/paths.py)
+    },
+    "relay": {
+        "base_delay_seconds": 1.0,
+        "max_delay_seconds": 20.0,
+        "max_retransmits_per_task": 4,
+    },
     "logging": {
-        "dir": "~/.nim/agency",
+        "dir": None,          # None: the instance home (lib/install/paths.py)
         "dispatch_csv": "dispatch.log",
         "dispatch_json": "dispatch.json",
     },
@@ -55,6 +74,22 @@ def get_config() -> dict:
             pass
         _config = merged
     return _config
+
+
+# Schema validation on datastore writes, per entity. Modes follow
+# Kubernetes Pod Security Admission: enforce refuses a non-conforming
+# write; warn writes it and records the errors. warn exists so policy can
+# be switched on before every stored record conforms (it is a migration
+# state, not a destination). Without jsonschema installed nothing is
+# validated; `nim.agency data check` says so.
+VALIDATION_MODES = ("enforce", "warn")
+
+
+def validation_mode(entity: str) -> str:
+    """How a write of this entity treats schema errors (etc/agency.json)."""
+    section = get_config().get("validation", {})
+    value = (section.get("entities") or {}).get(entity, section.get("default"))
+    return value if value in VALIDATION_MODES else "enforce"
 
 
 # Global dispatch posture, most restrictive first. One knob controls what
@@ -103,8 +138,13 @@ def modality_violation(read_only: bool, local_only: bool) -> Optional[str]:
 
 
 def log_dir() -> Path:
-    """Resolved operator-local log directory (default: ~/.nim/agency)."""
-    return Path(get_config()["logging"]["dir"]).expanduser()
+    """Resolved operator-local log directory: logging.dir when set, else
+    the instance home (lib/install/paths.py)."""
+    configured = get_config()["logging"].get("dir")
+    if configured:
+        return Path(configured).expanduser()
+    from .install import home
+    return home()
 
 
 def report_dir() -> Path:

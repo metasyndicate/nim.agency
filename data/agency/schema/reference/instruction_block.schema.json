@@ -40,15 +40,15 @@
       "type": "object",
       "description": "Conditions for when this block applies to an agent",
       "properties": {
-        "archetype_ids": {
+        "archetype_slugs": {
           "type": "array",
-          "items": {"type": "integer"},
-          "description": "Apply only to these archetypes (empty = all)"
+          "items": {"type": "string", "x-nim-ref": {"entity": "archetype", "key": "slug"}},
+          "description": "Apply only to these archetypes. Concept selectors match by slug (skos:notation), never surrogate id: absent = no constraint, present = must match one, [] = matches none."
         },
-        "focus_ids": {
+        "focus_slugs": {
           "type": "array",
-          "items": {"type": "integer"},
-          "description": "Apply only to agents with these focus areas"
+          "items": {"type": "string", "x-nim-ref": {"entity": "focus", "key": "slug"}},
+          "description": "Apply only to agents with these focus areas (same semantics as archetype_slugs)"
         },
         "rank_ids": {
           "oneOf": [
@@ -63,10 +63,10 @@
           ],
           "description": "Apply to specific ranks or rank range"
         },
-        "qualifier_ids": {
+        "qualifier_slugs": {
           "type": "array",
-          "items": {"type": "integer"},
-          "description": "Apply only to agents with these qualifiers"
+          "items": {"type": "string", "x-nim-ref": {"entity": "qualifier", "key": "slug"}},
+          "description": "Apply only to agents with these qualifiers (same semantics as archetype_slugs)"
         },
         "scope": {
           "type": "string",

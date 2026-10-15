@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/install.schema.json",
+  "title": "Install",
+  "description": "Receipt for one agency instance: the checkout it runs from, where its state and virtual environment live (and why those paths were chosen), the interpreter and dependency groups it carries, and its last health check. Written by `nim.agency install create`; a copy lives in the venv (nim_install.json) so either side can be checked against the other. Removal deletes only paths recorded here. After PEP 376 / PEP 610 install records and pipx's pipx_metadata.json.",
+  "@type": ["prov:Entity"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400115,
+    "created": "2026-10-14T00:00:00Z",
+    "modified": "2026-10-14T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 1,
+      "label": "system",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "install",
+      "type": "schema",
+      "path": "L1.agency.core.install"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true
+    },
+    "name": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Instance name; `default` is the one bin/nim.agency runs in"
+    },
+    "receipt_version": { "const": "1" },
+    "installer": { "type": "string", "description": "What wrote the receipt (nim.agency <version>)" },
+    "source": {
+      "type": "object",
+      "description": "The checkout this instance runs from",
+      "properties": {
+        "path": { "type": "string" },
+        "vcs": { "type": ["string", "null"], "enum": ["git", null] },
+        "commit": { "type": ["string", "null"] },
+        "dirty": { "type": ["boolean", "null"] }
+      },
+      "required": ["path"]
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "home": { "type": "string" },
+        "venv": { "type": "string" },
+        "python": { "type": "string", "description": "The venv's interpreter" }
+      },
+      "required": ["home", "venv", "python"]
+    },
+    "resolution": {
+      "type": "object",
+      "description": "Why each path was chosen (the winning candidate's source)",
+      "additionalProperties": { "type": "string" }
+    },
+    "python": {
+      "type": "object",
+      "description": "The base interpreter the venv was created from",
+      "properties": {
+        "base_executable": { "type": "string" },
+        "version": { "type": "string" },
+        "implementation": { "type": "string" },
+        "platform": { "type": "string" },
+        "externally_managed": { "type": "boolean" }
+      },
+      "required": ["base_executable", "version"]
+    },
+    "venv": {
+      "type": "object",
+      "properties": {
+        "symlinks": { "type": "boolean" },
+        "pip_version": { "type": ["string", "null"] }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "pyproject [dependency-groups] installed (PEP 735)"
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The specifiers those groups resolved to, as passed to pip"
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "null"] },
+      "description": "Installed version of each requirement, read inside the venv"
+    },
+    "status": {
+      "type": "object",
+      "readOnly": true,
+      "description": "Last health check (`nim.agency install doctor`)",
+      "properties": {
+        "state": { "type": "string", "enum": ["ok", "degraded", "broken", "unknown"] },
+        "last_check": { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp" },
+        "detail": { "type": "string" }
+      }
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": ["id", "name", "receipt_version", "source", "paths", "python", "audit"]
+}
