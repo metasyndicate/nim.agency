@@ -5,7 +5,6 @@ Uses taxonomy data from the NIM Lexicon and randomization to create
 unique agent identities with RPG-style attributes, skills, and backstories.
 """
 
-import csv
 import random
 import string
 import uuid
@@ -14,134 +13,52 @@ from pathlib import Path
 from typing import Optional
 import os
 
+from . import lex
 from .crud import DataStore, get_datastore
 
 
 class LexLoader:
     """
-    Loads lexicon data from CSV files in the lex/ directory.
-
-    Supports both simple single-column files (one value per line)
-    and multi-column CSV files (extracts specified column).
+    Lexicon values for the generator, read through lib/data/lex.py: each
+    lex/ file is parsed by its lex/csv-metadata.json description (RFC 4180,
+    header by title, blank rows skipped, values trimmed).
 
     Caches loaded data to avoid repeated file reads.
     """
 
     _cache: dict[str, list[str]] = {}
-    _lex_path: Optional[Path] = None
 
     @classmethod
     def get_lex_path(cls) -> Path:
-        """Resolve the lex directory path."""
-        if cls._lex_path is None:
-            # Navigate from lib/data/ to project root, then to lex/
-            module_path = Path(__file__).resolve()
-            project_root = module_path.parent.parent.parent
-            cls._lex_path = project_root / "lex"
-        return cls._lex_path
+        """The lex directory."""
+        return lex.LEX
 
     @classmethod
-    def load(
-        cls,
-        filename: str,
-        column: int = 0,
-        skip_header: bool = True,
-        cache: bool = True
-    ) -> list[str]:
+    def load(cls, filename: str, column: int = 0, cache: bool = True) -> list[str]:
         """
-        Load values from a lexicon CSV file.
+        Values of one column of a lexicon table.
 
         Args:
-            filename: Name of the CSV file (with or without .csv extension)
-            column: Column index to extract (0-based)
-            skip_header: Whether to skip the first row
+            filename: Table name (with or without .csv extension)
+            column: Column index (0-based) in the table's description
             cache: Whether to cache the results
 
         Returns:
-            List of string values from the specified column
+            The column's non-empty values, in file order
         """
-        # Normalize filename
-        if not filename.endswith('.csv'):
-            filename = f"{filename}.csv"
-
         cache_key = f"{filename}:{column}"
-
         if cache and cache_key in cls._cache:
             return cls._cache[cache_key]
-
-        filepath = cls.get_lex_path() / filename
-        values = []
-
-        if not filepath.exists():
-            # Return empty list if file doesn't exist
-            return values
-
-        with open(filepath, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-
-            for i, row in enumerate(reader):
-                # Skip header row if requested
-                if skip_header and i == 0:
-                    continue
-
-                # Skip empty rows
-                if not row:
-                    continue
-
-                # Extract value from specified column
-                if len(row) > column:
-                    value = row[column].strip()
-                    # Skip empty values
-                    if value:
-                        values.append(value)
-
+        table = lex.default().table(filename)
+        values = [str(v) for v in table.values(table.columns[column].name)]
         if cache:
             cls._cache[cache_key] = values
-
         return values
 
     @classmethod
     def load_simple(cls, filename: str, cache: bool = True, column: int = 0) -> list[str]:
-        """
-        Load values from a simple single-column file (one value per line).
-
-        Args:
-            filename: Name of the file
-            cache: Whether to cache the results
-            column: Column index for CSV files (0-based)
-
-        Returns:
-            List of string values
-        """
-        if not filename.endswith('.csv'):
-            filename = f"{filename}.csv"
-
-        cache_key = f"{filename}:simple:{column}"
-
-        if cache and cache_key in cls._cache:
-            return cls._cache[cache_key]
-
-        filepath = cls.get_lex_path() / filename
-        values = []
-
-        if not filepath.exists():
-            return values
-
-        # RFC 4180 parsing: a value containing commas is quoted in the file,
-        # so splitting on bare commas would cut it (every bio template and
-        # two mottos were truncated at their first comma)
-        with open(filepath, 'r', encoding='utf-8', newline='') as f:
-            for i, row in enumerate(csv.reader(f)):
-                if i == 0:
-                    continue        # header
-                value = row[column].strip() if len(row) > column else ''
-                if value:
-                    values.append(value)
-
-        if cache:
-            cls._cache[cache_key] = values
-
-        return values
+        """Values of a table's first (or given) column."""
+        return cls.load(filename, column=column, cache=cache)
 
     @classmethod
     def clear_cache(cls) -> None:

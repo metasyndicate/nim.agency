@@ -15,12 +15,13 @@ nim.agency/
 │   ├── cli/        CLI command modules (dispatch, mission, syndicate, agent, data, tui)
 │   ├── data/       datastore, schema, agent generation & composition
 │   ├── dispatch/   mission orchestration, syndicate inventory, providers,
-│   │               briefing, dispatch logging
+│   │               briefing, dispatch logging, BIRD relay, agency harness
+│   ├── install/    instance home + venv resolution, doctor, receipts, launcher
 │   └── remote/     SSH transport, credential vault, safety, audit logging
 ├── data/agency/
 │   ├── schema/     JSON Schema definitions (core, reference, meta)
 │   └── data/       instance data (agents, groups, reference, instruction)
-├── lex/            lexicon/taxonomy CSVs for procedural generation
+├── lex/            flavor vocabulary CSVs, described by csv-metadata.json (W3C CSVW)
 ├── tui/            curses HUD: builder.py core shell + chrome.py (draw
 │                   primitives) + mugshots.py + views/*.py screen mixins
 ├── log/            mission reports & mission JSON (gitignored)
@@ -48,6 +49,8 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 | `data form\|options\|list\|show\|new\|edit\|delete ENTITY` | `lib/cli/compose.py` → `lib/data/forms.py`, `lib/data/drafts.py` | generic composition of ANY registered entity from its schema: field tree, choice options (reference tables, enums, dependent bounds), JSON Pointer edits (`--set/--add/--remove/--unset`), `--dry-run` diffs; read-only fields refused; deletes refused while referenced | functional |
 | `syndicate form\|options\|new\|edit\|delete` | `lib/cli/syndicate.py` (mounts `compose`) | compose syndicates; channel capabilities bounded by the transport ceiling; `show` prints the hosting substation | functional |
 | `substation list\|show\|form\|options\|new\|edit\|delete` | `lib/cli/substation.py` (mounts `compose`) | hosts under inventory (operator-local `~/.nim/agency/substations`); ssh/https/http/local connection kinds | functional |
+| `install env\|doctor\|create\|list\|show\|remove` | `lib/cli/install.py` → `lib/install/` | instance setup: home resolution (`--home` > `NIM_HOME` > config > legacy `~/.nim/agency` > platform data dir; write-probed, sources reported), PEP 405 venv with PEP 735 dependency groups, PEP 668 aware, schema'd receipts; `doctor` checks (`--json`, exit 1 on fail). `bin/nim.agency` and `tools/easme` re-exec into the `default` instance's venv (`NIM_NO_VENV=1` opts out) | functional (I1-I5; update/repair, locks, Windows/Linux runs open) |
+| `lex groups\|show\|random\|salad\|name\|check` | `lib/cli/lex.py` → `lib/data/lex.py` | flavor vocabulary: tables read by their CSVW description; seeded phrase/salad/name composition (port of the retired `lex/taxonomy.sh`); `check` conforms files to `lex/csv-metadata.json` | functional |
 | `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional |
 | Programmatic (Python) | `lib.data`, `lib.dispatch` | see README "Programmatic" | functional |
 
@@ -76,6 +79,8 @@ the briefing rather than answered from imagination.
 | SchemaManager | `lib/data/schema.py` | schema loading/validation (`data/agency/schema/`); https `$id`s resolve from a local store, validation degrades gracefully without `jsonschema` | stable |
 | DataStore / CRUD | `lib/data/crud.py` | JSON datastore, soft-delete, queries; reference-table writes (`add_reference_entry`/`update_reference_entry`, id+slug immutable) | stable |
 | AgentGenerator | `lib/data/generator.py` | procedural agents from `lex/` taxonomies, weighted class/tier | stable |
+| Lexicon | `lib/data/lex.py` + `lex/csv-metadata.json` | `lex/` tables described after W3C CSVW (columns, titles, required, separators, row unit as `dc:type`); RFC 4180 parsing by column name; conformance check; the generator's `LexLoader` reads through it | functional |
+| Installer | `lib/install/` (paths, doctor, instance, launch) + `core/install.schema.json` | instance home and venv resolution with sources, environment checks, venv creation with dependency groups, receipts (operator-local `install` entity), launcher re-exec | functional |
 | AgentComposer | `lib/data/composer.py` | operational profile / system prompt assembly; tracks instruction source provenance (`OperationalProfile.sources`) | stable |
 | OWL / CrüeRoster | `lib/data/owl.py` | crew assembly | stable |
 | Roster matching | `lib/data/roster.py` | competency-term crew selection (skills/tools/specialties/capabilities, scored + disclosed); draft-hire fallback; `available_only` consults project bookings with BOOKED disclosure | functional |

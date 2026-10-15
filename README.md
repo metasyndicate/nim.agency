@@ -85,9 +85,20 @@ logs, and audit trails are not.
 
 - Python 3.9+ (core is stdlib-only)
 - [`claude` CLI](https://claude.com/claude-code) on PATH (mission dispatch)
-- Optional extras, declared in `pyproject.toml`: `validation`
-  (`jsonschema`), `remote` (`asyncssh` + `cryptography`), or `all` —
-  e.g. `pip install jsonschema asyncssh cryptography`
+- Optional dependency groups, declared in `pyproject.toml` (PEP 735):
+  `validation` (`jsonschema`), `remote` (`asyncssh` + `cryptography`), or
+  `all`. The installer puts them in a virtual environment (Python 3.11+;
+  never into a PEP 668 externally-managed interpreter):
+
+```sh
+bin/nim.agency install doctor              # version, platform, PEP 668, disk, venv, packages
+bin/nim.agency install env                 # where the home and venv resolve, and why
+bin/nim.agency install create --group all  # the `default` instance: venv + groups + receipt
+```
+
+  Once an instance exists, `bin/nim.agency` and `tools/easme` run inside
+  its venv automatically (no activation; `NIM_NO_VENV=1` opts out), so
+  schema validation is active for every command.
 
 Tests (stdlib `unittest`, isolated temp datastore per class):
 
@@ -166,6 +177,12 @@ One canonical entry point with a consistent grammar:
 | `data verify` | verify reference data |
 | `data seed --agents N` | generate sample agents |
 | `data schemas` / `data describe <schema>` | schema inspection |
+| `data check [ENTITY...]` | stored data against schemas and declared references |
+| `data form\|options\|list\|show\|new\|edit\|delete <entity>` | compose any record from its schema |
+| `syndicate list\|show\|probe\|conform` (+ compose verbs) | model provider inventory |
+| `substation list\|show\|new\|edit\|delete` | hosts under inventory |
+| `install env\|doctor\|create\|list\|show\|remove` | instance setup: home, venv, dependency groups, receipts |
+| `lex groups\|show\|random\|salad\|name\|check` | flavor vocabulary (`--seed` for repeatable draws) |
 | `tui` | interactive curses HUD: roster, create/edit, dispatch, missions, dojo, crues, stats, type foundry |
 
 Mission flags (shared by `dispatch` and `mission plan`):
@@ -398,12 +415,15 @@ form, with a picker for single and multi-select choices.
 bin/          canonical CLI entry point (nim.agency)
 tools/        auxiliary entry points (easme pipestream shim)
 etc/          source-controlled defaults (agency.json)
-lib/cli/      CLI command modules (dispatch, mission, project, syndicate, agent, data)
-lib/data/     datastore, schema, agent generation & composition
-lib/dispatch/ missions, dispatcher, syndicate inventory, providers, briefing, logging
+lib/cli/      CLI command modules (dispatch, mission, project, syndicate, substation,
+              install, agent, data, lex)
+lib/data/     datastore, schema, references, forms/drafts, lexicon, agent generation & composition
+lib/dispatch/ missions, dispatcher, syndicate inventory, providers, BIRD relay, harness,
+              briefing, logging
+lib/install/  instance home + venv resolution, doctor, receipts, launcher
 lib/remote/   ssh, vault, safety, audit
 data/agency/  JSON schemas + instance data
-lex/          lexicon/taxonomy CSVs
+lex/          flavor vocabulary CSVs + csv-metadata.json (W3C CSVW)
 tui/          curses HUD: core shell + chrome + views/ screen mixins + mugshots
 tests/        stdlib unittest suite (isolated temp datastores)
 log/          mission outputs (gitignored)

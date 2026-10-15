@@ -10,6 +10,7 @@ Components mirror the library nomenclature:
     syndicate   model provider inventory (lib.dispatch.syndicate)
     agent       roster operations (lib.data.generator)
     data        datastore init and schema inspection (lib.data)
+    lex         flavor vocabulary: names, phrases, checks (lib.data.lex)
     tui         interactive agent builder (tui.builder)
 """
 
@@ -24,6 +25,7 @@ from . import dispatch as dispatch_cmd
 from . import mission as mission_cmd
 from . import project as project_cmd
 from . import install as install_cmd
+from . import lex as lex_cmd
 from . import substation as substation_cmd
 from . import syndicate as syndicate_cmd
 
@@ -116,6 +118,7 @@ def build_parser() -> argparse.ArgumentParser:
     install_cmd.add_parser(sub)
     agent_cmd.add_parser(sub)
     data_cmd.add_parser(sub)
+    lex_cmd.add_parser(sub)
 
     tui = sub.add_parser("tui", help="Launch the interactive TUI agent builder")
     tui.set_defaults(func=cmd_tui)

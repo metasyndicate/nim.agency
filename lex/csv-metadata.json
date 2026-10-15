@@ -1,0 +1,149 @@
+{
+  "@context": ["http://www.w3.org/ns/csvw", {"@language": "en"}],
+  "dc:title": "NIM lex - flavor vocabulary",
+  "dc:description": "Word lists, phrases, and templates for NIM naming and lore (persona layer D, plan.101426.persona.md). Each table is described here after W3C CSV on the Web (CSVW) metadata; lib/data/lex.py reads and checks the files against it. dc:type is the unit of a row: word (one term; eligible for salad), phrase (multi-word term), sentence, template (with {placeholders}), or record (several columns). Several tables share a name with a model table but are a different sense - see each dc:description.",
+  "dc:license": "Project content",
+  "dialect": {"header": true, "encoding": "utf-8", "skipBlankRows": true, "trim": true},
+  "tables": [
+    {
+      "url": "academic.csv", "dc:title": "Academic disciplines", "dc:type": "phrase",
+      "dc:description": "Fields of study; agent interests.",
+      "tableSchema": {"columns": [{"name": "discipline", "titles": "Academic Discipline", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "bio_templates.csv", "dc:title": "Biography templates", "dc:type": "template",
+      "dc:description": "Agent biographies; placeholders {name} {origin} {trait1}..{trait4} {missions} {interest}.",
+      "tableSchema": {"columns": [{"name": "template", "titles": "Template", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "bioentity.csv", "dc:title": "Given names", "dc:type": "word",
+      "dc:description": "Agent first names.",
+      "tableSchema": {"columns": [{"name": "name", "titles": "Name", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "class.csv", "dc:title": "Classifier words", "dc:type": "word",
+      "dc:description": "Adjectives for naming units and facilities. Not the agent class table (data/agency/data/reference/class.json).",
+      "tableSchema": {"columns": [{"name": "classification", "titles": "Classification", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "constellation.csv", "dc:title": "Constellations", "dc:type": "record",
+      "dc:description": "The 88 IAU constellations with English translations; agent zodiac.",
+      "tableSchema": {"columns": [
+        {"name": "constellation", "titles": "Constellation Name", "datatype": "string", "required": true},
+        {"name": "translation", "titles": "Translation", "datatype": "string"}
+      ]}
+    },
+    {
+      "url": "descriptor.csv", "dc:title": "Descriptors", "dc:type": "word",
+      "dc:description": "Adjectives; agent trait words in the generated bio.",
+      "tableSchema": {"columns": [{"name": "descriptor", "titles": "Descriptors", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "facility.csv", "dc:title": "Facilities", "dc:type": "word",
+      "dc:description": "Kinds of place or installation.",
+      "tableSchema": {"columns": [{"name": "facility", "titles": "Facility", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "group.csv", "dc:title": "Organization words", "dc:type": "word",
+      "dc:description": "Nouns for organizations. Not the group entity (crues).",
+      "tableSchema": {"columns": [{"name": "group", "titles": "Group", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "haiku.csv", "dc:title": "Nature verses", "dc:type": "sentence",
+      "dc:description": "Short declarative verses about nature.",
+      "tableSchema": {"columns": [{"name": "verse", "titles": "Verse", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "mottos.csv", "dc:title": "Mottos", "dc:type": "sentence",
+      "dc:description": "Agent mottos.",
+      "tableSchema": {"columns": [{"name": "motto", "titles": "Motto", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "origins.csv", "dc:title": "Origins", "dc:type": "phrase",
+      "dc:description": "Career origins; the {origin} of a generated bio.",
+      "tableSchema": {"columns": [{"name": "origin", "titles": "Origin", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "postnominals.csv", "dc:title": "Post-nominal letters", "dc:type": "word",
+      "dc:description": "Degree and professional letters written after a name (from lex/taxonomy.sh).",
+      "tableSchema": {"columns": [{"name": "postnominal", "titles": "Post-nominal", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "prefixes.csv", "dc:title": "Word-forming prefixes", "dc:type": "record",
+      "dc:description": "Greek and Latin prefixes with meaning and examples.",
+      "tableSchema": {"columns": [
+        {"name": "prefix", "titles": "PREFIX", "datatype": "string", "required": true},
+        {"name": "meaning", "titles": "MEANING", "datatype": "string"},
+        {"name": "example", "titles": "EXAMPLE", "datatype": "string"}
+      ]}
+    },
+    {
+      "url": "rank.csv", "dc:title": "Rank title vocabulary", "dc:type": "record",
+      "dc:description": "Lore rank titles, each with the classifiers it takes, in order. Not the rank table (data/agency/data/reference/rank.json).",
+      "tableSchema": {"columns": [
+        {"name": "title", "titles": "Title", "datatype": "string", "required": true},
+        {"name": "classifiers", "titles": "Classifiers", "datatype": "string", "separator": ";"}
+      ]}
+    },
+    {
+      "url": "root.csv", "dc:title": "Codename adjectives", "dc:type": "word",
+      "dc:description": "First half of a generated codename (stellar.synthesizer).",
+      "tableSchema": {"columns": [{"name": "adjective", "titles": "Adjective", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "star.csv", "dc:title": "Star stages", "dc:type": "record",
+      "dc:description": "Stellar evolution stages with display symbols and an equilibrium threshold. Not the qualifier tiers (data/agency/data/reference/qualifier.json).",
+      "tableSchema": {"columns": [
+        {"name": "star", "titles": "Star", "datatype": "string", "required": true},
+        {"name": "substar", "titles": "Substar", "datatype": "string"},
+        {"name": "symbol", "titles": "Symbol", "datatype": "string"},
+        {"name": "telemetry", "titles": "Telemetry", "datatype": "string"},
+        {"name": "equilibrium", "titles": "Equilibrium", "datatype": "integer"}
+      ]}
+    },
+    {
+      "url": "subentities.csv", "dc:title": "Subentities", "dc:type": "word",
+      "dc:description": "Abstract nouns (Order, Chaos, ...).",
+      "tableSchema": {"columns": [{"name": "subentity", "titles": "Subentities", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "subject.csv", "dc:title": "Subjects", "dc:type": "word",
+      "dc:description": "Work nouns (Action, Plan, ...).",
+      "tableSchema": {"columns": [{"name": "subject", "titles": "Subject", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "suffix.csv", "dc:title": "Word-forming suffixes", "dc:type": "record",
+      "dc:description": "Suffixes with meaning and examples.",
+      "tableSchema": {"columns": [
+        {"name": "suffix", "titles": "SUFFIX", "datatype": "string", "required": true},
+        {"name": "meaning", "titles": "MEANING", "datatype": "string"},
+        {"name": "examples", "titles": "EXAMPLES", "datatype": "string"}
+      ]}
+    },
+    {
+      "url": "surnames.csv", "dc:title": "Surnames", "dc:type": "word",
+      "dc:description": "Agent family names.",
+      "tableSchema": {"columns": [{"name": "surname", "titles": "Surname", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "system.csv", "dc:title": "Codename nouns", "dc:type": "word",
+      "dc:description": "Second half of a generated codename.",
+      "tableSchema": {"columns": [{"name": "system", "titles": "System", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "temperaments.csv", "dc:title": "Temperament words", "dc:type": "word",
+      "dc:description": "Words currently drawn into profile.personality.temperament; superseded by persona layer A (plan.101426.persona.md).",
+      "tableSchema": {"columns": [{"name": "temperament", "titles": "Temperament", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "titles.csv", "dc:title": "Honorifics", "dc:type": "word",
+      "dc:description": "Abbreviated titles written before a name.",
+      "tableSchema": {"columns": [{"name": "title", "titles": "Title", "datatype": "string", "required": true}]}
+    },
+    {
+      "url": "tones.csv", "dc:title": "Tone words", "dc:type": "word",
+      "dc:description": "Words currently drawn into profile.personality.tone; superseded by persona layer B (plan.101426.persona.md).",
+      "tableSchema": {"columns": [{"name": "tone", "titles": "Tone", "datatype": "string", "required": true}]}
+    }
+  ]
+}
