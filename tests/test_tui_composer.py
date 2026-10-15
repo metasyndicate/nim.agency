@@ -117,6 +117,32 @@ class TestComposerScreens(DatastoreCase):
         self.assertEqual(self.tui.compose_entity, "substation")
         self.assertTrue(self.tui.compose_draft.is_new)
 
+    def test_crue_screen_creates_from_a_type_then_composes(self):
+        self.tui._enter_crues_mode()
+        self.press(ord("n"))
+        types = sorted(self.tui.crue_types.values(),
+                       key=lambda c: c.get("sort_order", 99))
+        self.tui.crue_edit_index = [t["slug"] for t in types].index("weld_crue")
+        self.press(ENTER)
+        self.assertEqual(self.tui.mode, "compose_form")
+        self.assertEqual(self.tui.compose_entity, "group")
+        record = self.tui.compose_draft.record
+        self.assertEqual(record["crue_type_slug"], "weld_crue")
+        self.assertRegex(record["slug"], r"^weld_crue_[0-9a-f]{4}$")
+        self.go_to("/crue_type_slug")
+        self.press(ENTER)
+        self.assertEqual(self.tui.mode, "compose_pick")
+        offered = [o.value for o in self.tui.compose_pick["options"]]
+        self.assertEqual(set(offered), {t["slug"] for t in types})
+        self.tui.compose_pick["index"] = offered.index("data_crue")
+        self.press(ENTER, ord("s"))
+        self.assertIn("Saved", self.tui.message)
+        self.assertEqual(self.tui.current_crue["crue_type_slug"], "data_crue")
+        self.assertEqual(self.tui._crue_type_of(self.tui.current_crue)["label"],
+                         "Data Crüe")
+        self.tui._delete_crue(self.tui.current_crue)
+        self.assertEqual(self.tui.crues, [])
+
 
 class TestMenu(unittest.TestCase):
 

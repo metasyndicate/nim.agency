@@ -23,6 +23,7 @@
   "type": "object",
   "properties": {
     "id": {
+      "readOnly": true,
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
     },
     "slug": {

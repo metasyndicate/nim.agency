@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nim.agency/schema/core/group.schema.json",
   "title": "Agent Group",
-  "description": "Fleet/Team/Lab/Syndicate - organizational groupings of agents",
+  "description": "Crues - organizational groupings of agents, each classified by a crue_type",
   "@type": ["foaf:Group", "prov:Organization"],
   "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
   "$nim.meta": {
     "nim.id": 400103,
     "created": "2026-04-06T00:00:00Z",
-    "modified": "2026-04-06T00:00:00Z",
-    "version": "1.0.0",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "2.0.0",
     "layer": {
       "id": 3,
       "label": "data",
@@ -23,6 +23,7 @@
   "type": "object",
   "properties": {
     "id": {
+      "readOnly": true,
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
     },
     "slug": {
@@ -32,10 +33,10 @@
       "type": "string",
       "maxLength": 128
     },
-    "type": {
-      "type": "string",
-      "enum": ["fleet", "team", "lab", "syndicate", "platform"],
-      "description": "Group classification"
+    "crue_type_slug": {
+      "x-nim-ref": {"entity": "crue_type", "key": "slug"},
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Classification of the group in the crue_type concept scheme (org:classification); the label, icon, and composition come from that row"
     },
     "description": {
       "type": "string"
@@ -92,5 +93,5 @@
       "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
     }
   },
-  "required": ["id", "slug", "name", "type"]
+  "required": ["id", "slug", "name", "crue_type_slug"]
 }

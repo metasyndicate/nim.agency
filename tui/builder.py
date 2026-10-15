@@ -304,8 +304,6 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._draw_crues(height, width)
         elif self.mode == "crue_view":
             self._draw_crue_view(height, width)
-        elif self.mode == "crue_edit":
-            self._draw_crue_edit(height, width)
         elif self.mode == "crue_create":
             self._draw_crue_create(height, width)
         elif self.mode == "crue_member_select":
@@ -445,8 +443,6 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._handle_crues_input(key)
         elif self.mode == "crue_view":
             self._handle_crue_view_input(key)
-        elif self.mode == "crue_edit":
-            self._handle_crue_edit_input(key)
         elif self.mode == "crue_create":
             self._handle_crue_create_input(key)
         elif self.mode == "crue_member_select":

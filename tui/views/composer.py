@@ -12,7 +12,7 @@ compose_pick as the single/multi-select picker over a choice field's
 options (each option's description shown as it is highlighted).
 
 Other screens open a form directly with `_open_compose(entity, ref,
-return_mode)` - the substation screen does, for new and edit.
+return_mode)` - the substation and crue screens do, for new and edit.
 """
 
 import curses
@@ -32,6 +32,13 @@ ENTITY_GROUPS = (
     ("Harness", ("transport", "channel_capability", "harness_function")),
     ("Agency", ("agent", "group", "project", "instruction_block")),
 )
+
+# Screens that open the form with _open_compose and keep their own copy of
+# the record: entity -> (reload method, attribute holding the current record)
+COMPOSE_VIEWS = {
+    "substation": ("_load_substations", "current_substation"),
+    "group": ("_load_crues", "current_crue"),
+}
 
 
 @dataclass
@@ -445,11 +452,13 @@ class ComposerMixin:
                                         self.compose_entity, ref)
         self.message = f"Saved {saved.get('slug') or saved.get('id')}"
         self.message_color = Colors.STAT_VALUE
-        if self.compose_entity == "substation" and hasattr(self, "_load_substations"):
-            self._load_substations()
-            current = getattr(self, "current_substation", None)
+        # Views that hold their own copy of the entity refresh it after a save
+        loader, holder = COMPOSE_VIEWS.get(self.compose_entity, (None, None))
+        if loader and hasattr(self, loader):
+            getattr(self, loader)()
+            current = getattr(self, holder, None)
             if current is None or current.get("id") == saved.get("id"):
-                self.current_substation = saved
+                setattr(self, holder, saved)
 
     # -- picker ---------------------------------------------------------------
 

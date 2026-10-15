@@ -1,5 +1,6 @@
 """
-Crues - crew formations: list, edit, member picker.
+Crues - crew formations: list, view, create from a crue_type, member picker.
+Editing opens the schema-driven Composer (tui/views/composer.py).
 
 Extracted move-only from tui/builder.py; methods run against shared
 AgentBuilder state (mixin over `self`).
@@ -29,6 +30,14 @@ class CruesMixin:
             self.crues = []
             self.message = f"Load error: {str(e)[:30]}"
             self.message_color = Colors.HEALTH
+
+    def _crue_type_of(self, crue: dict) -> dict:
+        """The crue_type row a group is classified by (empty if unbound)."""
+        slug = crue.get("crue_type_slug")
+        for ct in self.crue_types.values():
+            if ct.get("slug") == slug:
+                return ct
+        return {}
 
     def _draw_crues(self, height: int, width: int):
         """Draw crues list view."""
@@ -72,21 +81,13 @@ class CruesMixin:
                     break
 
                 name = crue.get("name", "?")[:25]
-                crue_type = crue.get("type", "team")[:18]
+                crue_type_data = self._crue_type_of(crue)
+                crue_type = crue_type_data.get(
+                    "label", crue.get("crue_type_slug") or "?")[:18]
                 member_count = crue.get("capacity", {}).get("current_members", 0)
                 is_active = crue.get("is_active", True)
                 status = "Active" if is_active else "Inactive"
-
-                # Get crue_type icon if available
-                type_slug = crue.get("type_slug")
-                crue_type_data = None
-                if type_slug:
-                    for ct in self.crue_types.values():
-                        if ct.get("slug") == type_slug:
-                            crue_type_data = ct
-                            break
-
-                icon = crue_type_data.get("icon", "👥") if crue_type_data else "👥"
+                icon = crue_type_data.get("icon", "👥")
 
                 row = f"{pad(icon, 2)} {pad(name, 23)} {crue_type:<18} {member_count:>8} {status:<10}"
                 row = f" {clip(row, width - 10)} "
@@ -114,13 +115,7 @@ class CruesMixin:
 
         # Title
         try:
-            icon = "👥"
-            type_slug = crue.get("type_slug")
-            if type_slug:
-                for ct in self.crue_types.values():
-                    if ct.get("slug") == type_slug:
-                        icon = ct.get("icon", "👥")
-                        break
+            icon = self._crue_type_of(crue).get("icon", "👥")
             self.stdscr.addstr(5, 2, f"{icon} CRUE: {crue.get('name', '?')}",
                                curses.color_pair(Colors.TITLE) | curses.A_BOLD)
         except curses.error:
@@ -142,7 +137,7 @@ class CruesMixin:
             self.stdscr.addstr(y, col1_x + 2, f"Slug: {crue.get('slug', '?')}",
                                curses.color_pair(Colors.DIM))
             y += 1
-            self.stdscr.addstr(y, col1_x + 2, f"Type: {crue.get('type', 'team')}",
+            self.stdscr.addstr(y, col1_x + 2, f"Type: {self._crue_type_of(crue).get('label', crue.get('crue_type_slug') or '?')}",
                                curses.color_pair(Colors.STAT_VALUE))
             y += 1
             desc = crue.get('description', '')[:col_width - 2]
@@ -191,65 +186,6 @@ class CruesMixin:
         self._draw_footer(height, width,
                           "E: Edit | A: Add Member | R: Remove Member | "
                           "D: Dispatch Crue | X: Delete | Q: Back")
-
-    def _draw_crue_edit(self, height: int, width: int):
-        """Draw crue edit view."""
-        self._draw_header(width)
-
-        if not self.current_crue:
-            return
-
-        crue = self.current_crue
-
-        # Title
-        try:
-            self.stdscr.addstr(5, 2, f"EDIT CRUE: {crue.get('name', '?')}",
-                               curses.color_pair(Colors.TITLE) | curses.A_BOLD)
-        except curses.error:
-            pass
-
-        # Editable fields
-        fields = [
-            ("Name", crue.get("name", "")),
-            ("Slug", crue.get("slug", "")),
-            ("Type", crue.get("type", "team")),
-            ("Description", crue.get("description", "")[:40]),
-            ("Max Members", str(crue.get("capacity", {}).get("max_members", 10))),
-        ]
-
-        y = 8
-        for i, (label, value) in enumerate(fields):
-            is_selected = (i == self.crue_edit_index)
-
-            if is_selected and self.editing:
-                display_value = self.edit_buffer + "_"
-            else:
-                display_value = value
-
-            if is_selected:
-                self._safe_addstr(y, 4, f" {label:15}: {display_value:<45} ",
-                                  curses.color_pair(Colors.HIGHLIGHT))
-            else:
-                self._safe_addstr(y, 4, f" {label:15}: ",
-                                  curses.color_pair(Colors.STAT_LABEL))
-                self._safe_addstr(y, 4 + 19, f"{display_value:<45}",
-                                  curses.color_pair(Colors.STAT_VALUE))
-            y += 1
-
-        # Help text
-        try:
-            if self.editing:
-                help_text = "Type to edit | ENTER: Save | ESC: Cancel"
-            else:
-                help_text = "UP/DOWN: Navigate | ENTER: Edit field | Q: Back"
-            self.stdscr.addstr(y + 2, 4, help_text, curses.color_pair(Colors.DIM))
-        except curses.error:
-            pass
-
-        # Status message
-        self._draw_message(height - 4, width)
-
-        self._draw_footer(height, width, "ENTER: Edit | Q: Back to View")
 
     def _draw_crue_create(self, height: int, width: int):
         """Draw crue creation view - select crue type template."""
@@ -316,11 +252,9 @@ class CruesMixin:
             self.mode = "crue_create"
         elif key == ord('e') or key == ord('E'):
             if self.crues:
+                # Composed from the schema (tui/views/composer.py)
                 self.current_crue = self.crues[self.crue_index]
-                self.crue_edit_index = 0
-                self.editing = False
-                self.edit_buffer = ""
-                self.mode = "crue_edit"
+                self._open_compose("group", str(self.current_crue["id"]), "crues")
         elif key == ord('x') or key == ord('X'):
             if self.crues:
                 self._delete_crue(self.crues[self.crue_index])
@@ -330,10 +264,7 @@ class CruesMixin:
     def _handle_crue_view_input(self, key: int):
         """Handle crue detail view input."""
         if key == ord('e') or key == ord('E'):
-            self.crue_edit_index = 0
-            self.editing = False
-            self.edit_buffer = ""
-            self.mode = "crue_edit"
+            self._open_compose("group", str(self.current_crue["id"]), "crue_view")
         elif key == ord('a') or key == ord('A'):
             # Add member - open the selection picker
             self._enter_crue_member_select("add")
@@ -358,31 +289,6 @@ class CruesMixin:
         elif key == ord('q') or key == ord('Q'):
             self.mode = "crues"
 
-    def _handle_crue_edit_input(self, key: int):
-        """Handle crue edit view input."""
-        field_count = 5
-
-        if self.editing:
-            if key == 27:  # ESC
-                self.editing = False
-                self.edit_buffer = ""
-            elif key in (curses.KEY_ENTER, 10, 13):
-                self._save_crue_field()
-                self.editing = False
-            elif key in (curses.KEY_BACKSPACE, 127, 8):
-                self.edit_buffer = self.edit_buffer[:-1]
-            elif 32 <= key <= 126:
-                self.edit_buffer += chr(key)
-        else:
-            if key == curses.KEY_UP:
-                self.crue_edit_index = (self.crue_edit_index - 1) % field_count
-            elif key == curses.KEY_DOWN:
-                self.crue_edit_index = (self.crue_edit_index + 1) % field_count
-            elif key in (curses.KEY_ENTER, 10, 13):
-                self._start_crue_field_edit()
-            elif key == ord('q') or key == ord('Q'):
-                self.mode = "crue_view"
-
     def _handle_crue_create_input(self, key: int):
         """Handle crue creation input."""
         crue_type_list = sorted(self.crue_types.values(), key=lambda c: c.get("sort_order", 99))
@@ -397,67 +303,6 @@ class CruesMixin:
         elif key == ord('q') or key == ord('Q'):
             self.mode = "crues"
 
-    def _start_crue_field_edit(self):
-        """Start editing the selected crue field."""
-        if not self.current_crue:
-            return
-
-        crue = self.current_crue
-        field_values = {
-            0: crue.get("name", ""),
-            1: crue.get("slug", ""),
-            2: crue.get("type", "team"),
-            3: crue.get("description", ""),
-            4: str(crue.get("capacity", {}).get("max_members", 10)),
-        }
-
-        self.edit_buffer = field_values.get(self.crue_edit_index, "")
-        self.editing = True
-
-    def _save_crue_field(self):
-        """Save the current edit to crue."""
-        if not self.current_crue:
-            return
-
-        field_map = {
-            0: "name",
-            1: "slug",
-            2: "type",
-            3: "description",
-            4: "max_members",
-        }
-
-        field = field_map.get(self.crue_edit_index)
-        if not field:
-            return
-
-        if field == "max_members":
-            if "capacity" not in self.current_crue:
-                self.current_crue["capacity"] = {}
-            try:
-                self.current_crue["capacity"]["max_members"] = int(self.edit_buffer)
-            except ValueError:
-                self.current_crue["capacity"]["max_members"] = 10
-        else:
-            self.current_crue[field] = self.edit_buffer
-
-        # Update timestamp
-        from datetime import datetime, timezone
-        if "audit" not in self.current_crue:
-            self.current_crue["audit"] = {}
-        self.current_crue["audit"]["updated_at"] = datetime.now(timezone.utc).isoformat()
-
-        try:
-            self.ds.update("group", self.current_crue["id"], self.current_crue)
-            self._load_crues()
-            self.message = f"{field.title()} updated"
-            self.message_color = Colors.STAT_VALUE
-        except Exception as e:
-            self.message = f"Save error: {str(e)[:30]}"
-            self.message_color = Colors.HEALTH
-
-        self.edit_buffer = ""
-
     def _create_crue_from_type(self, crue_type: dict):
         """Create a new crue from a crue_type template."""
         import uuid
@@ -466,17 +311,15 @@ class CruesMixin:
         crue_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
 
-        # Build slug from type
-        type_slug = crue_type.get("slug", "team")
-        suffix = crue_id[:4]
-        slug = f"{type_slug}.{suffix}"
+        # Slug from the type and the id's first characters (slug pattern: no dots)
+        type_slug = crue_type["slug"]
+        slug = f"{type_slug}_{crue_id[:4]}"
 
         crue = {
             "id": crue_id,
             "slug": slug,
             "name": f"New {crue_type.get('label', 'Crue')}",
-            "type": crue_type.get("label", "Team"),
-            "type_slug": type_slug,
+            "crue_type_slug": type_slug,
             "description": crue_type.get("mission_profile", ""),
             "parent_id": None,
             "specialization": {
@@ -501,10 +344,7 @@ class CruesMixin:
             self.ds.create("group", crue)
             self._load_crues()
             self.current_crue = crue
-            self.crue_edit_index = 0
-            self.editing = False
-            self.edit_buffer = ""
-            self.mode = "crue_edit"
+            self._open_compose("group", crue_id, "crue_view")
             self.message = "Crue created - configure details"
             self.message_color = Colors.STAT_VALUE
         except Exception as e:

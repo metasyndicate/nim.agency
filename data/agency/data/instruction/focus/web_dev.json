@@ -5,7 +5,11 @@
   "label": "Web Development Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {"focus_slugs": []},
+  "applies_when": {
+    "archetype_slugs": [
+      "backend_dev"
+    ]
+  },
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on web application development, from frontend interfaces to backend services.",
     "role_additions": [
@@ -21,8 +25,15 @@
       "Tooling: npm, webpack, vite, git, Docker"
     ],
     "tool_unlocks": [
-      "npm", "yarn", "node", "python", "curl", "jq",
-      "git", "docker", "docker-compose"
+      "npm",
+      "yarn",
+      "node",
+      "python",
+      "curl",
+      "jq",
+      "git",
+      "docker",
+      "docker-compose"
     ],
     "constraint_additions": [
       "VALIDATE user input - never trust client-side data",
@@ -32,10 +43,22 @@
       "NEVER commit secrets, API keys, or credentials to version control"
     ],
     "tool_risk_adjustments": {
-      "npm install": {"requires_confirmation": false, "risk_level": "moderate"},
-      "npm run build": {"requires_confirmation": false, "risk_level": "safe"},
-      "docker build": {"requires_confirmation": false, "risk_level": "safe"},
-      "docker push": {"requires_confirmation": true, "risk_level": "moderate"}
+      "npm install": {
+        "requires_confirmation": false,
+        "risk_level": "moderate"
+      },
+      "npm run build": {
+        "requires_confirmation": false,
+        "risk_level": "safe"
+      },
+      "docker build": {
+        "requires_confirmation": false,
+        "risk_level": "safe"
+      },
+      "docker push": {
+        "requires_confirmation": true,
+        "risk_level": "moderate"
+      }
     },
     "decision_framework_overrides": {
       "investigate_first": "Review existing codebase patterns. Check package.json, framework docs, and existing implementations.",
@@ -49,5 +72,8 @@
   "meta": {
     "description": "Focus overlay for web developers (frontend, backend, fullstack). Adds web-specific tools, security constraints, and development patterns.",
     "version": "1.0.0"
+  },
+  "audit": {
+    "updated_at": "2026-10-15T05:19:38.444843+00:00"
   }
 }

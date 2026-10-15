@@ -5,7 +5,11 @@
   "label": "Monitoring & Observability Focus",
   "category": "focus",
   "priority": 50,
-  "applies_when": {"focus_slugs": []},
+  "applies_when": {
+    "archetype_slugs": [
+      "sre"
+    ]
+  },
   "instruction_blocks": {
     "preamble_append": " Your expertise centers on system monitoring, metrics collection, and observability.",
     "role_additions": [
@@ -21,7 +25,11 @@
       "Alerting: PagerDuty, OpsGenie, AlertManager"
     ],
     "tool_unlocks": [
-      "promtool", "curl", "jq", "logcli", "grafana-cli"
+      "promtool",
+      "curl",
+      "jq",
+      "logcli",
+      "grafana-cli"
     ],
     "constraint_additions": [
       "AVOID alert fatigue - tune thresholds to actionable levels",
@@ -31,8 +39,14 @@
       "PREFER standard metrics naming conventions"
     ],
     "tool_risk_adjustments": {
-      "promtool": {"requires_confirmation": false, "risk_level": "safe"},
-      "curl": {"requires_confirmation": false, "risk_level": "safe"}
+      "promtool": {
+        "requires_confirmation": false,
+        "risk_level": "safe"
+      },
+      "curl": {
+        "requires_confirmation": false,
+        "risk_level": "safe"
+      }
     },
     "decision_framework_overrides": {
       "investigate_first": "Check current alert state, recent metrics, and historical patterns before making changes.",
@@ -46,5 +60,8 @@
   "meta": {
     "description": "Focus overlay for monitoring and observability specialists. Adds metrics, logging, and alerting expertise.",
     "version": "1.0.0"
+  },
+  "audit": {
+    "updated_at": "2026-10-15T05:19:38.275263+00:00"
   }
 }

@@ -178,6 +178,36 @@ class TestSubstationHostModel(unittest.TestCase):
                 draft.set(pointer, "x")
 
 
+class TestGroupClassification(DatastoreCase):
+    """O5: a group is classified by a crue_type row (org:classification),
+    chosen from the stored table rather than typed."""
+
+    def test_type_is_a_reference_to_crue_type(self):
+        f = forms.form("group", self.ds, SM).find(("crue_type_slug",))
+        self.assertEqual(f.kind, "select")
+        offered = {o.value for o in forms.options(f, self.ds, {}, {})}
+        stored = {r["slug"] for r in self.ds.load_reference("crue_type")}
+        self.assertEqual(offered, stored)
+
+    def test_new_group_saves_only_with_a_known_type(self):
+        draft = Draft.new(self.ds, SM, "group")
+        draft.set("/name", "Probe Crue")
+        self.assertTrue(any(p.startswith("/crue_type_slug:")
+                            for p in draft.problems()))
+        with self.assertRaisesRegex(EditError, "choose from"):
+            draft.set("/crue_type_slug", "Ground Crüe")       # a label, not a key
+        draft.set("/crue_type_slug", "ground_crue")
+        draft.set("/slug", "ground_crue_probe")
+        self.assertEqual(draft.problems(), [])
+        saved = draft.save()
+        self.assertEqual(self.ds.read("group", saved["id"])["crue_type_slug"],
+                         "ground_crue")
+        draft = Draft.load(self.ds, SM, "group", saved["id"])
+        with self.assertRaisesRegex(EditError, "crue_type"):
+            Draft.load(self.ds, SM, "crue_type", "ground_crue").delete()
+        draft.delete(hard=True)
+
+
 class TestFormCoversTheData(DatastoreCase):
     """Every stored record can be rebuilt through a Draft and comes out
     identical, with no problems, and every value sits on a field the form
