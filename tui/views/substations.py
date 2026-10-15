@@ -250,68 +250,6 @@ class SubstationsMixin:
 
         self._draw_footer(height, width, "C: Connect | E: Edit | P: Permissions | D: Deploy | X: Delete | Q: Back")
 
-    def _draw_substation_edit(self, height: int, width: int):
-        """Draw substation edit view."""
-        self._draw_header(width)
-
-        if not self.current_substation:
-            return
-
-        ident = self.current_substation.get("identity", {})
-        conn = self.current_substation.get("connection", {})
-
-        # Title
-        try:
-            self.stdscr.addstr(5, 2, f"EDIT SUBSTATION: {ident.get('name', '?')}",
-                               curses.color_pair(Colors.TITLE) | curses.A_BOLD)
-        except curses.error:
-            pass
-
-        # Field definitions
-        fields = [
-            ("Name", ident.get("name", "")),
-            ("Codename", ident.get("codename", "")),
-            ("Environment", ident.get("environment", "development")),
-            ("Hostname", conn.get("hostname", "")),
-            ("Port", str(conn.get("port", 22))),
-            ("Username", conn.get("username", "")),
-        ]
-
-        y = 8
-        for i, (label, value) in enumerate(fields):
-            is_selected = (i == self.substation_edit_index)
-
-            # If editing this field, show edit buffer
-            if is_selected and self.editing:
-                display_value = self.edit_buffer + "_"
-            else:
-                display_value = value
-
-            if is_selected:
-                self._safe_addstr(y, 4, f" {label:12}: {display_value:<40} ",
-                                  curses.color_pair(Colors.HIGHLIGHT))
-            else:
-                self._safe_addstr(y, 4, f" {label:12}: ",
-                                  curses.color_pair(Colors.STAT_LABEL))
-                self._safe_addstr(y, 4 + 16, f"{display_value:<40}",
-                                  curses.color_pair(Colors.STAT_VALUE))
-            y += 1
-
-        # Help text
-        try:
-            if self.editing:
-                help_text = "Type to edit | ENTER: Save | ESC: Cancel"
-            else:
-                help_text = "UP/DOWN: Navigate | ENTER: Edit field | Q: Back"
-            self.stdscr.addstr(y + 2, 4, help_text, curses.color_pair(Colors.DIM))
-        except curses.error:
-            pass
-
-        # Status message
-        self._draw_message(height - 4, width)
-
-        self._draw_footer(height, width, "ENTER: Edit | Q: Back to View")
-
     def _draw_substation_perms(self, height: int, width: int):
         """Draw substation permissions edit view."""
         self._draw_header(width)
@@ -490,7 +428,8 @@ class SubstationsMixin:
             self.current_substation = self.substations[self.substation_index]
             self.mode = "substation_view"
         elif key == ord('n') or key == ord('N'):
-            self._create_substation()
+            # Composed from the schema (tui/views/composer.py)
+            self._open_compose("substation", None, "substations")
         elif key == ord('k') or key == ord('K'):
             self._scan_ssh_keys()
             self.mode = "ssh_keys"
@@ -501,10 +440,9 @@ class SubstationsMixin:
             # Quick edit from list
             if self.substations:
                 self.current_substation = self.substations[self.substation_index]
-                self.substation_edit_index = 0
-                self.editing = False
-                self.edit_buffer = ""
-                self.mode = "substation_edit"
+                self._open_compose("substation",
+                                   str(self.current_substation["id"]),
+                                   "substations")
         elif key == ord('x') or key == ord('X'):
             # Quick delete from list
             if self.substations:
@@ -519,11 +457,8 @@ class SubstationsMixin:
         elif key == ord('d') or key == ord('D'):
             self._deploy_from_substation(self.current_substation)
         elif key == ord('e') or key == ord('E'):
-            # Enter edit mode
-            self.substation_edit_index = 0
-            self.editing = False
-            self.edit_buffer = ""
-            self.mode = "substation_edit"
+            self._open_compose("substation", str(self.current_substation["id"]),
+                               "substation_view")
         elif key == ord('p') or key == ord('P'):
             # Enter permissions mode
             self.substation_perm_index = 0
@@ -561,100 +496,6 @@ class SubstationsMixin:
         elif 32 <= key <= 126:  # Printable ASCII
             self.edit_buffer += chr(key)
             self.editing = True
-
-    def _handle_substation_edit_input(self, key: int):
-        """Handle substation edit view input."""
-        # Fields: 0=name, 1=codename, 2=environment, 3=hostname, 4=port, 5=username
-        field_count = 6
-
-        if self.editing:
-            # Text input mode
-            if key == 27:  # ESC
-                self.editing = False
-                self.edit_buffer = ""
-            elif key in (curses.KEY_ENTER, 10, 13):
-                self._save_substation_field()
-                self.editing = False
-            elif key in (curses.KEY_BACKSPACE, 127, 8):
-                self.edit_buffer = self.edit_buffer[:-1]
-            elif 32 <= key <= 126:  # Printable ASCII
-                self.edit_buffer += chr(key)
-        else:
-            # Navigation mode
-            if key == curses.KEY_UP:
-                self.substation_edit_index = (self.substation_edit_index - 1) % field_count
-            elif key == curses.KEY_DOWN:
-                self.substation_edit_index = (self.substation_edit_index + 1) % field_count
-            elif key in (curses.KEY_ENTER, 10, 13):
-                self._start_substation_field_edit()
-            elif key == ord('q') or key == ord('Q'):
-                self.mode = "substation_view"
-
-    def _start_substation_field_edit(self):
-        """Start editing the selected substation field."""
-        if not self.current_substation:
-            return
-
-        ident = self.current_substation.get("identity", {})
-        conn = self.current_substation.get("connection", {})
-
-        field_values = {
-            0: ident.get("name", ""),
-            1: ident.get("codename", ""),
-            2: ident.get("environment", "development"),
-            3: conn.get("hostname", ""),
-            4: str(conn.get("port", 22)),
-            5: conn.get("username", ""),
-        }
-
-        self.edit_buffer = field_values.get(self.substation_edit_index, "")
-        self.editing = True
-
-    def _save_substation_field(self):
-        """Save the current edit to substation."""
-        if not self.current_substation:
-            return
-
-        field_map = {
-            0: ("identity", "name"),
-            1: ("identity", "codename"),
-            2: ("identity", "environment"),
-            3: ("connection", "hostname"),
-            4: ("connection", "port"),
-            5: ("connection", "username"),
-        }
-
-        section, field = field_map.get(self.substation_edit_index, (None, None))
-        if section and field:
-            if section not in self.current_substation:
-                self.current_substation[section] = {}
-
-            value = self.edit_buffer
-            # Handle port as integer
-            if field == "port":
-                try:
-                    value = int(value)
-                except ValueError:
-                    value = 22
-
-            self.current_substation[section][field] = value
-
-            # Update timestamp
-            from datetime import datetime, timezone
-            if "audit" not in self.current_substation:
-                self.current_substation["audit"] = {}
-            self.current_substation["audit"]["updated_at"] = datetime.now(timezone.utc).isoformat()
-
-            try:
-                self.ds.update("substation", self.current_substation["id"], self.current_substation)
-                self._load_substations()
-                self.message = f"{field.title()} updated"
-                self.message_color = Colors.STAT_VALUE
-            except Exception as e:
-                self.message = f"Save error: {str(e)[:30]}"
-                self.message_color = Colors.HEALTH
-
-        self.edit_buffer = ""
 
     def _handle_substation_perms_input(self, key: int):
         """Handle substation permissions view input."""
@@ -766,59 +607,6 @@ class SubstationsMixin:
             self._scan_ssh_keys()
         except Exception as e:
             self.message = f"Import error: {str(e)[:30]}"
-            self.message_color = Colors.HEALTH
-
-    def _create_substation(self):
-        """Create a new substation (placeholder - would need input form)."""
-        import uuid
-        from datetime import datetime, timezone
-
-        # Create basic substation
-        sub_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc).isoformat()
-
-        substation = {
-            "id": sub_id,
-            "identity": {
-                "name": f"New Substation",
-                "codename": f"sub.{sub_id[:8]}",
-                "environment": "development"
-            },
-            "connection": {
-                "hostname": "localhost",
-                "port": 22,
-                "username": os.environ.get("USER", "user")
-            },
-            "permissions": {
-                "read_enabled": True,
-                "write_enabled": False,
-                "deploy_enabled": False,
-                "requires_confirmation": True
-            },
-            "status": {
-                "state": "unknown"
-            },
-            "deployments": [],
-            "audit": {
-                "created_at": now,
-                "updated_at": now,
-                "retired_at": None
-            }
-        }
-
-        try:
-            self.ds.create("substation", substation, validate=False)
-            self._load_substations()
-            # Set current and enter edit mode immediately
-            self.current_substation = substation
-            self.substation_edit_index = 0
-            self.editing = False
-            self.edit_buffer = ""
-            self.mode = "substation_edit"
-            self.message = "New substation - configure connection"
-            self.message_color = Colors.STAT_VALUE
-        except Exception as e:
-            self.message = f"Create error: {str(e)[:30]}"
             self.message_color = Colors.HEALTH
 
     def _connect_substation(self, substation):

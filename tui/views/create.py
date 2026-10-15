@@ -145,7 +145,7 @@ class CreateMixin:
         if not self.create_candidate:
             return
         try:
-            agent = self.ds.create("agent", self.create_candidate, validate=False)
+            agent = self.ds.create("agent", self.create_candidate)
         except Exception as e:
             self.message = f"Hire failed: {str(e)[:40]}"
             self.message_color = Colors.HEALTH

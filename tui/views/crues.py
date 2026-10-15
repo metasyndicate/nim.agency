@@ -498,7 +498,7 @@ class CruesMixin:
         }
 
         try:
-            self.ds.create("group", crue, validate=False)
+            self.ds.create("group", crue)
             self._load_crues()
             self.current_crue = crue
             self.crue_edit_index = 0

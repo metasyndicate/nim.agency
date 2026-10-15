@@ -36,10 +36,11 @@ from tui.views.viewer import ViewerMixin
 from tui.views.missions import MissionsMixin
 from tui.views.stats import StatsMixin
 from tui.views.foundry import FoundryMixin
+from tui.views.composer import ComposerMixin
 from tui.views.substations import HAS_REMOTE, REMOTE_ERROR
 
 
-class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, CreateMixin, AgentEditMixin, SetupMixin, SubstationsMixin, CruesMixin, DispatchMixin, ViewerMixin, MissionsMixin, StatsMixin, FoundryMixin):
+class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, CreateMixin, AgentEditMixin, SetupMixin, SubstationsMixin, CruesMixin, DispatchMixin, ViewerMixin, MissionsMixin, StatsMixin, FoundryMixin, ComposerMixin):
     """
     Main TUI application for agent creation and management.
 
@@ -88,7 +89,6 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
         self.ssh_key_index = 0
         self.vault_unlocked = False
         self.vault = None
-        self.substation_edit_index = 0  # Field being edited in substation
         self.substation_perm_index = 0  # Permission being toggled
 
         # Crues state
@@ -150,6 +150,21 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
         self.foundry_form = {}
         self.foundry_field_index = 0
         self.foundry_entry_id = None   # None = creating new
+
+        # Composer state (tui/views/composer.py)
+        self.compose_sm = None
+        self.compose_entity = None
+        self.compose_entity_rows = []
+        self.compose_entity_index = 0
+        self.compose_records = []
+        self.compose_record_index = 0
+        self.compose_delete_armed = None
+        self.compose_draft = None
+        self.compose_return = "menu"
+        self.compose_row_index = 0
+        self.compose_scroll = 0
+        self.compose_discard_armed = False
+        self.compose_pick = None
 
         # Load reference data
         self.ranks = {r["id"]: r for r in self.ds.load_reference("rank")}
@@ -283,8 +298,6 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._draw_vault_unlock(height, width)
         elif self.mode == "substation_view":
             self._draw_substation_view(height, width)
-        elif self.mode == "substation_edit":
-            self._draw_substation_edit(height, width)
         elif self.mode == "substation_perms":
             self._draw_substation_perms(height, width)
         elif self.mode == "crues":
@@ -319,6 +332,14 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._draw_foundry_list(height, width)
         elif self.mode == "foundry_form":
             self._draw_foundry_form(height, width)
+        elif self.mode == "compose_entities":
+            self._draw_compose_entities(height, width)
+        elif self.mode == "compose_records":
+            self._draw_compose_records(height, width)
+        elif self.mode == "compose_form":
+            self._draw_compose_form(height, width)
+        elif self.mode == "compose_pick":
+            self._draw_compose_pick(height, width)
 
         self.stdscr.refresh()
 
@@ -338,6 +359,7 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             ("C", "Crues", "Manage teams and groups"),
             ("T", "Statistics", "View agency statistics"),
             ("F", "Type Foundry", "Define specialties, foci, tools, crue types"),
+            ("P", "Composer", "Compose any record from its schema"),
             ("S", "Setup", "Configuration and data management"),
             ("Q", "Quit", "Exit the application")
         ]
@@ -417,8 +439,6 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._handle_vault_unlock_input(key)
         elif self.mode == "substation_view":
             self._handle_substation_view_input(key)
-        elif self.mode == "substation_edit":
-            self._handle_substation_edit_input(key)
         elif self.mode == "substation_perms":
             self._handle_substation_perms_input(key)
         elif self.mode == "crues":
@@ -455,10 +475,18 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._handle_foundry_list_input(key)
         elif self.mode == "foundry_form":
             self._handle_foundry_form_input(key)
+        elif self.mode == "compose_entities":
+            self._handle_compose_entities_input(key)
+        elif self.mode == "compose_records":
+            self._handle_compose_records_input(key)
+        elif self.mode == "compose_form":
+            self._handle_compose_form_input(key)
+        elif self.mode == "compose_pick":
+            self._handle_compose_pick_input(key)
 
     def _handle_menu_input(self, key: int):
         """Handle menu input."""
-        menu_count = 11
+        menu_count = 12
 
         if key == curses.KEY_UP:
             self.menu_index = (self.menu_index - 1) % menu_count
@@ -484,6 +512,8 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._enter_stats_mode()
         elif key == ord('f') or key == ord('F'):
             self._enter_foundry_mode()
+        elif key == ord('p') or key == ord('P'):
+            self._enter_compose_mode()
         elif key == ord('s') or key == ord('S'):
             self.mode = "setup"
             self.setup_index = 0
@@ -509,11 +539,13 @@ class AgentBuilder(ChromeMixin, RosterMixin, DossierMixin, ProgressionMixin, Cre
             self._enter_stats_mode()
         elif self.menu_index == 8:  # Type Foundry
             self._enter_foundry_mode()
-        elif self.menu_index == 9:  # Setup
+        elif self.menu_index == 9:  # Composer
+            self._enter_compose_mode()
+        elif self.menu_index == 10:  # Setup
             self.mode = "setup"
             self.setup_index = 0
             self._refresh_setup_stats()
-        elif self.menu_index == 10:  # Quit
+        elif self.menu_index == 11:  # Quit
             raise KeyboardInterrupt
 
 
