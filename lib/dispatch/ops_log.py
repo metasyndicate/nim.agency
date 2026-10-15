@@ -42,6 +42,11 @@ class DispatchLogType(Enum):
     TASK_COMPLETE = "task_complete"
     TASK_FAIL = "task_fail"
     TASK_TIMEOUT = "task_timeout"
+    TASK_VERIFY = "task_verify"
+
+    # Harness: a tool call a rogue syndicate emitted and the agency executed
+    TOOL_CALL = "tool_call"
+    ANOMALY = "anomaly"           # BIRD relay finding (RFC 9457 problem)
 
     # Agent lifecycle
     AGENT_IDLE = "agent_idle"
@@ -554,6 +559,96 @@ class DispatchLogger:
             error=error,
             duration_ms=duration_ms,
             metadata=metadata
+        ))
+
+    def log_task_verified(
+        self,
+        dispatch_id: str,
+        mission_id: str,
+        task_id: str,
+        agent_id: str,
+        agent_codename: str,
+        passed: bool,
+        detail: str,
+        **metadata
+    ) -> DispatchLogEntry:
+        """Log a known-answer verdict on a task's output."""
+        return self.log(DispatchLogEntry(
+            dispatch_id=dispatch_id,
+            mission_id=mission_id,
+            task_id=task_id,
+            agent_id=agent_id,
+            agent_codename=agent_codename,
+            log_type=DispatchLogType.TASK_VERIFY.value,
+            action="verify:pass" if passed else "verify:fail",
+            agent_state=AgentState.COMPLETE.value,
+            status="ok" if passed else "fail",
+            output_summary=detail[:200],
+            error="" if passed else detail,
+            metadata=metadata
+        ))
+
+    def log_tool_call(
+        self,
+        dispatch_id: str,
+        mission_id: str,
+        task_id: str,
+        agent_id: str,
+        agent_codename: str,
+        call: dict,
+        provider: str = "",
+        working_dir: str = "",
+    ) -> DispatchLogEntry:
+        """Log one harness tool call: what the model asked for, and what
+        the executor did with it (ran, refused, or failed)."""
+        outcome = call.get("outcome", "ok")
+        return self.log(DispatchLogEntry(
+            dispatch_id=dispatch_id,
+            mission_id=mission_id,
+            task_id=task_id,
+            agent_id=agent_id,
+            agent_codename=agent_codename,
+            log_type=DispatchLogType.TOOL_CALL.value,
+            action=f"tool:{call.get('function', '?')}",
+            agent_state=AgentState.ACTIVE.value,
+            provider=provider,
+            working_dir=working_dir,
+            status="ok" if outcome == "ok" else "fail",
+            duration_ms=call.get("duration_ms", 0),
+            output_summary=call.get("summary", "")[:200],
+            error=call.get("error", "") if outcome != "ok" else "",
+            metadata={"arguments": call.get("arguments"),
+                      "outcome": outcome,
+                      "iteration": call.get("iteration")},
+        ))
+
+    def log_anomaly(
+        self,
+        dispatch_id: str,
+        mission_id: str,
+        task_id: str,
+        agent_id: str,
+        agent_codename: str,
+        problem: dict,
+        provider: str = "",
+    ) -> DispatchLogEntry:
+        """Log one BIRD relay finding; metadata holds the full RFC 9457
+        problem-details object."""
+        return self.log(DispatchLogEntry(
+            dispatch_id=dispatch_id,
+            mission_id=mission_id,
+            task_id=task_id,
+            agent_id=agent_id,
+            agent_codename=agent_codename,
+            log_type=DispatchLogType.ANOMALY.value,
+            action=f"bird:{problem.get('anomaly', '?')}",
+            agent_state=AgentState.ACTIVE.value,
+            provider=provider,
+            status="fail" if problem.get("severity") == "error" else "ok",
+            output_summary=str(problem.get("detail", ""))[:200],
+            error=str(problem.get("detail", ""))[:200]
+            if problem.get("severity") == "error" else "",
+            metadata=problem,
         ))
 
     # -------------------------------------------------------------------------

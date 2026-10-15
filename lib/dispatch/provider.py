@@ -5,7 +5,9 @@ One class per transport in the syndicate inventory:
 
     ClaudeCliProvider     subprocess `claude --print` - full agentic harness
     OllamaProvider        HTTP /api/generate - text in, text out
-    OpenAICompatProvider  HTTP /v1/chat/completions - the lingua franca
+    OllamaChatProvider    HTTP /api/chat - tool calls, run by the agency harness
+    OpenAICompatProvider  HTTP /v1/chat/completions - the lingua franca,
+                          tool calls run by the agency harness
 
 `get_provider()` resolves a dispatch address through the inventory and
 instantiates the handler the transport record names, so adding a backend
@@ -44,6 +46,23 @@ POLICY_REFUSAL_MARKERS = (
     "i cannot assist with",
     "i can't assist with",
 )
+
+# Finish reasons meaning the model stopped because it hit the output limit,
+# not because it was done. The value arrives with HTTP 200 and a partial
+# answer, so without this check a cut-off reply reads as a complete one.
+# Vocabularies: Ollama `done_reason`, OpenAI `finish_reason` ("length");
+# Anthropic `stop_reason` ("max_tokens"). Raw values are kept as reported,
+# per OpenTelemetry GenAI `gen_ai.response.finish_reasons`.
+TRUNCATION_FINISH_REASONS = frozenset({"length", "max_tokens"})
+
+
+def truncation_error(finish_reason: Optional[str], limit: int) -> Optional[str]:
+    """Task error for an answer cut off at the output limit, else None."""
+    if finish_reason not in TRUNCATION_FINISH_REASONS:
+        return None
+    return (f"output truncated: the model stopped at the {limit}-token "
+            f"output limit (finish reason {finish_reason!r}) - raise "
+            f"max_tokens_per_task or narrow the task")
 
 
 @dataclass
@@ -106,14 +125,20 @@ class Provider(ABC):
         """Why `is_available()` said no - shown at the briefing gate."""
         return f"{self.config.name} is not reachable"
 
-    def _build_constraint_block(self, constraints: MissionConstraints) -> str:
+    def _build_constraint_block(self, constraints: MissionConstraints,
+                                offered: Optional[list[str]] = None) -> str:
         """Build constraint instructions.
 
         In-band constraints are advisory: they shape the model's behavior
         but enforce nothing on their own. Transports with a real harness
-        (claude CLI) back them with a sandbox; text-only transports have
-        no tools to constrain in the first place, which is why the
-        capability gate keeps tool-bearing missions away from them.
+        (claude CLI) back them with a sandbox; the agency harness backs
+        them with its executor; text-only transports have no tools to
+        constrain in the first place, which is why the capability gate
+        keeps tool-bearing missions away from them.
+
+        `offered` names the agency-harness functions this task may call:
+        None when the transport owns its own harness (or none), an empty
+        list when this task runs without tools.
         """
         lines = ["## OPERATIONAL CONSTRAINTS", ""]
 
@@ -136,11 +161,30 @@ class Provider(ABC):
         lines.append("**OUTPUT FORMAT:** Provide findings in clear markdown format.")
         lines.append("**FOCUS:** Stay focused on the assigned task. Be thorough but concise.")
 
+        if offered:
+            # The agency harness: the model gets real hands, and is told
+            # exactly which, where they reach, and to use their counts.
+            lines.extend([
+                "",
+                f"**TOOLS:** You can call these functions: "
+                f"{', '.join(offered)}. They run on the target host, "
+                f"confined to the WORKING DIRECTORY; give paths relative to "
+                f"it.",
+                "**GROUNDING:** Call a function whenever the answer depends "
+                "on file contents, names, or counts - never guess. Use the "
+                "narrowest function that answers the question. Function "
+                "results state exact counts; report those rather than "
+                "counting a listing yourself.",
+                "**FINISH:** When you have what you need, reply with your "
+                "final answer and no function call.",
+            ])
+            return "\n".join(lines)
+
         # A text-only channel must be told it has no hands. The composed
         # persona describes a field specialist with tools, and a model that
         # believes it will narrate an inspection it never performed - the
         # exact failure the capability gate exists to prevent.
-        if not self.has_harness:
+        if offered is not None or not self.has_harness:
             lines.extend([
                 "",
                 "**NO TOOLS AVAILABLE** - You have no filesystem access, no "
@@ -170,10 +214,11 @@ class Provider(ABC):
         self,
         system_prompt: str,
         task: Task,
-        constraints: MissionConstraints
+        constraints: MissionConstraints,
+        offered: Optional[list[str]] = None,
     ) -> str:
         """Compose the full task prompt (persona, constraints, work)."""
-        constraint_block = self._build_constraint_block(constraints)
+        constraint_block = self._build_constraint_block(constraints, offered)
 
         return f"""{system_prompt}
 
@@ -411,6 +456,69 @@ class HttpProvider(Provider):
         """Return (text, tokens_used) from a decoded response body."""
         raise NotImplementedError
 
+    def _finish_reason(self, response: dict) -> Optional[str]:
+        """The endpoint's raw finish reason, when it reports one."""
+        return None
+
+    # Whether this transport can carry function declarations and return
+    # structured tool calls - the precondition for the agency harness.
+    supports_tool_calls = False
+
+    @staticmethod
+    def http_body(exc: urllib.error.HTTPError) -> str:
+        """An HTTP error's body, read once and kept on the exception (the
+        relay classifies it, then describe_error quotes it)."""
+        if not hasattr(exc, "nim_body"):
+            try:
+                exc.nim_body = exc.read().decode(errors="replace")
+            except Exception:
+                exc.nim_body = ""
+            try:
+                exc.close()      # release the connection now, not at GC
+            except Exception:
+                pass
+        return exc.nim_body
+
+    def reply_parts(self, response: dict) -> tuple:
+        """(text, tool_call_count, finish_reason, prompt_tokens) of a reply,
+        for the relay's frame and context checks."""
+        text, _ = self._extract(response)
+        return text, 0, self._finish_reason(response), self._prompt_tokens(response)
+
+    def _prompt_tokens(self, response: dict) -> Optional[int]:
+        return None
+
+    def describe_error(self, exc: Exception) -> str:
+        """Operator-facing task error for a failed request."""
+        if isinstance(exc, asyncio.TimeoutError):
+            return f"request timed out ({self.config.url})"
+        if isinstance(exc, urllib.error.HTTPError):
+            detail = self.http_body(exc)[:300]
+            # Ollama with truncate=false refuses an over-long prompt rather
+            # than dropping its oldest messages (OllamaProvider.LOSSLESS)
+            if exc.code == 400 and ("exceed_context_size" in detail
+                                    or "exceeds the available context" in detail):
+                return (f"context exceeded: the prompt is larger than the "
+                        f"channel's context window and was refused, not "
+                        f"truncated ({self.config.url}) - {detail}")
+            return (f"syndicate channel anomaly: HTTP {exc.code} from "
+                    f"{self.config.url}{' - ' + detail if detail else ''}")
+        if isinstance(exc, urllib.error.URLError):
+            return f"syndicate unreachable ({self.config.url}): {exc.reason}"
+        if isinstance(exc, (KeyError, IndexError, TypeError)):
+            return f"unexpected response shape from {self.config.url}: {exc}"
+        return str(exc)
+
+    def offered_functions(self, task: Task,
+                          constraints: MissionConstraints) -> list[dict]:
+        """Harness functions this task would be offered on this provider.
+        Empty means the single-shot text path."""
+        if not self.supports_tool_calls:
+            return []
+        from .harness import offered_functions
+        return offered_functions(constraints, getattr(self, "channel", None),
+                                 task.tool_grants, getattr(self, "ds", None))
+
     async def execute(
         self,
         system_prompt: str,
@@ -423,60 +531,96 @@ class HttpProvider(Provider):
             return self._result(task, started_at,
                                 error=self.unavailable_reason)
 
-        # The persona goes in the system channel; the task body carries
-        # constraints and instructions. Text-only channels have no tools to
-        # gate, so the constraint block is context, not enforcement.
-        body = self._build_prompt("", task, constraints).strip()
+        # Harnessed path: the channel grants tool_use, the transport can
+        # carry tool calls, and the task is offered at least one function.
+        offered = self.offered_functions(task, constraints)
+        if offered:
+            from .harness import run
+            try:
+                return await run(self, system_prompt, task, constraints,
+                                 offered, getattr(self, "ds", None))
+            except Exception as exc:
+                # The loop returns results on every anticipated path; this
+                # keeps an unanticipated one from aborting sibling tasks
+                return self._result(task, started_at, error=(
+                    f"harness fault: {type(exc).__name__}: {exc}"))
+
+        # Single-shot path. The persona goes in the system channel; the task
+        # body carries constraints and instructions. No function is offered
+        # on this path, so the model is told it has no hands.
+        body = self._build_prompt("", task, constraints, offered=[]).strip()
         timeout = min(constraints.timeout_seconds, self.config.timeout)
 
         try:
+            from . import bird
             payload = self._payload(system_prompt, body, constraints)
-            response = await asyncio.wait_for(
-                asyncio.to_thread(self._post, payload, timeout),
-                timeout=timeout + 5,
-            )
+            response = await bird.transmit(self, payload, timeout)
         except asyncio.TimeoutError:
             return self._result(
                 task, started_at,
                 error=f"Task timed out after {timeout} seconds "
                       f"({self.config.url})")
-        except urllib.error.HTTPError as e:
-            detail = ""
-            try:
-                detail = e.read().decode()[:300]
-            except Exception:
-                pass
-            return self._result(
-                task, started_at,
-                error=f"syndicate channel anomaly: HTTP {e.code} from "
-                      f"{self.config.url}{' - ' + detail if detail else ''}")
-        except urllib.error.URLError as e:
-            return self._result(
-                task, started_at,
-                error=f"syndicate unreachable ({self.config.url}): {e.reason}")
         except Exception as e:
-            return self._result(task, started_at, error=str(e))
+            return self._result(task, started_at, error=self.describe_error(e))
 
         try:
             text, tokens = self._extract(response)
         except (KeyError, IndexError, TypeError) as e:
-            return self._result(
-                task, started_at,
-                error=f"unexpected response shape from {self.config.url}: {e}")
+            return self._result(task, started_at,
+                                error=self.describe_error(e))
 
         if not text.strip():
             return self._result(
                 task, started_at,
                 error=f"empty response from {self.config.url}")
 
+        truncated = truncation_error(self._finish_reason(response),
+                                     constraints.max_tokens_per_task)
+        if truncated:
+            return self._result(task, started_at, output=text,
+                                error=truncated, tokens=tokens)
+
         refusal = self._classify_refusal(text)
         return self._result(task, started_at, output=text,
                             error=refusal, tokens=tokens)
+
+    # -- chat interface (agency harness) ------------------------------------
+    # Transports that set supports_tool_calls implement the three hooks
+    # below; `chat()` is shared.
+
+    def _chat_payload(self, messages: list[dict], tools: list[dict],
+                      constraints: MissionConstraints) -> dict:
+        raise NotImplementedError
+
+    def _parse_chat(self, response: dict):
+        """Decode a response body into a harness ChatTurn."""
+        raise NotImplementedError
+
+    def tool_result_message(self, call, content: str) -> dict:
+        """The history message carrying one tool result back to the model."""
+        raise NotImplementedError
+
+    async def chat(self, messages: list[dict], tools: list[dict],
+                   constraints: MissionConstraints, timeout: float):
+        """One request/response turn with function declarations attached.
+        Raises on transport failure; the loop turns that into a task error."""
+        from . import bird
+        timeout = max(1.0, min(float(timeout), float(self.config.timeout)))
+        payload = self._chat_payload(messages, tools, constraints)
+        response = await bird.transmit(self, payload, timeout)
+        return self._parse_chat(response)
 
 
 class OllamaProvider(HttpProvider):
     """Ollama's native /api/generate: prompt in, completion out, with a
     first-class system field. No tool harness - text only."""
+
+    # Ollama defaults to truncate=true: an over-long prompt loses its oldest
+    # messages and the request still answers HTTP 200 (observed on bonsai,
+    # 0.33.2: 3040 tokens sent, 26 evaluated, the question's facts gone).
+    # false/false makes it refuse with HTTP 400 exceed_context_size_error,
+    # and refuse to shift context mid-generation, instead.
+    LOSSLESS = {"truncate": False, "shift": False}
 
     def _payload(self, system_prompt: str, prompt: str,
                  constraints: MissionConstraints) -> dict:
@@ -488,6 +632,7 @@ class OllamaProvider(HttpProvider):
             "prompt": prompt,
             "stream": False,
             "options": options,
+            **self.LOSSLESS,
         }
 
     def _extract(self, response: dict) -> tuple[str, int]:
@@ -495,10 +640,141 @@ class OllamaProvider(HttpProvider):
                   + response.get("eval_count", 0))
         return response.get("response", ""), tokens
 
+    def _finish_reason(self, response: dict) -> Optional[str]:
+        return response.get("done_reason")
+
+    def _prompt_tokens(self, response: dict) -> Optional[int]:
+        return response.get("prompt_eval_count")
+
+
+class OllamaChatProvider(HttpProvider):
+    """Ollama's native /api/chat: a message history with function
+    declarations. The model emits structured tool calls; the agency
+    harness executes them. Text-only tasks take a single turn with no
+    tools attached."""
+
+    supports_tool_calls = True
+    LOSSLESS = OllamaProvider.LOSSLESS
+
+    def _options(self, constraints: MissionConstraints) -> dict:
+        options = dict(self.config.parameters or {})
+        options.setdefault("num_predict", constraints.max_tokens_per_task)
+        return options
+
+    def _payload(self, system_prompt: str, prompt: str,
+                 constraints: MissionConstraints) -> dict:
+        return {
+            "model": self.config.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": False,
+            "options": self._options(constraints),
+            **self.LOSSLESS,
+        }
+
+    def _extract(self, response: dict) -> tuple[str, int]:
+        tokens = (response.get("prompt_eval_count", 0)
+                  + response.get("eval_count", 0))
+        return (response.get("message") or {}).get("content", ""), tokens
+
+    def _finish_reason(self, response: dict) -> Optional[str]:
+        return response.get("done_reason")
+
+    def _prompt_tokens(self, response: dict) -> Optional[int]:
+        return response.get("prompt_eval_count")
+
+    def reply_parts(self, response: dict) -> tuple:
+        message = response["message"]
+        return (message.get("content") or "", len(message.get("tool_calls") or []),
+                response.get("done_reason"), response.get("prompt_eval_count"))
+
+    def _chat_payload(self, messages: list[dict], tools: list[dict],
+                      constraints: MissionConstraints) -> dict:
+        return {
+            "model": self.config.model,
+            "messages": messages,
+            "tools": tools,
+            "stream": False,
+            "options": self._options(constraints),
+            **self.LOSSLESS,
+        }
+
+    def _parse_chat(self, response: dict):
+        from .harness import ChatTurn, ToolCall, parse_arguments
+        message = response["message"]
+        calls = []
+        for raw in message.get("tool_calls") or []:
+            function = raw.get("function") or {}
+            arguments, error = parse_arguments(function.get("arguments"))
+            calls.append(ToolCall(id=raw.get("id"),
+                                  name=function.get("name", ""),
+                                  arguments=arguments, parse_error=error))
+        replay = {"role": "assistant", "content": message.get("content", "")}
+        if message.get("tool_calls"):
+            replay["tool_calls"] = message["tool_calls"]
+        return ChatTurn(
+            content=message.get("content", "") or "",
+            tool_calls=calls,
+            message=replay,
+            prompt_tokens=response.get("prompt_eval_count", 0),
+            completion_tokens=response.get("eval_count", 0),
+            finish_reason=response.get("done_reason"),
+        )
+
+    def tool_result_message(self, call, content: str) -> dict:
+        message = {"role": "tool", "content": content, "tool_name": call.name}
+        if call.id:
+            message["tool_call_id"] = call.id
+        return message
+
 
 class OpenAICompatProvider(HttpProvider):
     """The /v1/chat/completions lingua franca - Ollama, vLLM, llama.cpp,
-    LM Studio, OpenRouter, and the commercial APIs all answer here."""
+    LM Studio, OpenRouter, and the commercial APIs all answer here. Tool
+    calls are in the protocol; the agency harness executes them."""
+
+    supports_tool_calls = True
+
+    def _chat_payload(self, messages: list[dict], tools: list[dict],
+                      constraints: MissionConstraints) -> dict:
+        payload = {
+            "model": self.config.model,
+            "messages": messages,
+            "tools": tools,
+            "stream": False,
+            "max_tokens": constraints.max_tokens_per_task,
+        }
+        payload.update(self.config.parameters or {})
+        return payload
+
+    def _parse_chat(self, response: dict):
+        from .harness import ChatTurn, ToolCall, parse_arguments
+        message = response["choices"][0]["message"]
+        calls = []
+        for raw in message.get("tool_calls") or []:
+            function = raw.get("function") or {}
+            arguments, error = parse_arguments(function.get("arguments"))
+            calls.append(ToolCall(id=raw.get("id"),
+                                  name=function.get("name", ""),
+                                  arguments=arguments, parse_error=error))
+        replay = {"role": "assistant", "content": message.get("content")}
+        if message.get("tool_calls"):
+            replay["tool_calls"] = message["tool_calls"]
+        usage = response.get("usage") or {}
+        return ChatTurn(
+            content=message.get("content") or "",
+            tool_calls=calls,
+            message=replay,
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            completion_tokens=usage.get("completion_tokens", 0),
+            finish_reason=response["choices"][0].get("finish_reason"),
+        )
+
+    def tool_result_message(self, call, content: str) -> dict:
+        return {"role": "tool", "tool_call_id": call.id or call.name,
+                "content": content}
 
     def _payload(self, system_prompt: str, prompt: str,
                  constraints: MissionConstraints) -> dict:
@@ -519,12 +795,25 @@ class OpenAICompatProvider(HttpProvider):
         tokens = (response.get("usage") or {}).get("total_tokens", 0)
         return text or "", tokens
 
+    def _finish_reason(self, response: dict) -> Optional[str]:
+        return (response.get("choices") or [{}])[0].get("finish_reason")
+
+    def _prompt_tokens(self, response: dict) -> Optional[int]:
+        return (response.get("usage") or {}).get("prompt_tokens")
+
+    def reply_parts(self, response: dict) -> tuple:
+        choice = response["choices"][0]
+        message = choice["message"]
+        return (message.get("content") or "", len(message.get("tool_calls") or []),
+                choice.get("finish_reason"), self._prompt_tokens(response))
+
 
 # Transport handler registry. The transport reference table names the class;
 # this maps the name to it. Adding a backend means a data row plus a class.
 HANDLERS = {
     "ClaudeCliProvider": ClaudeCliProvider,
     "OllamaProvider": OllamaProvider,
+    "OllamaChatProvider": OllamaChatProvider,
     "OpenAICompatProvider": OpenAICompatProvider,
 }
 
@@ -582,4 +871,7 @@ def get_provider(address: Optional[str] = None, ds=None) -> Provider:
     # by hand (test stubs) simply have neither, and the gate stands down.
     provider.syndicate = syndicate
     provider.channel = channel
+    # The datastore the records came from: the harness reads its function
+    # table from the same place the gate read the channel
+    provider.ds = ds
     return provider

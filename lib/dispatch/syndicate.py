@@ -161,6 +161,24 @@ def capability_index(ds: Optional[DataStore] = None) -> dict[str, dict]:
     return {c["slug"]: c for c in ds.load_reference("channel_capability")}
 
 
+def harness_tool_names(ds: Optional[DataStore] = None) -> set[str]:
+    """Every tool name a mission may list in allowed_tools: the union of
+    the capability table's `harness_tools`. Derived, never hand kept."""
+    names: set[str] = set()
+    for capability in capability_index(ds).values():
+        names.update(capability.get("harness_tools") or [])
+    return names
+
+
+def capability_of_tool(name: str,
+                       ds: Optional[DataStore] = None) -> Optional[str]:
+    """The capability slug whose `harness_tools` names this tool."""
+    for slug, capability in capability_index(ds).items():
+        if name in (capability.get("harness_tools") or []):
+            return slug
+    return None
+
+
 def expand_dependencies(slugs, ds: Optional[DataStore] = None) -> set[str]:
     """Close a capability set over its `requires` edges.
 
@@ -282,6 +300,18 @@ def capability_violation(constraints: MissionConstraints, syndicate: dict,
         labels = ", ".join(
             f"{slug} ({(index.get(slug) or {}).get('label', slug)})"
             for slug in missing)
+        if "tool_use" in granted:
+            # What the agency harness actually serves within the grant
+            harnessed = ",".join(sorted(
+                row["function_name"]
+                for row in ds.load_reference("harness_function")
+                if capability_of_tool(row["function_name"], ds) in granted))
+            return (f"channel '{address_of(syndicate, channel)}' cannot serve "
+                    f"this mission: missing {labels}. Its harness provides "
+                    f"only {harnessed or 'no functions'}. Narrow the "
+                    f"mission's allowed_tools (--tools {harnessed or '...'}), "
+                    f"or dispatch to a syndicate whose harness covers the "
+                    f"rest (--provider claude_cli)")
         return (f"channel '{address_of(syndicate, channel)}' cannot serve "
                 f"this mission: missing {labels}. This channel generates "
                 f"text but runs no tools, so the work would be answered "

@@ -45,6 +45,19 @@ def _permission_mode(provider, syndicate: Optional[dict],
         return "(provider supplied directly - no inventory record)"
 
     if "tool_use" in (channel.get("capabilities") or []):
+        if getattr(provider, "supports_tool_calls", False):
+            from .harness import ProfileMissing, harness_config
+            try:
+                cfg = harness_config(channel)
+            except ProfileMissing as exc:
+                return f"agency harness REFUSED: {exc} - no functions offered"
+            profile = channel.get("harness_profile") or "(none: channel default)"
+            return ("agency harness: the executor runs each tool call, "
+                    "confined to the working directory, read-only enforced, "
+                    f"{cfg['call_timeout_seconds']}s per call, "
+                    f"<= {cfg['max_iterations']} turns; profile {profile}; "
+                    "functions offered per agent (profile ∩ grants ∩ "
+                    "mission tools ∩ channel)")
         return ("unattended; the harness owns tool permissions and enforces "
                 "the constraint block")
     return ("text-only channel: no tools, no filesystem - constraints are "

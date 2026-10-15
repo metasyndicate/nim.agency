@@ -30,6 +30,7 @@ from .provider import (
     ClaudeCliProvider,
     HttpProvider,
     OllamaProvider,
+    OllamaChatProvider,
     OpenAICompatProvider,
     get_provider,
 )
@@ -90,6 +91,7 @@ __all__ = [
     "ClaudeCliProvider",
     "HttpProvider",
     "OllamaProvider",
+    "OllamaChatProvider",
     "OpenAICompatProvider",
     "get_provider",
     # Syndicate inventory

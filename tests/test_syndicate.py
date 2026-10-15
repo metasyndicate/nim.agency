@@ -6,6 +6,7 @@ transport so payload shape and error surfacing are asserted offline.
 """
 
 import unittest
+from unittest import mock
 import urllib.error
 
 from tests.support import DatastoreCase
@@ -14,7 +15,7 @@ from lib.dispatch.mission import (
     Mission, MissionConstraints, MissionStatus, Task, TaskStatus,
 )
 from lib.dispatch.provider import (
-    OllamaProvider, OpenAICompatProvider, ProviderConfig, get_provider,
+    OllamaChatProvider, OllamaProvider, OpenAICompatProvider, ProviderConfig, get_provider,
     provider_config,
 )
 from lib.dispatch.syndicate import (
@@ -30,7 +31,33 @@ def constraints(**kwargs) -> MissionConstraints:
     return MissionConstraints(**kwargs)
 
 
-class TestResolution(DatastoreCase):
+# A bare completion endpoint: the text-only reference case for the gate.
+# The shipped inventory no longer has one (mux_nova runs behind the agency
+# harness), so the tests carry their own.
+TEXT_ONLY = {
+    "slug": "text_fixture",
+    "identity": {"label": "Text-only fixture", "vendor": "self"},
+    "transport_slug": "ollama_native",
+    "endpoint": {"base_uri": "https://text.invalid", "egress": "private"},
+    "channels": [{
+        "slug": "plain", "model": "tiny:1b", "default": True,
+        "capabilities": ["text_generation", "system_prompt"],
+        "limits": {"max_concurrent": 1},
+    }],
+    "enabled": True,
+}
+
+
+class SyndicateCase(DatastoreCase):
+    """Isolated datastore plus the text-only fixture syndicate."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ds.create("syndicate", dict(TEXT_ONLY), validate=False)
+
+
+class TestResolution(SyndicateCase):
 
     def test_address_forms(self):
         syndicate, channel = resolve("mux_nova", self.ds)
@@ -56,15 +83,20 @@ class TestResolution(DatastoreCase):
     def test_transport_selects_handler(self):
         syndicate, _ = resolve("mux_nova", self.ds)
         self.assertEqual(transport_of(syndicate, self.ds)["handler"],
-                         "OllamaProvider")
+                         "OllamaChatProvider")
         provider = get_provider("mux_nova", ds=self.ds)
-        self.assertIsInstance(provider, OllamaProvider)
+        self.assertIsInstance(provider, OllamaChatProvider)
         self.assertEqual(provider.config.model, "qwen3-coder:30b")
         self.assertEqual(provider.config.url,
-                         "https://mux-nova.tailef068f.ts.net/api/generate")
+                         "https://mux-nova.tailef068f.ts.net/api/chat")
         # Inventory records ride along for the gate and the briefing
         self.assertEqual(provider.syndicate["slug"], "mux_nova")
-        self.assertFalse(provider.has_harness)
+        self.assertTrue(provider.has_harness)
+
+        plain = get_provider("text_fixture", ds=self.ds)
+        self.assertIsInstance(plain, OllamaProvider)
+        self.assertEqual(plain.config.url, "https://text.invalid/api/generate")
+        self.assertFalse(plain.has_harness)
 
     def test_disabled_syndicate_refuses(self):
         syndicate, _ = resolve("mux_nova", self.ds)
@@ -77,7 +109,7 @@ class TestResolution(DatastoreCase):
             self.ds.update("syndicate", syndicate["id"], {"enabled": True})
 
 
-class TestCapabilityDerivation(DatastoreCase):
+class TestCapabilityDerivation(SyndicateCase):
 
     def test_dependency_closure(self):
         # filesystem_write pulls in its whole chain
@@ -117,7 +149,7 @@ class TestCapabilityDerivation(DatastoreCase):
         self.assertIn("filesystem_write", granted)
 
 
-class TestChannelValidation(DatastoreCase):
+class TestChannelValidation(SyndicateCase):
 
     def test_dependency_gap_is_inconsistent(self):
         syndicate, _ = resolve("mux_nova", self.ds)
@@ -127,7 +159,7 @@ class TestChannelValidation(DatastoreCase):
         self.assertTrue(any("requires tool_use" in p for p in problems))
 
     def test_transport_ceiling_is_enforced(self):
-        syndicate, _ = resolve("mux_nova", self.ds)
+        syndicate, _ = resolve("text_fixture", self.ds)
         overreach = {"slug": "over", "model": "x",
                      "capabilities": ["text_generation", "tool_use",
                                       "filesystem_read"]}
@@ -144,7 +176,7 @@ class TestChannelValidation(DatastoreCase):
 
     def test_shipped_inventory_is_consistent(self):
         """Every channel we ship validates - the seed data is the example."""
-        for slug in ("claude_cli", "mux_nova"):
+        for slug in ("claude_cli", "mux_nova", "text_fixture"):
             syndicate, _ = resolve(slug, self.ds)
             for channel in syndicate["channels"]:
                 with self.subTest(channel=address_of(syndicate, channel)):
@@ -152,11 +184,11 @@ class TestChannelValidation(DatastoreCase):
                         validate_channel(syndicate, channel, self.ds), [])
 
 
-class TestCapabilityGate(DatastoreCase):
+class TestCapabilityGate(SyndicateCase):
     """The refusal truth table: which missions which channels may serve."""
 
     def test_text_only_channel_refuses_tool_missions(self):
-        syndicate, channel = resolve("mux_nova", self.ds)
+        syndicate, channel = resolve("text_fixture", self.ds)
         refusal = capability_violation(
             constraints(allowed_tools=["Read", "Bash"]),
             syndicate, channel, self.ds)
@@ -166,7 +198,7 @@ class TestCapabilityGate(DatastoreCase):
         self.assertIn("claude_cli", refusal)
 
     def test_text_only_channel_serves_text_missions(self):
-        syndicate, channel = resolve("mux_nova", self.ds)
+        syndicate, channel = resolve("text_fixture", self.ds)
         self.assertIsNone(capability_violation(
             constraints(allowed_tools=[]), syndicate, channel, self.ds))
 
@@ -179,17 +211,34 @@ class TestCapabilityGate(DatastoreCase):
                     syndicate, channel, self.ds))
 
     def test_write_mission_refused_by_text_channel(self):
-        syndicate, channel = resolve("mux_nova", self.ds)
+        syndicate, channel = resolve("text_fixture", self.ds)
         refusal = capability_violation(
             constraints(allowed_tools=[], read_only=False),
             syndicate, channel, self.ds)
         self.assertIn("filesystem_write", refusal)
 
+    def test_agency_harness_serves_reads_not_shell(self):
+        """mux_nova runs behind the agency harness: read functions pass,
+        a shell or write mission is refused with the narrowing knob."""
+        syndicate, channel = resolve("mux_nova", self.ds)
+        self.assertIsNone(capability_violation(
+            constraints(allowed_tools=["Read", "Glob", "Grep", "LS"]),
+            syndicate, channel, self.ds))
+        refusal = capability_violation(
+            constraints(allowed_tools=["Read", "Bash"]),
+            syndicate, channel, self.ds)
+        self.assertIn("shell_exec", refusal)
+        self.assertIn("--tools Glob,Grep,LS,Read", refusal)
+        self.assertNotIn("runs no tools", refusal)
+        self.assertIn("filesystem_write", capability_violation(
+            constraints(allowed_tools=["Edit"], read_only=False),
+            syndicate, channel, self.ds))
+
     def test_egress_policy_refuses_distant_syndicates(self):
         from lib.config import get_config
         cfg = get_config()
         original = cfg["dispatch"].get("egress_policy", "public")
-        syndicate, channel = resolve("mux_nova", self.ds)   # private egress
+        syndicate, channel = resolve("text_fixture", self.ds)   # private
         try:
             cfg["dispatch"]["egress_policy"] = "local"
             refusal = capability_violation(
@@ -203,14 +252,14 @@ class TestCapabilityGate(DatastoreCase):
             cfg["dispatch"]["egress_policy"] = original
 
 
-class TestDispatchBackstop(DatastoreCase):
+class TestDispatchBackstop(SyndicateCase):
     """The dispatcher refuses past the briefing, from any entry point."""
 
     def test_dispatcher_refuses_incapable_channel(self):
         from lib.dispatch.dispatcher import Dispatcher
         from lib.dispatch.ops_log import DispatchLogger
 
-        provider = get_provider("mux_nova", ds=self.ds)
+        provider = get_provider("text_fixture", ds=self.ds)
         mission = Mission(
             title="needs tools",
             constraints=MissionConstraints(allowed_tools=["Read"]))
@@ -243,7 +292,13 @@ class StubResponse:
         return self.reply
 
 
-class TestHttpProviders(DatastoreCase):
+class TestHttpProviders(SyndicateCase):
+
+    def setUp(self):
+        # The relay retransmits link failures with backoff; tests do not wait
+        patcher = mock.patch("lib.dispatch.bird._delay", return_value=0.0)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def _task(self):
         return Task(id="t1", agent_id="a1", prompt="do the thing", role="Spec")
@@ -289,7 +344,7 @@ class TestHttpProviders(DatastoreCase):
 
     def test_no_tools_notice_for_text_only_channel(self):
         """A channel without a harness must tell the model it has no hands."""
-        provider = get_provider("mux_nova", ds=self.ds)
+        provider = get_provider("text_fixture", ds=self.ds)
         provider._post = StubResponse(provider, {"response": "ok"})
         provider.execute_sync("PERSONA", self._task(), constraints())
         prompt = provider._post.sent["prompt"]
@@ -322,7 +377,7 @@ class TestHttpProviders(DatastoreCase):
         self.assertTrue(result.error.startswith("policy_violation"))
 
 
-class TestProviderConfigMapping(DatastoreCase):
+class TestProviderConfigMapping(SyndicateCase):
 
     def test_inventory_flattens_into_config(self):
         syndicate, channel = resolve("mux_nova", self.ds)

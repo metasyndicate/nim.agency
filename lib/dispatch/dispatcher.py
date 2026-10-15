@@ -27,7 +27,9 @@ from ..data.project import (
 from .mission import Mission, MissionStatus, Task, TaskStatus, TaskResult
 from .provider import Provider, get_provider, POLICY_VIOLATION_PREFIX
 from .syndicate import capability_violation
+from .verification import VERIFICATION_FAILED_PREFIX, Expectation, verify
 from .ops_log import DispatchLogger, get_dispatch_logger, AgentState
+from . import bird
 
 
 @dataclass
@@ -82,6 +84,7 @@ class Dispatcher:
         # Cache agents by ID
         self._agent_cache: dict[str, dict] = {}
         self._prompt_cache: dict[str, str] = {}
+        self._profile_cache: dict[str, object] = {}
 
     def _load_agent(self, agent_id: str) -> Optional[dict]:
         """Load an agent by ID."""
@@ -99,10 +102,33 @@ class Dispatcher:
         if cache_key in self._prompt_cache:
             return self._prompt_cache[cache_key]
 
-        profile = self.composer.compose(agent, scope=scope)
-        prompt = profile.render_system_prompt()
+        prompt = self._get_profile(agent, scope).render_system_prompt()
         self._prompt_cache[cache_key] = prompt
         return prompt
+
+    def _get_profile(self, agent: dict, scope: str = "read_only"):
+        """The composed OperationalProfile for an agent (cached)."""
+        cache_key = f"{agent['id']}:{scope}"
+        if cache_key not in self._profile_cache:
+            self._profile_cache[cache_key] = self.composer.compose(
+                agent, scope=scope)
+        return self._profile_cache[cache_key]
+
+    def _verify_result(self, task: Task, result: TaskResult) -> None:
+        """Settle a task's known-answer check before payroll sees it.
+
+        A wrong answer to a task with an expectation is a failed task: the
+        paymaster only pays completed work, and the conduct ledger is not
+        charged - an honest miss is not misconduct.
+        """
+        expectation = Expectation.from_dict(task.expect)
+        if expectation is None or result.status != TaskStatus.COMPLETE:
+            return
+        verdict = verify(expectation, result.output or "")
+        result.verdict = verdict.to_dict()
+        if not verdict.passed:
+            result.status = TaskStatus.FAILED
+            result.error = f"{VERIFICATION_FAILED_PREFIX}: {verdict.detail}"
 
     async def execute(
         self,
@@ -270,8 +296,12 @@ class Dispatcher:
                     emit("task_failed", f"Agent not found: {task.agent_id}", task.id, task.agent_id)
                     return
 
-                # Get agent's system prompt
+                # Get agent's system prompt, and stamp the depot tools the
+                # composed profile grants: a harness offers functions only
+                # within them
                 system_prompt = self._get_agent_prompt(agent, scope)
+                task.tool_grants = [
+                    t.slug for t in self._get_profile(agent, scope).tools]
                 agent_name = agent["identity"]["codename"]
                 agent_tag = agent["identity"].get("tag", 0)
 
@@ -302,8 +332,57 @@ class Dispatcher:
 
                 # Execute via provider
                 task_start = datetime.now(timezone.utc)
-                result = await self.provider.execute(system_prompt, task, mission.constraints)
+                # BIRD: one ledger per task; every exchange with the
+                # syndicate records its anomalies there
+                ledger_token = bird.begin(task.id, self.ds)
+                try:
+                    result = await self.provider.execute(system_prompt, task, mission.constraints)
+                    self._verify_result(task, result)
+                    bird.note_result(result)
+                finally:
+                    anomalies = bird.end(ledger_token)
+                result.anomalies = anomalies + list(result.anomalies or [])
                 task_duration = (datetime.now(timezone.utc) - task_start).total_seconds() * 1000
+
+                for problem in result.anomalies:
+                    self.logger.log_anomaly(
+                        dispatch_id=dispatch_id,
+                        mission_id=mission.id,
+                        task_id=task.id,
+                        agent_id=task.agent_id,
+                        agent_codename=agent_name,
+                        problem=problem,
+                        provider=mission.provider_address or "",
+                    )
+                    emit("bird", bird.summary_line(problem), task.id, task.agent_id)
+
+                for call in result.tool_calls or []:
+                    self.logger.log_tool_call(
+                        dispatch_id=dispatch_id,
+                        mission_id=mission.id,
+                        task_id=task.id,
+                        agent_id=task.agent_id,
+                        agent_codename=agent_name,
+                        call=call,
+                        provider=mission.provider_address or "",
+                        working_dir=mission.constraints.working_directory or "",
+                    )
+                    emit("tool", _tool_call_line(call), task.id, task.agent_id)
+
+                if result.verdict is not None:
+                    self.logger.log_task_verified(
+                        dispatch_id=dispatch_id,
+                        mission_id=mission.id,
+                        task_id=task.id,
+                        agent_id=task.agent_id,
+                        agent_codename=agent_name,
+                        passed=result.verdict["passed"],
+                        detail=result.verdict["detail"],
+                    )
+                    emit("verify",
+                         ("PASS" if result.verdict["passed"] else "FAIL")
+                         + f" known-answer check: {result.verdict['detail']}",
+                         task.id, task.agent_id)
 
                 task.result = result
                 task.status = result.status
@@ -523,6 +602,23 @@ class Dispatcher:
             ])
 
             if task.result:
+                if task.result.verdict is not None:
+                    mark = "PASS" if task.result.verdict["passed"] else "FAIL"
+                    lines.extend([
+                        f"**Known-answer check:** {mark} - "
+                        f"{task.result.verdict['detail']}",
+                        "",
+                    ])
+                if task.result.tool_calls:
+                    lines.extend(["#### Tool Calls", ""])
+                    for call in task.result.tool_calls:
+                        lines.append(f"- {_tool_call_line(call)}")
+                    lines.append("")
+                if task.result.anomalies:
+                    lines.extend(["#### Relay Anomalies (BIRD)", ""])
+                    for problem in task.result.anomalies:
+                        lines.append(f"- {bird.summary_line(problem)}")
+                    lines.append("")
                 if task.result.output:
                     lines.extend([
                         "#### Output",
@@ -558,6 +654,16 @@ class Dispatcher:
         lines.extend(["", "---", ""])
 
         return "\n".join(lines)
+
+
+def _tool_call_line(call: dict) -> str:
+    """One-line rendering of a harness tool call for events and reports."""
+    args = ", ".join(f"{k}={v!r}" for k, v in
+                     (call.get("arguments") or {}).items())
+    outcome = call.get("outcome", "ok")
+    tail = call.get("summary", "") if outcome == "ok" else call.get("error", "")
+    return (f"[{call.get('iteration', '?')}] {call.get('function', '?')}"
+            f"({args}) -> {outcome}: {tail}")[:240]
 
 
 def create_dispatcher() -> Dispatcher:

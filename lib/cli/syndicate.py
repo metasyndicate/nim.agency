@@ -4,6 +4,7 @@
     syndicate list    inventory with transport, egress, cost, and channels
     syndicate show    full disclosure for one syndicate
     syndicate probe   reach the endpoint, record state and advertised models
+    syndicate conform run the known-answer suite, record the pass rate
 
 The inventory is what makes dispatch multivalued: `dispatch.provider` in
 etc/agency.json names a syndicate here, and `--provider` overrides it per
@@ -28,8 +29,21 @@ from ..dispatch import (
 # read-only: it lists, it never loads or unloads a model.
 MODEL_LIST_PATHS = {
     "ollama_native": "/api/tags",
+    "ollama_chat": "/api/tags",
     "openai_compat": "/v1/models",
 }
+
+
+def _conformance_label(syndicate: dict, channel: dict) -> str:
+    """'14/18 (78%) kat-1 harness' from the last recorded conform run."""
+    record = (((syndicate.get("status") or {}).get("conformance") or {})
+              .get(channel.get("slug")))
+    if not record:
+        return "not measured"
+    rate = record.get("rate", 0)
+    return (f"{record.get('passed')}/{record.get('total')} ({rate:.0%}) "
+            f"{record.get('suite')} {record.get('mode', '')}  "
+            f"at {str(record.get('at', '?'))[:16]}").rstrip()
 
 
 def _cost_label(channel: dict) -> str:
@@ -78,10 +92,24 @@ def cmd_list(args) -> int:
                   f"{channel.get('model') or '(default)':<22} "
                   f"{_cost_label(channel):<10} {harness:<10} "
                   f"conc:{limits.get('max_concurrent', 1)}")
+            print(f"     {'':<16} conform: {_conformance_label(syndicate, channel)}")
 
     print("\n  * = default channel. Dispatch with: "
           "nim.agency dispatch --provider <syndicate>[:<channel>] ...")
     return 0
+
+
+def _substation_label(ds, substation_id) -> str:
+    """The hosting substation, or why there is none. Substations are
+    operator-local, so a binding made elsewhere may not resolve here."""
+    if not substation_id:
+        return "(not inventoried - bind with: syndicate edit REF --set /endpoint/substation_id=CODENAME)"
+    host = ds.read("substation", substation_id)
+    if host is None:
+        return f"{substation_id} (unbound: not in this operator's inventory)"
+    ident, conn = host.get("identity") or {}, host.get("connection") or {}
+    return (f"{ident.get('name', '?')} [{ident.get('codename', '?')}]  "
+            f"{conn.get('kind', 'ssh')}://{conn.get('hostname', '?')}")
 
 
 def cmd_show(args) -> int:
@@ -111,6 +139,7 @@ def cmd_show(args) -> int:
           f"  credential: {endpoint.get('credential_id') or '(none held)'}")
     print(f"  egress:    {endpoint.get('egress', '?')}  "
           f"(policy: {egress_policy()})")
+    print(f"  host:      {_substation_label(ds, endpoint.get('substation_id'))}")
 
     status = syndicate.get("status") or {}
     print(f"  state:     {status.get('state', 'unknown')}"
@@ -130,6 +159,7 @@ def cmd_show(args) -> int:
               f"max_concurrent={limits.get('max_concurrent', 1)}  "
               f"timeout={limits.get('timeout_seconds', '?')}s")
         print(f"    cost:       {cost.get('class', '?')}")
+        print(f"    conform:    {_conformance_label(syndicate, entry)}")
         if entry.get("parameters"):
             print(f"    parameters: {json.dumps(entry['parameters'])}")
         print(f"    grants:")
@@ -207,8 +237,11 @@ def cmd_probe(args) -> int:
         _record_status(ds, syndicate, "unreachable", error=str(e))
         return 1
 
-    if transport["slug"] == "ollama_native":
+    model_caps: dict[str, list] = {}
+    if transport["slug"] in ("ollama_native", "ollama_chat"):
         models = [m.get("name", "?") for m in payload.get("models", [])]
+        model_caps = {m.get("name", "?"): m.get("capabilities")
+                      for m in payload.get("models", [])}
     else:
         models = [m.get("id", "?") for m in payload.get("data", [])]
 
@@ -229,6 +262,16 @@ def cmd_probe(args) -> int:
         print(f"  unregistered: {', '.join(unlisted)}  "
               f"(add a channel to serve them)")
 
+    # A channel granting tool_use on a model the endpoint says cannot emit
+    # tool calls would offer functions nobody will call
+    for channel in syndicate.get("channels") or []:
+        caps = model_caps.get(channel.get("model"))
+        if (caps is not None and "tool_use" in (channel.get("capabilities") or [])
+                and "tools" not in caps):
+            print(f"\033[91m  DRIFT: channel '{channel.get('slug')}' grants "
+                  f"tool_use but {channel.get('model')} reports no 'tools' "
+                  f"capability\033[0m")
+
     _record_status(ds, syndicate, "online", latency=latency, models=models)
     return 0
 
@@ -245,13 +288,74 @@ def _record_status(ds, syndicate: dict, state: str, latency: float = 0,
         status["latency_ms"] = round(latency, 1)
     if models is not None:
         status["models_reported"] = models
-    ds.update("syndicate", syndicate["id"], {"status": status})
+    # Each probe replaces the last observation (a merge would let a failed
+    # probe inherit the previous latency and model list); conformance is a
+    # separate observation, made by conform, and is kept
+    record = ds.read("syndicate", syndicate["id"]) or dict(syndicate)
+    previous = record.get("status") or {}
+    if "conformance" in previous:
+        status["conformance"] = previous["conformance"]
+    record["status"] = status
+    ds.replace("syndicate", syndicate["id"], record)
+
+
+def cmd_conform(args) -> int:
+    """Measure a channel against the fixed known-answer suite."""
+    from ..config import report_dir
+    from ..dispatch import address_of, get_provider
+    from ..dispatch.conformance import run_suite
+
+    ds = get_datastore()
+    try:
+        provider = get_provider(args.ref, ds=ds)
+    except SyndicateError as exc:
+        print(f"\033[91mERROR: {exc}\033[0m", file=sys.stderr)
+        return 1
+    syndicate, channel = provider.syndicate, provider.channel
+    address = address_of(syndicate, channel)
+
+    print(f"CONFORM {address}: {provider.descriptor}")
+    print(f"  runs: {args.runs}   timeout: {args.timeout}s per case")
+    print("-" * 78)
+
+    def show(result):
+        mark = "\033[92mPASS\033[0m" if result.passed else "\033[91mFAIL\033[0m"
+        calls = f"  calls: {','.join(result.calls)}" if result.calls else ""
+        print(f"  [{result.run}] {result.slug:<16} {mark}  {result.seconds:>6.1f}s  "
+              f"{result.tokens:>6} tok{calls}")
+        if result.anomalies:
+            print(f"      bird: {', '.join(result.anomalies)}")
+        if not result.passed:
+            print(f"      {result.detail[:200]}")
+
+    card = run_suite(provider, runs=args.runs, timeout=args.timeout,
+                     on_result=show)
+    print("-" * 78)
+    print(f"  {card['suite']} ({card['mode']}): {card['passed']}/{card['total']} "
+          f"passed  rate {card['rate']:.0%}")
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    path = report_dir() / f"conformance-{syndicate['slug']}-{stamp}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"address": address, **card}, indent=2))
+    print(f"  scorecard: {path}")
+
+    if not args.no_record:
+        summary = {k: card[k] for k in
+                   ("suite", "mode", "runs", "passed", "total", "rate", "at")}
+        ds.update("syndicate", syndicate["id"], {"status": {
+            "conformance": {channel["slug"]: summary}}})
+    return 0 if card["passed"] == card["total"] else 1
 
 
 def add_parser(subparsers):
     p = subparsers.add_parser(
-        "syndicate", help="Model provider inventory (list, show, probe)")
+        "syndicate",
+        help="Model provider inventory (list, show, probe, conform; "
+             "form, options, new, edit, delete)")
     actions = p.add_subparsers(dest="action", required=True)
+    from . import compose
+    compose.add_verbs(actions, "syndicate")
 
     lst = actions.add_parser("list", help="List the syndicate inventory")
     lst.set_defaults(func=cmd_list)
@@ -266,3 +370,16 @@ def add_parser(subparsers):
     probe.add_argument("--timeout", type=int, default=10,
                        help="Probe timeout in seconds (default: 10)")
     probe.set_defaults(func=cmd_probe)
+
+    conform = actions.add_parser(
+        "conform",
+        help="Run the known-answer suite against a channel and record its "
+             "pass rate (dispatches real requests)")
+    conform.add_argument("ref", help="Syndicate slug, or 'syndicate:channel'")
+    conform.add_argument("--runs", type=int, default=1,
+                         help="Repetitions of the suite (default: 1)")
+    conform.add_argument("--timeout", type=int, default=300,
+                         help="Per-case timeout in seconds (default: 300)")
+    conform.add_argument("--no-record", action="store_true",
+                         help="Do not write the result onto the syndicate record")
+    conform.set_defaults(func=cmd_conform)

@@ -48,6 +48,13 @@ class TaskResult:
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     tokens_used: int = 0
+    # Known-answer outcome, set by the dispatcher before payroll
+    verdict: Optional[dict] = None
+    # Harness transcript: one entry per tool call the model emitted and the
+    # agency executed (or refused). Empty for single-shot transports.
+    tool_calls: list[dict] = field(default_factory=list)
+    # BIRD relay anomalies (RFC 9457 problem details), in order of detection
+    anomalies: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -58,7 +65,10 @@ class TaskResult:
             "error": self.error,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "tokens_used": self.tokens_used
+            "tokens_used": self.tokens_used,
+            "verdict": self.verdict,
+            "tool_calls": self.tool_calls,
+            "anomalies": self.anomalies,
         }
 
 
@@ -72,6 +82,11 @@ class Task:
     status: TaskStatus = TaskStatus.PENDING
     result: Optional[TaskResult] = None
     depends_on: list[str] = field(default_factory=list)  # Task IDs this depends on
+    # Known-answer check (verification.Expectation as a dict), if any
+    expect: Optional[dict] = None
+    # Depot tool slugs the assigned agent holds, stamped by the dispatcher
+    # from the composed profile; a harness offers functions within them
+    tool_grants: Optional[list[str]] = None
 
     def to_dict(self) -> dict:
         return {
@@ -81,7 +96,9 @@ class Task:
             "role": self.role,
             "status": self.status.value,
             "result": self.result.to_dict() if self.result else None,
-            "depends_on": self.depends_on
+            "depends_on": self.depends_on,
+            "expect": self.expect,
+            "tool_grants": self.tool_grants,
         }
 
 
@@ -248,7 +265,9 @@ class Mission:
                 prompt=t["prompt"],
                 role=t["role"],
                 status=TaskStatus(t["status"]),
-                depends_on=t.get("depends_on", [])
+                depends_on=t.get("depends_on", []),
+                expect=t.get("expect"),
+                tool_grants=t.get("tool_grants"),
             )
             if t.get("result"):
                 r = t["result"]
@@ -258,7 +277,10 @@ class Mission:
                     status=TaskStatus(r["status"]),
                     output=r["output"],
                     error=r.get("error"),
-                    tokens_used=r.get("tokens_used", 0)
+                    tokens_used=r.get("tokens_used", 0),
+                    verdict=r.get("verdict"),
+                    tool_calls=r.get("tool_calls") or [],
+                    anomalies=r.get("anomalies") or [],
                 )
             mission.tasks.append(task)
 
