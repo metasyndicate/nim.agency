@@ -283,7 +283,8 @@ class OpsLogger:
             substation_name: Default substation name
         """
         if log_path is None:
-            log_path = Path.home() / ".nim" / "agency" / "ops.log"
+            from ..install import home
+            log_path = home() / "ops.log"
 
         self.log_path = log_path
         self.delimiter = delimiter

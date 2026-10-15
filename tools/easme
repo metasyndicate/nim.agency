@@ -23,6 +23,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Run inside the default instance's venv when one exists (as bin/nim.agency
+# does); exec keeps stdin, so the piped payload is not lost
+from lib.install.launch import reexec, target  # noqa: E402
+
+_python = target(sys.argv)
+if _python is not None:
+    reexec(_python, str(Path(__file__).resolve()), sys.argv)
+
 MAX_PAYLOAD = 64 * 1024  # keep prompts sane; the tail is the fresh part
 
 
@@ -60,6 +68,22 @@ def main() -> int:
                        help="Working directory for the task (default: .)")
     agent.add_argument("--crew", type=str,
                        help="Comma-separated agent codenames")
+    agent.add_argument("--provider", type=str,
+                       help="Syndicate to dispatch to, as 'syndicate' or "
+                            "'syndicate:channel' (default: dispatch.provider "
+                            "in etc/agency.json)")
+    agent.add_argument("--text-only", action="store_true",
+                       help="Declare the task needs no tools: the piped "
+                            "payload is the whole context, so text-only "
+                            "syndicates (local models) can serve it")
+    agent.add_argument("--tools", type=str,
+                       help="Comma-separated harness functions the mission "
+                            "may use (narrows the default Read,Glob,Grep,Bash)")
+    agent.add_argument("--expect", type=str,
+                       help="Known-answer check: output must contain this text")
+    agent.add_argument("--expect-json", type=str,
+                       help="Known-answer check: output must carry a JSON "
+                            "object containing these keys and values")
     agent.add_argument("-y", "--yes", action="store_true",
                        help="Bypass the confirmation gate")
     agent.add_argument("-v", "--verbose", action="count", default=0,
@@ -85,19 +109,18 @@ def main() -> int:
     from lib.config import get_config
     from lib.data import get_datastore
     from lib.dispatch import (
-        Dispatcher, adhoc_task_mission, build_briefing, get_provider,
-        render_briefing,
+        Dispatcher, adhoc_task_mission, build_briefing, render_briefing,
     )
     from lib.cli.common import (
-        confirm_dispatch, print_event, resolve_crew, resolve_report_path,
-        save_report,
+        apply_mission_scope, confirm_dispatch, print_event, resolve_crew,
+        resolve_provider, resolve_report_path, save_report,
     )
 
     ds = get_datastore()
-    provider = get_provider("claude-cli")
-    if not provider.is_available():
-        print("ERROR: claude CLI not found. Install it first.",
-              file=sys.stderr)
+    # Through the syndicate inventory like every other entry point:
+    # --provider, else dispatch.provider in etc/agency.json
+    provider = resolve_provider(ds, args)
+    if provider is None:
         return 1
 
     hint = args.hint
@@ -128,12 +151,19 @@ def main() -> int:
             crew, str(Path(args.target).resolve()),
             build_prompt(hint, payload, truncated),
             title=f"Pipestream: {hint or 'stdin payload'}"[:64])
+        apply_mission_scope(args, mission, ds)
 
         report_path = resolve_report_path(argparse.Namespace(output=None),
                                           mission)
         briefing = build_briefing(mission, ds=ds, report_path=report_path,
                                   provider=provider, verbosity=args.verbose)
         print(render_briefing(briefing, verbosity=args.verbose))
+
+        # Fail the briefing, not the mission: a channel that cannot serve
+        # the toolset would answer from imagination rather than refuse
+        if briefing.capability_refusal:
+            print(f"ERROR: {briefing.capability_refusal}")
+            return 1
 
         if not confirm_dispatch(args.yes):
             return 2

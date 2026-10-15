@@ -7,6 +7,7 @@ Shared by the dispatch and mission subcommands.
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from ..config import get_config, report_dir
 from ..data import DataStore, match_agents, draft_hire
@@ -193,14 +194,56 @@ def build_mission_from_args(args, crew: list[dict]) -> Mission:
     if args.timeout:
         mission.constraints.timeout_seconds = args.timeout
 
+    apply_mission_scope(args, mission)
+    return mission
+
+
+def apply_mission_scope(args, mission: Mission,
+                        ds: Optional[DataStore] = None) -> None:
+    """Apply the toolset and known-answer flags to a built mission.
+
+    --text-only   no tools at all: the crew answers from the prompt alone
+    --tools       narrow allowed_tools to named harness functions
+    --expect      every task must answer with output containing this text
+    --expect-json every task must answer with a JSON object containing these
+                  keys and values
+
+    Exits with an error message on an unknown function or malformed JSON.
+    """
+    import json
+    from ..dispatch.syndicate import harness_tool_names
+    from ..dispatch.verification import Expectation
+
     if getattr(args, "text_only", False):
         # An honest declaration, not a shortcut: with no tools the crew
         # answers from the prompt alone. The capability gate uses this to
         # let text-only syndicates serve the mission.
         mission.constraints.allowed_tools = []
         mission.constraints.blocked_commands = []
+    elif getattr(args, "tools", None):
+        names = [n.strip() for n in args.tools.split(",") if n.strip()]
+        known = harness_tool_names(ds)
+        unknown = [n for n in names if n not in known]
+        if unknown:
+            print(f"\033[91mERROR: unknown harness function(s): "
+                  f"{', '.join(unknown)} (known: {', '.join(sorted(known))})"
+                  f"\033[0m", file=sys.stderr)
+            raise SystemExit(1)
+        mission.constraints.allowed_tools = names
 
-    return mission
+    expectation = None
+    if getattr(args, "expect_json", None):
+        try:
+            expectation = Expectation("json_subset", json.loads(args.expect_json))
+        except (json.JSONDecodeError, ValueError) as exc:
+            print(f"\033[91mERROR: --expect-json: {exc}\033[0m",
+                  file=sys.stderr)
+            raise SystemExit(1)
+    elif getattr(args, "expect", None):
+        expectation = Expectation("contains", args.expect)
+    if expectation:
+        for task in mission.tasks:
+            task.expect = expectation.to_dict()
 
 
 def resolve_report_path(args, mission: Mission) -> Path:
@@ -261,6 +304,9 @@ def print_event(event: DispatchEvent):
         "queue": "\033[96m[QUEUE]\033[0m",
         "collecting": "\033[96m[COLLECT]\033[0m",
         "error": "\033[91m[ERROR]\033[0m",
+        "tool": "\033[95m[TOOL]\033[0m",
+        "verify": "\033[96m[VERIFY]\033[0m",
+        "bird": "\033[93m[BIRD]\033[0m",
     }.get(event.event_type, f"[{event.event_type}]")
 
     print(f"{timestamp} {prefix} {event.message}")

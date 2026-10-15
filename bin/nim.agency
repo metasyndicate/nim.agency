@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
-"""NIM Agency CLI launcher. All logic lives in lib/cli."""
+"""NIM Agency CLI launcher. All logic lives in lib/cli.
+
+When the `default` instance exists (`nim.agency install create`), this
+re-execs into that instance's venv interpreter so its dependency groups
+(jsonschema, asyncssh, ...) are present; NIM_NO_VENV=1 opts out. See
+lib/install/launch.py.
+"""
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from lib.install.launch import reexec, target
+
+_python = target(sys.argv)
+if _python is not None:
+    reexec(_python, str(Path(__file__).resolve()), sys.argv)
 
 from lib.cli import main
 

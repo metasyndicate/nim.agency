@@ -87,7 +87,8 @@ class AuditLogger:
 
     def __init__(self, log_path: Optional[Path] = None):
         if log_path is None:
-            log_path = Path.home() / ".nim" / "agency" / "remote_operations.json"
+            from ..install import home
+            log_path = home() / "remote_operations.json"
         self.log_path = log_path
         self._ensure_log_file()
 

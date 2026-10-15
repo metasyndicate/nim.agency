@@ -141,7 +141,8 @@ class CredentialVault:
     def _get_base_path(scope: VaultScope) -> Path:
         """Get base path for scope."""
         if scope == VaultScope.OPERATOR:
-            return Path.home() / ".nim" / "agency"
+            from ..install import home
+            return home()
         else:
             return Path("/etc/nim/agency")
 

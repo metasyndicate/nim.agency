@@ -23,6 +23,8 @@ from . import data as data_cmd
 from . import dispatch as dispatch_cmd
 from . import mission as mission_cmd
 from . import project as project_cmd
+from . import install as install_cmd
+from . import substation as substation_cmd
 from . import syndicate as syndicate_cmd
 
 
@@ -78,7 +80,20 @@ def build_parser() -> argparse.ArgumentParser:
                                help="Syndicate to dispatch to, as 'syndicate' "
                                     "or 'syndicate:channel' (default: "
                                     "dispatch.provider in etc/agency.json). "
-                                    "List them: nim.agency data syndicates")
+                                    "List them: nim.agency syndicate list")
+    mission_flags.add_argument("--tools", type=str,
+                               help="Comma-separated harness functions the "
+                                    "mission may use, narrowing the default "
+                                    "Read,Glob,Grep,Bash (e.g. Read,Glob,Grep,LS "
+                                    "for a read-only harness without a shell)")
+    mission_flags.add_argument("--expect", type=str,
+                               help="Known-answer check: each task's output "
+                                    "must contain this text, or the task fails "
+                                    "before payroll")
+    mission_flags.add_argument("--expect-json", type=str,
+                               help="Known-answer check: each task's output "
+                                    "must carry a JSON object containing these "
+                                    "keys and values (arrays compare order-free)")
     mission_flags.add_argument("--output", type=str,
                                help="Report path (default: <report_dir>/mission-<id>-report.md)")
 
@@ -97,6 +112,8 @@ def build_parser() -> argparse.ArgumentParser:
     mission_cmd.add_parser(sub, mission_flags, verbosity)
     project_cmd.add_parser(sub)
     syndicate_cmd.add_parser(sub)
+    substation_cmd.add_parser(sub)
+    install_cmd.add_parser(sub)
     agent_cmd.add_parser(sub)
     data_cmd.add_parser(sub)
 

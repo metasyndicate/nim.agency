@@ -133,7 +133,8 @@ class KnownHostsManager:
 
     def __init__(self, hosts_file: Optional[Path] = None):
         if hosts_file is None:
-            hosts_file = Path.home() / ".nim" / "agency" / "known_hosts"
+            from ..install import home
+            hosts_file = home() / "known_hosts"
         self.hosts_file = hosts_file
         self._hosts: Dict[str, str] = {}
         self._load()
