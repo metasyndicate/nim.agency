@@ -25,6 +25,13 @@
     "epochs": 10,
     "min_images": 15
   },
+  "train": {
+    "_doc": "settings for `train`, which runs `script` (train_lora.sh). lora_dir must match the script's OUT (Forge's LoRA folder). sec_per_step is the estimate until a run on the profile measures one.",
+    "script": "/Volumes/mf-arc/ai/training/train_lora.sh",
+    "lora_dir": "/Volumes/mf-arc/ai/models/sd/lora",
+    "epochs": 10,
+    "sec_per_step": 180
+  },
   "keys": {
     "_doc": "--keys mapping. A key listed here fills a typed profile field; any other key goes to profile.attributes unchanged. Keys match case-insensitively.",
     "instrument": {"field": "roles", "as": "roleName"},

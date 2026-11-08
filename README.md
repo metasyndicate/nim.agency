@@ -13,12 +13,13 @@ nim.library index lk5/jody        # hash, de-duplicate -> index.json
 nim.library list [lk5|lk5/jody]   # profiles, or one profile's files
 nim.library init lk5/jody         # resize, face-crop, caption; verdicts
 nim.library stage lk5/jody        # kohya dataset from accepted images
+nim.library train lk5/jody --epochs 1 --name lk5-jody-trial [--dry-run]
 nim.library show lk5/jody
 nim.library check
 ```
 
-Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`. The first four
-exist; `train` (`train_lora.sh`) and `prompt` (fixed comparison prompts) follow.
+Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`. The first five
+exist; `prompt` (fixed comparison prompts) follows.
 
 `init` writes `stage/` in each profile:
 - `images/<id>.png`: downscaled to a 1024 px long side, plus `<id>-face.png` when there
@@ -37,6 +38,12 @@ writes `stage/stage.json` (items, repeats, step estimate, warnings) and links th
 dataset as `training/datasets/<tag>-<slug>`, so `train_lora.sh lk5-jody` trains it as
 is. Repeats default to about 100 images per epoch (`etc/library.json` `stage`);
 `--repeats N` overrides, `--no-link` skips the link. The dataset is rebuilt each run.
+
+`train` runs `train_lora.sh <tag>-<slug> --max_train_epochs N --output_name NAME`
+(flags after `--` are passed through), prints a time estimate first (`--dry-run` stops
+there) and warns if Forge or an Ollama model is holding memory. Each run writes
+`train/<run>.log` and `train/<run>.json` (steps, seconds, s/step, output + sha256); the
+measured s/step becomes the next estimate. The LoRA lands in Forge's LoRA folder.
 
 The image work runs in `lib/library/workers/images.py` under `init.python`
 (sd-scripts' venv: Pillow + OpenCV Haar face detection).

@@ -9,6 +9,8 @@
                          hand verdicts on images (kept across re-runs)
     stage REF [--repeats N] [--no-link]
                          kohya dataset from accepted images, linked into training/datasets
+    train REF [--epochs N] [--name NAME] [--dry-run] [-- SD-SCRIPTS FLAGS...]
+                         run train_lora.sh on the staged dataset; logs + record in train/
     list [TAG|REF]       profiles (all, or one tag), or one profile's indexed files
     show REF             profile.json
     check [REF]          validate profile, group, index and manifest files
@@ -27,6 +29,7 @@ from pathlib import Path
 from .index import build_index
 from .init import build_init, set_override
 from .stage import build_stage
+from .train import busy, plan, run_train
 from .store import Library, new_profile
 from .util import VERSION, LibraryError, library_root, load_json
 from .validate import validate
@@ -115,6 +118,29 @@ def cmd_stage(lib: Library, a) -> int:
     if "link" in doc:
         link = Path(doc["link"])
         print(f"  train    {link.parent.parent / 'train_lora.sh'} {link.name}")
+    return 0
+
+
+def _hms(sec: int) -> str:
+    h, m = divmod(round(sec / 60), 60)
+    return f"{h}h{m:02d}m" if h else f"{m}m"
+
+
+def cmd_train(lib: Library, a) -> int:
+    p = plan(lib, a.ref, a.epochs, a.name, a.extra)
+    print(f"train {a.ref}: {p['steps']} steps ({p['epochs']} epochs), about "
+          f"{_hms(p['estimate_seconds'])} at {p['sec_per_step_assumed']}s/step -> {p['output']}")
+    print(f"  command  {' '.join(p['command'])}")
+    for b in busy():
+        print(f"  warning  {b}; train_lora.sh asks for it to be stopped first")
+    if a.dry_run:
+        return 0
+    rec = run_train(lib, a.ref, p)
+    if rec["status"] != "ok":
+        raise LibraryError(f"training failed (exit {rec['returncode']}); see "
+                           f"{lib.profile_dir(a.ref) / rec['log']}")
+    print(f"trained {a.ref}: {rec['steps']} steps in {_hms(rec['seconds'])} "
+          f"({rec['sec_per_step']}s/step) -> {rec['output']}")
     return 0
 
 
@@ -221,6 +247,14 @@ def parser() -> argparse.ArgumentParser:
     stg.add_argument("--repeats", type=int, help="kohya repeats per image (default: from etc/library.json stage)")
     stg.add_argument("--no-link", action="store_true", help="do not link into the training datasets dir")
     stg.set_defaults(func=cmd_stage)
+
+    trn = sub.add_parser("train", help="run train_lora.sh on the staged dataset")
+    trn.add_argument("ref", help="<tag>/<slug>")
+    trn.add_argument("--epochs", type=int, help="epochs (default: etc/library.json train.epochs)")
+    trn.add_argument("--name", help="LoRA output name (default: the dataset name, e.g. lk5-jody)")
+    trn.add_argument("--dry-run", action="store_true", help="print the command and estimate only")
+    trn.add_argument("extra", nargs="*", help="after --: extra sd-scripts flags")
+    trn.set_defaults(func=cmd_train)
 
     lst = sub.add_parser("list", help="list profiles, or a profile's indexed files")
     lst.add_argument("ref", nargs="?", help="<tag> or <tag>/<slug>")

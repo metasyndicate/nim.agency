@@ -255,6 +255,32 @@
       }
     },
 
+    "train": {
+      "description": "profiles/<slug>/train/<run>.json, written by `train`: one train_lora.sh run.",
+      "type": "object",
+      "required": ["$schema", "profile", "run", "started", "finished", "status", "returncode", "command", "dataset", "name", "epochs", "steps", "seconds", "log"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/train"},
+        "profile": {"type": "string"},
+        "run": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z$"},
+        "started": {"$ref": "#/$defs/timestamp"},
+        "finished": {"$ref": "#/$defs/timestamp"},
+        "status": {"enum": ["ok", "failed"]},
+        "returncode": {"type": "integer"},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "dataset": {"type": "string", "description": "training/datasets entry (the stage link)"},
+        "name": {"type": "string", "description": "LoRA output name"},
+        "epochs": {"type": "integer"},
+        "steps": {"type": "integer"},
+        "seconds": {"type": "integer"},
+        "sec_per_step": {"type": "number"},
+        "output": {"type": "string", "description": "the .safetensors written"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "log": {"type": "string", "description": "full training output, relative to the profile dir"}
+      }
+    },
+
     "activity": {
       "description": "prov:Activity: one stage run against a profile.",
       "type": "object",

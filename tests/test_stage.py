@@ -17,7 +17,9 @@ from library.cli import main  # noqa: E402
 from library.util import config  # noqa: E402
 
 
-class StageCase(unittest.TestCase):
+class StageBase(unittest.TestCase):
+    """profile + fake init fixture; no tests (shared with test_train)."""
+
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="nim-library-stage-"))
         self.root = self.tmp / "lib"
@@ -58,6 +60,8 @@ class StageCase(unittest.TestCase):
                "images": images, "text": []}
         (self.pdir / "stage" / "init.json").write_text(json.dumps(doc))
 
+
+class StageCase(StageBase):
     def test_accepted_only_and_layout(self):
         self.fake_init({"a" * 12: ("ok", None, True), "b" * 12: ("review", "ok", False),
                         "c" * 12: ("review", None, False), "d" * 12: ("ok", "exclude", False)})

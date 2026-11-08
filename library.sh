@@ -100,3 +100,16 @@ function nim.library.init() {
 function nim.library.stage() {
     nim.fn.validate.args "${@}" || return 1
     .nim.library.py.fn stage "${@}" || { nim.out.fail "library: stage failed"; return 1; }; }
+
+##! @function nim.library.train
+##! @description run train_lora.sh on a profile's staged dataset; log and record in train/
+##! @param <ref>           <tag>/<slug>
+##! @param [--epochs N]    epochs (default 10)
+##! @param [--name NAME]   LoRA output name (default <tag>-<slug>)
+##! @param [--dry-run]     print the command and time estimate only
+##! @param [-- FLAGS...]   extra sd-scripts flags
+##! @return 0 on success, 1 on failure
+##! @example nim.library.train lk5/jody --epochs 1 --name lk5-jody-trial
+function nim.library.train() {
+    nim.fn.validate.args "${@}" || return 1
+    .nim.library.py.fn train "${@}" || { nim.out.fail "library: train failed"; return 1; }; }
