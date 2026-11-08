@@ -17,6 +17,14 @@
     "caption": "{trigger} {class}",
     "caption_face": "{trigger} {class}, close-up portrait"
   },
+  "stage": {
+    "_doc": "kohya dataset settings for `stage`. repeats = ceil(steps_per_epoch / images), capped at max_repeats; `--repeats` overrides. epochs mirrors train_lora.sh --max_train_epochs, for the step estimate only.",
+    "datasets": "/Volumes/mf-arc/ai/training/datasets",
+    "steps_per_epoch": 100,
+    "max_repeats": 40,
+    "epochs": 10,
+    "min_images": 15
+  },
   "keys": {
     "_doc": "--keys mapping. A key listed here fills a typed profile field; any other key goes to profile.attributes unchanged. Keys match case-insensitively.",
     "instrument": {"field": "roles", "as": "roleName"},

@@ -11,13 +11,14 @@ nim.library new profile --type character --tag LK5 --name Jody \
     --keys "[Instrument:Lead Guitar,Voice:Tenor,Era:1990s]"
 nim.library index lk5/jody        # hash, de-duplicate -> index.json
 nim.library list [lk5|lk5/jody]   # profiles, or one profile's files
+nim.library init lk5/jody         # resize, face-crop, caption; verdicts
+nim.library stage lk5/jody        # kohya dataset from accepted images
 nim.library show lk5/jody
 nim.library check
 ```
 
-Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`. The first three
-exist; `stage` (kohya dataset), `train` (`train_lora.sh`) and `prompt` (fixed
-comparison prompts) follow.
+Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`. The first four
+exist; `train` (`train_lora.sh`) and `prompt` (fixed comparison prompts) follow.
 
 `init` writes `stage/` in each profile:
 - `images/<id>.png`: downscaled to a 1024 px long side, plus `<id>-face.png` when there
@@ -29,6 +30,13 @@ comparison prompts) follow.
 - `text/passages.jsonl`: memoir paragraphs that mention the subject's name or an
   alias (`--keys Alias:...`). Extracts .txt/.md directly and .docx/.rtf/.odt/.html
   with macOS `textutil`; .pdf is not handled yet.
+
+`stage` copies every accepted image (override, else status, is `ok`), full frame
+and face crop, with its caption into `stage/dataset/img/<repeats>_<trigger> <class>/`,
+writes `stage/stage.json` (items, repeats, step estimate, warnings) and links the
+dataset as `training/datasets/<tag>-<slug>`, so `train_lora.sh lk5-jody` trains it as
+is. Repeats default to about 100 images per epoch (`etc/library.json` `stage`);
+`--repeats N` overrides, `--no-link` skips the link. The dataset is rebuilt each run.
 
 The image work runs in `lib/library/workers/images.py` under `init.python`
 (sd-scripts' venv: Pillow + OpenCV Haar face detection).

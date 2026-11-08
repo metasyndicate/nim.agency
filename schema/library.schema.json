@@ -215,6 +215,46 @@
       }
     },
 
+    "stage": {
+      "description": "profiles/<slug>/stage/stage.json, written by `stage`: the kohya dataset built from accepted images.",
+      "type": "object",
+      "required": ["$schema", "profile", "generated", "dataset", "folder", "repeats", "counts", "items", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/stage"},
+        "profile": {"type": "string"},
+        "generated": {"$ref": "#/$defs/timestamp"},
+        "dataset": {"type": "string", "description": "absolute path of stage/dataset (kohya --train_data_dir is its img/)"},
+        "folder": {"type": "string", "pattern": "^[0-9]+_[a-z0-9]+ .+$", "description": "kohya folder name: <repeats>_<trigger> <class>"},
+        "repeats": {"type": "integer", "minimum": 1},
+        "link": {"type": "string", "description": "training datasets entry linked to the dataset, e.g. .../datasets/lk5-jody"},
+        "counts": {
+          "type": "object",
+          "required": ["images", "full", "face", "epochs", "steps"],
+          "properties": {
+            "images": {"type": "integer"}, "full": {"type": "integer"}, "face": {"type": "integer"},
+            "epochs": {"type": "integer"},
+            "steps": {"type": "integer", "description": "images x repeats x epochs at batch size 1"}
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "file", "variant", "caption"],
+            "additionalProperties": false,
+            "properties": {
+              "item": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+              "file": {"type": "string"},
+              "variant": {"enum": ["full", "face"]},
+              "caption": {"type": "string"}
+            }
+          }
+        },
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
     "activity": {
       "description": "prov:Activity: one stage run against a profile.",
       "type": "object",

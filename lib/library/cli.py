@@ -7,6 +7,8 @@
                          resize, face-crop, caption images; pull memoir passages
     init REF --ok ID.. | --exclude ID.. | --clear ID..
                          hand verdicts on images (kept across re-runs)
+    stage REF [--repeats N] [--no-link]
+                         kohya dataset from accepted images, linked into training/datasets
     list [TAG|REF]       profiles (all, or one tag), or one profile's indexed files
     show REF             profile.json
     check [REF]          validate profile, group, index and manifest files
@@ -20,9 +22,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .index import build_index
 from .init import build_init, set_override
+from .stage import build_stage
 from .store import Library, new_profile
 from .util import VERSION, LibraryError, library_root, load_json
 from .validate import validate
@@ -98,6 +102,22 @@ def cmd_init(lib: Library, a) -> int:
     return 0
 
 
+def cmd_stage(lib: Library, a) -> int:
+    doc = build_stage(lib, a.ref, repeats=a.repeats, link=not a.no_link)
+    c = doc["counts"]
+    print(f"staged {a.ref}: {c['images']} images ({c['full']} full, {c['face']} face) "
+          f"x {doc['repeats']} repeats x {c['epochs']} epochs = {c['steps']} steps")
+    print(f"  dataset  {doc['dataset']}/img/{doc['folder']}")
+    if "link" in doc:
+        print(f"  linked   {doc['link']}")
+    for w in doc["warnings"]:
+        print(f"  warning  {w}")
+    if "link" in doc:
+        link = Path(doc["link"])
+        print(f"  train    {link.parent.parent / 'train_lora.sh'} {link.name}")
+    return 0
+
+
 def cmd_list(lib: Library, a) -> int:
     if a.ref and "/" in a.ref:
         path = lib.profile_dir(a.ref) / "index.json"
@@ -142,7 +162,8 @@ def cmd_check(lib: Library, a) -> int:
         pdir = lib.profile_dir(p["id"])
         tags.add(p["tag"])
         for fname, defn in (("profile.json", "profile"), ("index.json", "index"),
-                            ("manifest.json", "manifest")):
+                            ("manifest.json", "manifest"), ("stage/init.json", "init"),
+                            ("stage/stage.json", "stage")):
             path = pdir / fname
             if not path.exists():
                 continue
@@ -194,6 +215,12 @@ def parser() -> argparse.ArgumentParser:
     ini.add_argument("--exclude", nargs="+", metavar="ID", help="leave images out of staging")
     ini.add_argument("--clear", nargs="+", metavar="ID", help="drop a hand verdict")
     ini.set_defaults(func=cmd_init)
+
+    stg = sub.add_parser("stage", help="build the kohya dataset from accepted images")
+    stg.add_argument("ref", help="<tag>/<slug>")
+    stg.add_argument("--repeats", type=int, help="kohya repeats per image (default: from etc/library.json stage)")
+    stg.add_argument("--no-link", action="store_true", help="do not link into the training datasets dir")
+    stg.set_defaults(func=cmd_stage)
 
     lst = sub.add_parser("list", help="list profiles, or a profile's indexed files")
     lst.add_argument("ref", nargs="?", help="<tag> or <tag>/<slug>")

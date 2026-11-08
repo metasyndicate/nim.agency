@@ -89,3 +89,14 @@ function nim.library.check() { .nim.library.py.fn check "${@}"; }
 function nim.library.init() {
     nim.fn.validate.args "${@}" || return 1
     .nim.library.py.fn init "${@}" || { nim.out.fail "library: init failed"; return 1; }; }
+
+##! @function nim.library.stage
+##! @description build the kohya dataset from accepted images and link it into training/datasets
+##! @param <ref>           <tag>/<slug>
+##! @param [--repeats N]   kohya repeats per image
+##! @param [--no-link]     do not link into the training datasets dir
+##! @return 0 on success, 1 on failure
+##! @example nim.library.stage lk5/jody --repeats 10
+function nim.library.stage() {
+    nim.fn.validate.args "${@}" || return 1
+    .nim.library.py.fn stage "${@}" || { nim.out.fail "library: stage failed"; return 1; }; }
