@@ -11,6 +11,8 @@
                          kohya dataset from accepted images, linked into training/datasets
     train REF [--epochs N] [--name NAME] [--dry-run] [-- SD-SCRIPTS FLAGS...]
                          run train_lora.sh on the staged dataset; logs + record in train/
+    prompt REF [--lora FILE] [--prompt TEXT].. [--weights W,..] [--seed N] [--steps N] [--dry-run]
+                         comparison images with and without the LoRA -> prompt/<run>/
     list [TAG|REF]       profiles (all, or one tag), or one profile's indexed files
     show REF             profile.json
     check [REF]          validate profile, group, index and manifest files
@@ -30,6 +32,7 @@ from .index import build_index
 from .init import build_init, set_override
 from .stage import build_stage
 from .train import busy, plan, run_train
+from . import prompt as prompt_mod
 from .store import Library, new_profile
 from .util import VERSION, LibraryError, library_root, load_json
 from .validate import validate
@@ -144,6 +147,28 @@ def cmd_train(lib: Library, a) -> int:
     return 0
 
 
+def cmd_prompt(lib: Library, a) -> int:
+    weights = [float(w) for w in a.weights.split(",")] if a.weights else None
+    p = prompt_mod.plan(lib, a.ref, lora=a.lora, prompts=a.prompt, weights=weights, seed=a.seed,
+                        steps=a.steps, size=a.size)
+    st = p["settings"]
+    print(f"prompt {a.ref}: {len(p['jobs'])} images ({st['size']}px, {st['steps']} steps, {st['dtype']}) "
+          f"with {Path(p['lora']).name}")
+    for label in p["sheet"]["labels"]:
+        print(f"  {label}")
+    if a.dry_run:
+        return 0
+    doc = prompt_mod.build_prompt(lib, a.ref, p)
+    out = lib.profile_dir(a.ref) / "prompt" / doc["run"]
+    secs = sum(i["seconds"] for i in doc["images"])
+    print(f"generated {len(doc['images'])} images in {_hms(round(secs))} -> {out}")
+    print(f"  sheet    {out / doc['sheet']}")
+    blank = [i["file"] for i in doc["images"] if i["blank"]]
+    if blank:
+        print(f"  warning  blank output (try prompt.dtype float32): {', '.join(blank)}")
+    return 0
+
+
 def cmd_list(lib: Library, a) -> int:
     if a.ref and "/" in a.ref:
         path = lib.profile_dir(a.ref) / "index.json"
@@ -255,6 +280,17 @@ def parser() -> argparse.ArgumentParser:
     trn.add_argument("--dry-run", action="store_true", help="print the command and estimate only")
     trn.add_argument("extra", nargs="*", help="after --: extra sd-scripts flags")
     trn.set_defaults(func=cmd_train)
+
+    prm = sub.add_parser("prompt", help="comparison images with and without the profile's LoRA")
+    prm.add_argument("ref", help="<tag>/<slug>")
+    prm.add_argument("--lora", help="LoRA file (default: the profile's latest successful train run)")
+    prm.add_argument("--prompt", action="append", help="prompt template (repeatable; default: etc/library.json)")
+    prm.add_argument("--weights", help="comma-separated LoRA weights (default 0,1)")
+    prm.add_argument("--seed", type=int)
+    prm.add_argument("--steps", type=int, help="sampling steps")
+    prm.add_argument("--size", type=int, help="image side in pixels")
+    prm.add_argument("--dry-run", action="store_true", help="print the prompts only")
+    prm.set_defaults(func=cmd_prompt)
 
     lst = sub.add_parser("list", help="list profiles, or a profile's indexed files")
     lst.add_argument("ref", nargs="?", help="<tag> or <tag>/<slug>")

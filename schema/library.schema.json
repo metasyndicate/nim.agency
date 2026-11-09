@@ -281,6 +281,39 @@
       }
     },
 
+    "prompt": {
+      "description": "profiles/<slug>/prompt/<run>/prompt.json, written by `prompt`: comparison images with and without a LoRA.",
+      "type": "object",
+      "required": ["$schema", "profile", "run", "started", "finished", "lora", "lora_sha256", "settings", "sheet", "images"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/prompt"},
+        "profile": {"type": "string"},
+        "run": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z$"},
+        "started": {"$ref": "#/$defs/timestamp"},
+        "finished": {"$ref": "#/$defs/timestamp"},
+        "lora": {"type": "string"},
+        "lora_sha256": {"$ref": "#/$defs/sha256"},
+        "train_run": {"type": "string", "description": "the train/<run>.json that produced the LoRA, if known"},
+        "settings": {"type": "object", "description": "ckpt, dtype, steps, guidance, size"},
+        "sheet": {"type": "string", "description": "contact sheet: one row per prompt, one column per weight"},
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "prompt", "negative", "weight", "seed", "seconds", "blank"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {"type": "string"}, "prompt": {"type": "string"}, "negative": {"type": "string"},
+              "weight": {"type": "number", "description": "LoRA multiplier; 0 = base model"},
+              "seed": {"type": "integer"}, "seconds": {"type": "number"},
+              "blank": {"type": "boolean", "description": "all-black or all-white output (a precision failure)"}
+            }
+          }
+        }
+      }
+    },
+
     "activity": {
       "description": "prov:Activity: one stage run against a profile.",
       "type": "object",

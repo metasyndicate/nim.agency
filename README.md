@@ -14,12 +14,14 @@ nim.library list [lk5|lk5/jody]   # profiles, or one profile's files
 nim.library init lk5/jody         # resize, face-crop, caption; verdicts
 nim.library stage lk5/jody        # kohya dataset from accepted images
 nim.library train lk5/jody --epochs 1 --name lk5-jody-trial [--dry-run]
+nim.library prompt lk5/jody       # base vs LoRA renders, same seed -> sheet.png
 nim.library show lk5/jody
 nim.library check
 ```
 
-Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`. The first five
-exist; `prompt` (fixed comparison prompts) follows.
+Stages: `new` → `index` → `init` → `stage` → `train` → `prompt`, all functional.
+[MANIFEST.md](MANIFEST.md) has the pipeline chart, inventory, dependencies,
+defaults, runbook and known gaps.
 
 `init` writes `stage/` in each profile:
 - `images/<id>.png`: downscaled to a 1024 px long side, plus `<id>-face.png` when there

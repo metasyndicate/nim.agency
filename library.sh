@@ -113,3 +113,16 @@ function nim.library.stage() {
 function nim.library.train() {
     nim.fn.validate.args "${@}" || return 1
     .nim.library.py.fn train "${@}" || { nim.out.fail "library: train failed"; return 1; }; }
+
+##! @function nim.library.prompt
+##! @description render fixed prompts with and without the profile's LoRA; contact sheet in prompt/<run>/
+##! @param <ref>               <tag>/<slug>
+##! @param [--lora FILE]       LoRA (default: latest successful train run)
+##! @param [--prompt TEXT]     prompt template, repeatable ({trigger} {class} {name} {role})
+##! @param [--weights W,..]    LoRA weights (default 0,1)
+##! @param [--dry-run]         print the prompts only
+##! @return 0 on success, 1 on failure
+##! @example nim.library.prompt lk5/jody --steps 20
+function nim.library.prompt() {
+    nim.fn.validate.args "${@}" || return 1
+    .nim.library.py.fn prompt "${@}" || { nim.out.fail "library: prompt failed"; return 1; }; }

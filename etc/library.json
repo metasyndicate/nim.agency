@@ -32,6 +32,23 @@
     "epochs": 10,
     "sec_per_step": 180
   },
+  "prompt": {
+    "_doc": "settings for `prompt`. Each template renders at every weight (0 = base model, 1 = full LoRA) with the same seed. Placeholders: {trigger} {class} {name} {role}. ckpt should match train_lora.sh BASE. The VAE always runs in float32. dtype: float16 | bfloat16 | float32 (float32 exceeds 8 GB).",
+    "python": "/Volumes/mf-arc/ai/tools/sd-scripts/venv/bin/python",
+    "sd_scripts": "/Volumes/mf-arc/ai/tools/sd-scripts",
+    "ckpt": "/Volumes/mf-arc/ai/models/sd/checkpoints/Realistic_Vision_V5.1_Hyper_pruned.safetensors",
+    "prompts": [
+      "photo of {trigger} {class}, portrait, natural light",
+      "{trigger} {class} playing {role} on stage, 1990s concert photo"
+    ],
+    "negative": "blurry, deformed, lowres, bad anatomy, watermark, text",
+    "weights": [0, 1],
+    "seed": 1234,
+    "steps": 20,
+    "guidance": 7.0,
+    "size": 512,
+    "dtype": "float16"
+  },
   "keys": {
     "_doc": "--keys mapping. A key listed here fills a typed profile field; any other key goes to profile.attributes unchanged. Keys match case-insensitively.",
     "instrument": {"field": "roles", "as": "roleName"},
