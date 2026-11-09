@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# nim.library — command entry point.
+#
+#   nim.library new profile --type character|group --tag TAG --name NAME [--text P] [--images P] [--keys "[K:V,...]"]
+#   nim.library index REF | list [TAG|REF] | show REF | check [REF]
+#
+# Boots the metashell when reachable and registers this subsystem through
+# nim.mod.register; the work itself is the python engine either way.
+# Global flag --root DIR goes BEFORE the command.
+set -uo pipefail
+
+_real="$(readlink -f "${BASH_SOURCE[0]}")"
+NIM_LIBRARY_HOME="$(cd "$(dirname "${_real}")/.." && pwd)"
+export NIM_LIBRARY_HOME
+
+_init="${NIM_METASHELL:-/usr/local/nim/sh}/etc/nim.init.sh"
+set +u  # the metashell reads optional env vars unguarded
+if [[ -r ${_init} ]] && source "${_init}" >/dev/null 2>&1 \
+    && declare -F nim.mod.register >/dev/null; then
+    nim.mod.register "${NIM_LIBRARY_HOME}" >/dev/null 2>&1 || true
+fi
+set -u
+
+PYTHONPATH="${NIM_LIBRARY_HOME}/lib${PYTHONPATH:+:${PYTHONPATH}}" exec python3 -m library "$@"
