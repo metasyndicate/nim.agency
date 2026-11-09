@@ -1,6 +1,9 @@
 # NIM LIBRARY — MANIFEST
 
-Component inventory, state snapshot and operator runbook. Revision 26.11.8.x.
+Component inventory, state snapshot and operator runbook. Revision 26.11.9.x.
+
+Lives in nim.agency as the `library` extension (`ext/library`, merged by `git subtree`
+from the former nim.library repo); `nim.agency library ...` runs `bin/nim.library ...`.
 
 Profile library for generative character work: one profile per subject (a band
 member, or the band), built from raw text and image archives plus a few keys,
@@ -116,7 +119,7 @@ Entry points: `nim.library <command>` (bin), or `nim.library.<command>` after
 
 - **nim.metashell** — `library.sh` is a standard module (`nim.source core fn log
   output validate`, `##!` docs, `nim.fn.help nim.library.<cmd>`); registered
-  with `nim.mod.register /usr/local/nim/library` (symlink to this repo).
+  with `nim.mod.register /usr/local/nim/library` (symlink to this directory).
   Registering through a symlink needed the `find -H` fix in `nim.source`
   (metashell branch `claude/source-follow-symlinks`). `bin/nim.library` boots
   the metashell with `set +u` then hands off to python.
@@ -202,4 +205,4 @@ nim.library check lk5/jody
 - No `group` profile trained yet; the group roster is kept but has no dataset.
 - `train` runs in the foreground; long runs should be started under
   `nohup`/`tmux` (no detach or resume).
-- No GitHub remote for this repo yet.
+- Not yet sharing agency's validator, datastore or persona model (see agency MANIFEST).

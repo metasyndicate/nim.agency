@@ -61,3 +61,9 @@ data/agency/hive/depot/.vault/
 tools/persona/raw/
 tools/persona/*.json
 tools/onet_pdf_text/
+
+# ext/ subsystems are merged subtrees with their own layout: keep their
+# metashell manifests and prompt stage tracked despite the patterns above
+!ext/*/.nim
+!ext/*/.nim/**
+!ext/**/*prompt*

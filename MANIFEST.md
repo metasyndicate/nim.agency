@@ -1,6 +1,6 @@
 # NIM AGENCY — MANIFEST
 
-Component inventory and state snapshot. Revision 26.7.14.x.
+Component inventory and state snapshot. Revision 26.11.9.x.
 
 ## LAYOUT
 
@@ -24,6 +24,8 @@ nim.agency/
 ├── lex/            flavor vocabulary CSVs, described by csv-metadata.json (W3C CSVW)
 ├── tui/            curses HUD: builder.py core shell + chrome.py (draw
 │                   primitives) + mugshots.py + views/*.py screen mixins
+├── ext/            optional extensions, one subtree each (ext/<name>/extension.json);
+│   └── library/    character-profile library (own bin/, lib/, etc/, tests/, MANIFEST.md)
 ├── log/            mission reports & mission JSON (gitignored)
 └── arc/            archives — drafts, retired artifacts (gitignored)
 ```
@@ -52,6 +54,8 @@ Single canonical entry point: `bin/nim.agency <component> <action> [--flags]`
 | `install env\|doctor\|create\|list\|show\|remove` | `lib/cli/install.py` → `lib/install/` | instance setup: home resolution (`--home` > `NIM_HOME` > config > legacy `~/.nim/agency` > platform data dir; write-probed, sources reported), PEP 405 venv with PEP 735 dependency groups, PEP 668 aware, schema'd receipts; `doctor` checks (`--json`, exit 1 on fail). `bin/nim.agency` and `tools/easme` re-exec into the `default` instance's venv (`NIM_NO_VENV=1` opts out) | functional (I1-I5; update/repair, locks, Windows/Linux runs open) |
 | `lex groups\|show\|random\|salad\|name\|check` | `lib/cli/lex.py` → `lib/data/lex.py` | flavor vocabulary: tables read by their CSVW description; seeded phrase/salad/name composition (port of the retired `lex/taxonomy.sh`); `check` conforms files to `lex/csv-metadata.json` | functional |
 | `tui` | `lib/cli/__init__.py` → `tui/builder.py` | curses HUD: roster/dossier (op-profile, service record, edit form), create, dispatch (briefing gate + live events, direct from dossier/crue), missions browser, ledger, dojo, crues + member picker, stats, type foundry (min 80x24) | functional |
+| `ext list` | `lib/cli/ext.py` → `lib/extensions.py` | installed extensions, versions, entry points; manifests that fail to load are named on stderr | functional |
+| `<extension> [ARGS...]` (e.g. `library list`) | `lib/cli/ext.py` `forward()` | runs `ext/<name>/<command>` as a child process with ARGS untouched (its own flags and help), returning its exit code; names of core components cannot be taken | functional |
 | Programmatic (Python) | `lib.data`, `lib.dispatch` | see README "Programmatic" | functional |
 
 Shared mission flags (`dispatch`, `mission plan`):
@@ -93,6 +97,8 @@ the briefing rather than answered from imagination.
 | MissionBuilder + templates | `lib/dispatch/builder.py` | fluent builder; `codebase`/`security` templates | stable |
 | Dispatcher | `lib/dispatch/dispatcher.py` | async execution, dependency ordering, report assembly (on success and failure); records provider policy refusals to the agent conduct ledger; drives project engagement transitions for project-tagged missions | stable |
 | Briefing | `lib/dispatch/briefing.py` | centralized mission disclosure renderer (verbosity 0/-v/-vv); single scope authority (`mission_scope`) shared with dispatcher | stable |
+| Extensions | `lib/extensions.py` + `ext/*/extension.json` | optional subsystems merged with `git subtree` (history kept; `git subtree split` takes one back out). Core never imports extension code; deleting `ext/<name>` removes only that extension. Manifest: name (= directory), version, summary, command, tests | functional |
+| Library extension | `ext/library/` | profiles of real people (band members) built from text and image archives, reviewed, staged as a kohya dataset, trained into a LoRA, checked with prompt renders; see `ext/library/MANIFEST.md` | functional (prototype) |
 | CLI | `lib/cli/` | argparse command modules behind `bin/nim.agency` | stable |
 | Syndicate inventory | `lib/dispatch/syndicate.py` + `data/agency/data/syndicates/` | multivalued model-provider inventory: address resolution (`syndicate[:channel]`), capability derivation from mission constraints, dependency closure, channel validation (dependency gaps + transport ceiling), and the `capability_violation` dispatch gate | functional |
 | Providers | `lib/dispatch/provider.py` | one class per transport: `ClaudeCliProvider` (subprocess harness), `OllamaProvider` (`/api/generate`), `OllamaChatProvider` (`/api/chat`, tool calls), `OpenAICompatProvider` (`/v1/chat/completions`, tool calls); registry resolves the handler named by the `transport` table; stdlib-only HTTP (urllib on a worker thread); tool-call transports take the agency-harness path when a task is offered functions, single-shot otherwise; tasks without tools get an explicit no-tools notice so they cannot narrate inspections they never performed | functional |
@@ -134,6 +140,10 @@ Output artifacts per mission run:
 
 ## KNOWN GAPS
 
+- Extensions are mounted, not yet integrated: `ext/library` keeps its own
+  stdlib validator, JSON/sha256 helpers and Person profile instead of
+  agency's SchemaManager, datastore and persona model. Its tests run from
+  its own directory (`cd ext/library && python3 -m unittest discover -s tests`).
 - Test coverage is seeded, not exhaustive: `tests/` covers the datastore,
   project aggregate, availability/matching, dispatch pipeline (stub
   provider), attribution, modality, and the syndicate inventory
