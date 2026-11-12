@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/finding.schema.json",
+  "title": "Finding",
+  "description": "Something a sweep found about documents or substrates, as an RFC 9457 problem: kind (type), title, detail, and the subjects it is about (plan.101526.profiles.md).",
+  "@type": [
+    "prov:Entity",
+    "nim:Finding"
+  ],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400118,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "finding",
+      "type": "schema",
+      "path": "L3.agency.core.finding"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true
+    },
+    "tag": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Target slug the record belongs to (the project slug when bound to a nim.agency project); first path segment under profiles/"
+    },
+    "scan_id": {
+      "type": "string"
+    },
+    "kind_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "finding_kind",
+        "key": "slug"
+      }
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "detail": {
+      "type": "string"
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "entity": {
+            "type": "string",
+            "enum": [
+              "document",
+              "substrate"
+            ]
+          },
+          "id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entity",
+          "id"
+        ]
+      }
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "accepted",
+        "resolved",
+        "wontfix"
+      ],
+      "default": "open"
+    },
+    "resolution": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": [
+    "id",
+    "tag",
+    "kind_slug",
+    "severity",
+    "title",
+    "subjects",
+    "status"
+  ]
+}

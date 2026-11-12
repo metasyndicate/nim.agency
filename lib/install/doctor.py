@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from . import instance
-from .paths import DEFAULT_INSTANCE, probe, resolve_home
+from .paths import DEFAULT_INSTANCE, REPO_ROOT, probe, resolve_home
+from .root import Root
 
 MIN_FREE_MB = (500, 100)       # warn below the first, fail below the second
 
@@ -96,6 +97,40 @@ def home(ctx):
         return Check("home", "fail", "no candidate is usable", "set NIM_HOME to a "
                      "writable directory")
     return Check("home", "ok", f"{resolved.path}  ({resolved.source})")
+
+
+@check
+def instance_root(ctx):
+    """This checkout is coupled to a valid instance root that names it"""
+    root = Root(ctx.name)
+    coupled = root.coupling.read()
+    if coupled is None:
+        return Check("instance_root", "warn", "this checkout has no instance root yet",
+                     "nim.agency install couple")
+    path, source = coupled
+    failures = [c for c in root.validate.run(path) if c.status == "fail"]
+    if failures:
+        return Check("instance_root", "fail", f"{path} ({source}): " + "; ".join(
+            f"{c.id}: {c.detail}" for c in failures),
+            "nim.agency install couple --home <path>, or install adopt if the "
+            "checkout moved")
+    record = Root.Identity.read(path)
+    if record is None:
+        return Check("instance_root", "fail", f"{path} ({source}) has no instance.json",
+                     "nim.agency install couple")
+    return Check("instance_root", "ok", f"{path}  instance {record['id']} "
+                                        f"({record.get('scope')}, {source})")
+
+
+@check
+def coupling_ignored(ctx):
+    """data/local is ignored by git, so instance data cannot be committed"""
+    result = Root.Validate.shippable(REPO_ROOT / "data" / "local")
+    if result.status == "fail":
+        return Check("coupling_ignored", "fail", result.detail,
+                     "add data/local and data/local.json to .gitignore")
+    return Check("coupling_ignored", "warn" if result.status == "skip" else "ok",
+                 result.detail)
 
 
 @check

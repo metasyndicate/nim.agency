@@ -1,0 +1,238 @@
+{
+  "$schema": "../schema/reference/render_target.schema.json",
+  "$comment": "Render targets (profiles C5)",
+  "data": [
+    {
+      "id": 1,
+      "slug": "agents_md",
+      "label": "AGENTS.md",
+      "description": "Root agent instructions for Codex and Copilot.",
+      "harness_slugs": [
+        "codex_cli",
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "doc_kind_slug": "agents_md",
+      "path": "AGENTS.md",
+      "format": "markdown",
+      "merge": "single",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "claude_md",
+      "label": "CLAUDE.md",
+      "description": "Claude Code project memory.",
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "doc_kind_slug": "claude_md",
+      "path": "CLAUDE.md",
+      "format": "markdown",
+      "merge": "single",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "verified": null,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "gemini_md",
+      "label": "GEMINI.md",
+      "description": "Gemini CLI context.",
+      "harness_slugs": [
+        "gemini_cli"
+      ],
+      "doc_kind_slug": "gemini_md",
+      "path": "GEMINI.md",
+      "format": "markdown",
+      "merge": "single",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://geminicli.com/docs/cli/gemini-md"
+        ]
+      },
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "copilot_instructions",
+      "label": "Copilot repository instructions",
+      "description": "Repository-wide Copilot instructions.",
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "doc_kind_slug": "copilot_instructions",
+      "path": ".github/copilot-instructions.md",
+      "format": "markdown",
+      "merge": "single",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "copilot_scoped",
+      "label": "Copilot path-specific instructions",
+      "description": "One file per facet scope, with applyTo.",
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "doc_kind_slug": "scoped_instructions",
+      "path": ".github/instructions/{slug}.instructions.md",
+      "format": "markdown_frontmatter",
+      "merge": "scoped",
+      "substrate_kinds": [
+        "instruction",
+        "directive"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "claude_agent",
+      "label": "Claude Code subagent",
+      "description": "One subagent per profile.",
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "doc_kind_slug": "claude_agent",
+      "path": ".claude/agents/{slug}.md",
+      "format": "markdown_frontmatter",
+      "merge": "per_substrate",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "access",
+        "persona"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://code.claude.com/docs/en/sub-agents"
+        ]
+      },
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "copilot_agent",
+      "label": "Copilot custom agent",
+      "description": "One custom agent per profile.",
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "doc_kind_slug": "copilot_agent",
+      "path": ".github/agents/{slug}.agent.md",
+      "format": "markdown_frontmatter",
+      "merge": "per_substrate",
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "access",
+        "persona"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli"
+        ],
+        "note": "directory verified; .agent.md suffix from prior knowledge"
+      },
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "skill",
+      "label": "Agent Skill",
+      "description": "One package per skill substrate.",
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "doc_kind_slug": "skill",
+      "path": ".claude/skills/{slug}/SKILL.md",
+      "format": "markdown_frontmatter",
+      "merge": "per_substrate",
+      "substrate_kinds": [
+        "skill"
+      ],
+      "verified": null,
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "claude_command",
+      "label": "Claude Code command",
+      "description": "One command per prompt substrate.",
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "doc_kind_slug": "claude_command",
+      "path": ".claude/commands/{slug}.md",
+      "format": "markdown",
+      "merge": "per_substrate",
+      "substrate_kinds": [
+        "prompt"
+      ],
+      "verified": null,
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "copilot_prompt",
+      "label": "Copilot prompt file",
+      "description": "One prompt file per prompt substrate.",
+      "harness_slugs": [
+        "copilot_editor"
+      ],
+      "doc_kind_slug": "prompt",
+      "path": ".github/prompts/{slug}.prompt.md",
+      "format": "markdown_frontmatter",
+      "merge": "per_substrate",
+      "substrate_kinds": [
+        "prompt"
+      ],
+      "verified": null,
+      "sort_order": 10
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/doc_form.schema.json",
+  "title": "Document Form",
+  "description": "Diátaxis form of a document, plus record and mixed. A mixed document is a finding.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400049,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "doc_form",
+      "type": "schema",
+      "path": "L2.agency.reference.doc_form"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "diataxis": {
+      "type": "boolean",
+      "description": "One of the four Diátaxis forms"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "diataxis"
+  ]
+}

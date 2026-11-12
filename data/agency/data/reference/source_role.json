@@ -1,0 +1,46 @@
+{
+  "$schema": "../schema/reference/source_role.schema.json",
+  "$comment": "Source roles",
+  "data": [
+    {
+      "id": 1,
+      "slug": "authoritative",
+      "label": "Authoritative",
+      "description": "The accepted source of truth (imported substrates, rendered outputs' origin).",
+      "authoritative": true,
+      "swept": true,
+      "indexed": true,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "candidate",
+      "label": "Candidate",
+      "description": "A scan target whose documents are swept for findings.",
+      "authoritative": false,
+      "swept": true,
+      "indexed": true,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "reference",
+      "label": "Reference",
+      "description": "Auxiliary library (e.g. nim.agent.docs): indexed for duplicate matching, never swept, never authoritative.",
+      "authoritative": false,
+      "swept": false,
+      "indexed": true,
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "intake",
+      "label": "Intake",
+      "description": "Material awaiting reconciliation: indexed and matched, not swept.",
+      "authoritative": false,
+      "swept": false,
+      "indexed": true,
+      "sort_order": 4
+    }
+  ]
+}

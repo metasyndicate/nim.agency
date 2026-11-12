@@ -232,7 +232,11 @@ def within_bound(within: dict, via_ref: Optional[dict], record: dict,
 
 
 def is_operator_local(ds, entity: str) -> bool:
-    return bool(ds.ENTITY_CONFIG.get(entity, {}).get("local_storage"))
+    """Records that live outside the checkout (operator home or instance
+    root): a reference into them that does not resolve here is unbound,
+    not dangling - this host may simply not hold them."""
+    config = ds.ENTITY_CONFIG.get(entity, {})
+    return bool(config.get("local_storage") or config.get("scope") == "instance")
 
 
 def schema_name(ds, entity: str) -> str:

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/substrate_kind.schema.json",
+  "title": "Substrate Kind",
+  "description": "Kinds of substrate: the addressable units a profile is composed of (plan.101526.profiles.md).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400045,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "substrate_kind",
+      "type": "schema",
+      "path": "L2.agency.reference.substrate_kind"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "body": {
+      "type": "string",
+      "description": "Name of the body definition in substrate.schema.json $defs"
+    },
+    "normative": {
+      "type": "boolean",
+      "description": "Carries a requirement level (conflicts are detectable mechanically)"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "body",
+    "normative"
+  ]
+}

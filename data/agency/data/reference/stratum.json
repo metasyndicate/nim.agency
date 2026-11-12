@@ -1,0 +1,60 @@
+{
+  "$schema": "../schema/reference/stratum.schema.json",
+  "$comment": "Precedence strata, lowest first",
+  "data": [
+    {
+      "id": 1,
+      "slug": "distribution",
+      "label": "Distribution",
+      "description": "Shipped with nim.agency: the default profile baseline.",
+      "rank": 1,
+      "priority_band": 10,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "org",
+      "label": "Organization",
+      "description": "Organization-wide conventions.",
+      "rank": 2,
+      "priority_band": null,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "project",
+      "label": "Project",
+      "description": "One target project's conventions.",
+      "rank": 3,
+      "priority_band": null,
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "role",
+      "label": "Role",
+      "description": "An archetype or engagement role within a project.",
+      "rank": 4,
+      "priority_band": 50,
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "agent",
+      "label": "Agent",
+      "description": "One agent.",
+      "rank": 5,
+      "priority_band": 70,
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "session",
+      "label": "Session",
+      "description": "One session or mission.",
+      "rank": 6,
+      "priority_band": null,
+      "sort_order": 6
+    }
+  ]
+}

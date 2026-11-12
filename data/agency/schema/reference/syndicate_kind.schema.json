@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/syndicate_kind.schema.json",
+  "title": "Syndicate Kind",
+  "description": "What kind of syndicate serves inference: who owns the harness, who owns authentication, and how much of the control plane the agency holds (plan.101526.syndicate.md). Displayed as '<kind> syndicate'.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400054,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "syndicate_kind",
+      "type": "schema",
+      "path": "L2.agency.reference.syndicate_kind"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "display": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Label used everywhere a syndicate is shown, e.g. 'rogue syndicate'"
+    },
+    "harness_owner": {
+      "type": "string",
+      "enum": [
+        "vendor",
+        "agency"
+      ],
+      "description": "vendor: the vendor's harness runs the tool loop; agency: the nim harness does"
+    },
+    "auth_owner": {
+      "type": "string",
+      "enum": [
+        "vendor",
+        "agency"
+      ],
+      "description": "vendor: the vendor's sign-in or key; agency: none, or a vaulted credential"
+    },
+    "control_plane": {
+      "type": "string",
+      "enum": [
+        "full",
+        "limited"
+      ],
+      "description": "full: the agency controls host, process, and shell; limited: only what the vendor's harness exposes"
+    },
+    "vendor_required": {
+      "type": "boolean",
+      "description": "Whether a syndicate of this kind must name a vendor"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "display",
+    "harness_owner",
+    "auth_owner",
+    "control_plane",
+    "vendor_required"
+  ]
+}

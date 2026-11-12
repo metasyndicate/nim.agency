@@ -1,0 +1,54 @@
+{
+  "$schema": "../schema/reference/doc_form.schema.json",
+  "$comment": "Diátaxis forms (diataxis.fr) plus record and mixed",
+  "data": [
+    {
+      "id": 1,
+      "slug": "tutorial",
+      "label": "Tutorial",
+      "description": "Learning-oriented: a lesson.",
+      "diataxis": true,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "how_to",
+      "label": "How-to guide",
+      "description": "Task-oriented: steps to a goal.",
+      "diataxis": true,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "reference",
+      "label": "Reference",
+      "description": "Information-oriented: describes the machinery.",
+      "diataxis": true,
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "explanation",
+      "label": "Explanation",
+      "description": "Understanding-oriented: context and reasoning.",
+      "diataxis": true,
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "record",
+      "label": "Record",
+      "description": "Status, log, plan, or journal: true as of a date.",
+      "diataxis": false,
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "mixed",
+      "label": "Mixed",
+      "description": "Combines forms; split or classify.",
+      "diataxis": false,
+      "sort_order": 6
+    }
+  ]
+}

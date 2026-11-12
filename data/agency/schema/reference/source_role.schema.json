@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/source_role.schema.json",
+  "title": "Source Role",
+  "description": "What authority a scanned source carries and how a sweep treats it.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400047,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "source_role",
+      "type": "schema",
+      "path": "L2.agency.reference.source_role"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "authoritative": {
+      "type": "boolean"
+    },
+    "swept": {
+      "type": "boolean",
+      "description": "Checked for findings"
+    },
+    "indexed": {
+      "type": "boolean",
+      "description": "Hashed and matched against targets (duplicate detection)"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "authoritative",
+    "swept",
+    "indexed"
+  ]
+}

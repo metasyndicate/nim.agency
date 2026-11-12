@@ -31,7 +31,8 @@ class DatastoreCase(unittest.TestCase):
         syndicates = REPO / "data/agency/data/syndicates"
         if syndicates.exists():
             shutil.copytree(syndicates, cls.tmp / "syndicates")
-        cls.ds = DataStore(base_path=str(cls.tmp))
+        # Instance-scoped records (profiles) live in a temp instance root
+        cls.ds = DataStore(base_path=str(cls.tmp), instance_path=str(cls.tmp / "instance"))
 
     @classmethod
     def tearDownClass(cls):

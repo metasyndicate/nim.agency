@@ -1,16 +1,22 @@
 """
 `nim.agency install` - set up, check, and manage agency instances.
 
-    install env                         resolved paths, why each was chosen, NIM_* variables
+    install env                         resolved paths, why each was chosen, NIM_* variables,
+                                        and the instance root with every candidate's checks
     install doctor [--json] [--list-checks]
+    install couple [--name N] [--home P] [--dry-run]
+    install adopt  [--name N] [--home P] --yes | --dry-run
     install create [--name N] [--group G ...] [--home P] [--venv P] [--recreate] [--dry-run]
     install list | show [NAME] | remove NAME --yes
 
-An instance is a virtual environment carrying pyproject dependency groups
-(PEP 735) plus a receipt; bin/nim.agency runs inside the `default`
-instance's venv when one exists (NIM_NO_VENV=1 opts out). Nothing here
-edits shell rc files, uses sudo, or installs into the base interpreter.
-Plan of record: .nim/work/plan.101426.installer.md
+An instance is one instance root (instance.json, class directories, coupled
+to this checkout through data/local) plus a virtual environment carrying
+pyproject dependency groups (PEP 735) and a receipt. `create` couples
+first; `couple` alone needs no venv. bin/nim.agency runs inside the
+`default` instance's venv when one exists (NIM_NO_VENV=1 opts out).
+Nothing here edits shell rc files, uses sudo, or installs into the base
+interpreter. Plans of record: .nim/work/plan.101426.installer.md,
+.nim/work/plan.101526.instance.md
 """
 
 import json
@@ -20,9 +26,11 @@ import sys
 from ..install import doctor as doctor_mod
 from ..install import instance
 from ..install.paths import DEFAULT_INSTANCE, platform_dirs, resolve_home, resolve_venv
+from ..install.root import Root, RootError
 
 ENV_VARS = ("NIM_HOME", "NIM_VENV", "NIM_NO_VENV", "NIM_IN_VENV",
-            "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "LOCALAPPDATA")
+            "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CONFIG_HOME", "LOCALAPPDATA",
+            "PROGRAMDATA")
 MARK = {"ok": "\033[92m ok \033[0m", "warn": "\033[93mwarn\033[0m",
         "fail": "\033[91mfail\033[0m"}
 
@@ -35,12 +43,35 @@ def _show_resolution(resolved) -> None:
               f"{c.path}  [{verdict}]")
 
 
+def _show_root(result, indent: str = "  ") -> None:
+    """An instance root resolution: the answer, then each candidate with
+    every check that did not pass."""
+    answer = "REFUSED" if result.refused else (result.root or "none valid")
+    scope = f"  [{result.scope}]" if result.scope else ""
+    print(f"{indent}root  {answer}   <- {result.source}{scope}")
+    for c in result.candidates:
+        mark = "*" if c.verdict == "chosen" else " "
+        print(f"{indent}      {mark} {c.scope:<8} {c.path}  [{c.verdict}]")
+        for check in c.checks:
+            if check.status != "ok":
+                print(f"{indent}          {check.status:<4} {check.id:<12} {check.detail}")
+    if result.suggestion:
+        print(f"{indent}suggestion (the enumeration; not used - pass it with --home to accept):")
+        _show_root(result.suggestion, indent + "  ")
+
+
 def cmd_env(args) -> int:
     home = resolve_home(args.home)
     print("RESOLUTION (first usable candidate wins)")
     _show_resolution(home)
     if home.path:
         _show_resolution(resolve_venv(home.path, args.name, args.venv))
+    print("\nINSTANCE ROOT (plan.101526.instance.md; reported only - the runtime "
+          "uses 'home' above until the migration)")
+    root = Root(args.name).resolve(args.home)
+    _show_root(root)
+    if root.root:
+        print(f"  venv  {Root.layout(root.root)['venv']}   <- runtime/ class of the root")
     print("\nPLATFORM DIRECTORIES (app 'nim')")
     for key, path in platform_dirs().items():
         print(f"  {key:<7} {path}")
@@ -90,6 +121,10 @@ def cmd_create(args) -> int:
     if instance.externally_managed():
         print("note      base interpreter is externally managed (PEP 668); "
               "everything installs into the venv")
+    print()
+    coupled = _couple(args.name, args.home, adopt=False, dry_run=args.dry_run)
+    if coupled != 0:
+        return coupled
     if args.dry_run:
         print("dry run: nothing created")
         return 0
@@ -105,6 +140,40 @@ def cmd_create(args) -> int:
         print("bin/nim.agency now runs inside this venv (NIM_NO_VENV=1 to opt out).")
     print("check it: nim.agency install doctor")
     return 0
+
+
+def _couple(name: str, home, adopt: bool, dry_run: bool) -> int:
+    """Resolve the instance root and make it this checkout's: the ceremony
+    shared by couple, adopt, and create."""
+    root = Root(name)
+    resolution = root.resolve(home, adopt=adopt)
+    verb = "ADOPT" if adopt else "COUPLE"
+    print(f"{verb} instance {name}" + ("  (dry run)" if dry_run else ""))
+    _show_root(resolution)
+    try:
+        record, actions = root.establish(resolution, dry_run=dry_run)
+    except RootError as exc:
+        print(f"\033[91mrefused: {exc}\033[0m", file=sys.stderr)
+        return 1
+    for line in actions or ["nothing to change"]:
+        print(f"  {line}")
+    if not dry_run:
+        print(f"instance {record['id']} ({record['scope']}) coupled: "
+              f"{resolution.root}")
+    return 0
+
+
+def cmd_couple(args) -> int:
+    return _couple(args.name, args.home, adopt=False, dry_run=args.dry_run)
+
+
+def cmd_adopt(args) -> int:
+    if not args.yes and not args.dry_run:
+        _couple(args.name, args.home, adopt=True, dry_run=True)
+        print("refused: adopting takes an instance over from another checkout; "
+              "add --yes", file=sys.stderr)
+        return 2
+    return _couple(args.name, args.home, adopt=True, dry_run=args.dry_run)
 
 
 def cmd_list(args) -> int:
@@ -169,6 +238,21 @@ def add_parser(subparsers):
                         help="Rebuild an existing instance's venv")
     create.add_argument("--dry-run", action="store_true")
     create.set_defaults(func=cmd_create)
+
+    couple = actions.add_parser("couple", help="Make the resolved instance root this "
+                                "checkout's: class directories, instance.json, data/local")
+    couple.add_argument("--name", default=DEFAULT_INSTANCE)
+    couple.add_argument("--home", help="Instance root (overrides NIM_HOME and the coupling)")
+    couple.add_argument("--dry-run", action="store_true")
+    couple.set_defaults(func=cmd_couple)
+
+    adopt = actions.add_parser("adopt", help="Couple to a root another checkout claimed "
+                               "(moved or recloned checkout)")
+    adopt.add_argument("--name", default=DEFAULT_INSTANCE)
+    adopt.add_argument("--home", help="Instance root to adopt")
+    adopt.add_argument("--yes", action="store_true")
+    adopt.add_argument("--dry-run", action="store_true")
+    adopt.set_defaults(func=cmd_adopt)
 
     lst = actions.add_parser("list", help="List instances")
     lst.set_defaults(func=cmd_list)

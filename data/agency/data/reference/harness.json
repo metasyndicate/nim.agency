@@ -1,0 +1,124 @@
+{
+  "$schema": "../schema/reference/harness.schema.json",
+  "$comment": "Harnesses that run tool loops and read rendered profiles (render targets bind here)",
+  "data": [
+    {
+      "id": 1,
+      "slug": "claude_code",
+      "label": "Claude Code",
+      "description": "Anthropic's agentic CLI; dispatched today through the claude_cli transport.",
+      "vendor_slug": "anthropic",
+      "binary": "claude",
+      "version_args": [
+        "--version"
+      ],
+      "transport_slug": "claude_cli",
+      "auth_method_slugs": [
+        "api_key",
+        "subscription_login"
+      ],
+      "docs_url": "https://docs.claude.com/en/docs/claude-code/overview",
+      "verified": null,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "codex_cli",
+      "label": "Codex CLI",
+      "description": "OpenAI's agentic CLI.",
+      "vendor_slug": "openai",
+      "binary": "codex",
+      "version_args": [
+        "--version"
+      ],
+      "transport_slug": null,
+      "auth_method_slugs": [
+        "api_key",
+        "subscription_login"
+      ],
+      "docs_url": "https://developers.openai.com/codex/cli",
+      "verified": null,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "gemini_cli",
+      "label": "Gemini CLI",
+      "description": "Google's agentic CLI.",
+      "vendor_slug": "google",
+      "binary": "gemini",
+      "version_args": [
+        "--version"
+      ],
+      "transport_slug": null,
+      "auth_method_slugs": [
+        "api_key",
+        "oauth_login"
+      ],
+      "docs_url": "https://geminicli.com/docs",
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://geminicli.com/docs/cli/gemini-md"
+        ]
+      },
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "copilot_cli",
+      "label": "Copilot CLI",
+      "description": "GitHub Copilot's agentic CLI.",
+      "vendor_slug": "github",
+      "binary": "copilot",
+      "version_args": [
+        "--version"
+      ],
+      "transport_slug": null,
+      "auth_method_slugs": [
+        "oauth_login"
+      ],
+      "docs_url": "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli",
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli"
+        ]
+      },
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "copilot_editor",
+      "label": "Copilot (editor)",
+      "description": "GitHub Copilot in VS Code and other editors; reads the same repository instruction and agent files.",
+      "vendor_slug": "github",
+      "binary": null,
+      "version_args": [],
+      "transport_slug": null,
+      "auth_method_slugs": [
+        "oauth_login"
+      ],
+      "docs_url": "https://docs.github.com/en/copilot",
+      "verified": null,
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "nim",
+      "label": "nim harness",
+      "description": "The agency's own tool loop (lib/dispatch/harness/) for rogue and gateway syndicates.",
+      "vendor_slug": null,
+      "binary": null,
+      "version_args": [],
+      "transport_slug": null,
+      "auth_method_slugs": [
+        "none",
+        "vault_credential",
+        "api_key"
+      ],
+      "verified": null,
+      "sort_order": 6
+    }
+  ]
+}

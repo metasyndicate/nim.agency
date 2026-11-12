@@ -44,5 +44,39 @@
     "mission_bonus_gold": 5,
     "skill_points_per_rank": 10,
     "max_tool_proficiency": 3
+  },
+  "profiles": {
+    "_": "profiles scan (plan.101526.profiles.md): exclude: names or relative-path globs pruned from every walk (vaults and keys included); index_only: archive-like directories whose documents are matched for duplicates but never swept; markdown larger than max_file_bytes is skipped and reported; stale = a document older than what it references by more than stale_days; near_duplicate = the shared-line jaccard (or containment) that counts as a near copy",
+    "exclude": [
+      ".git",
+      ".vault",
+      ".ssh",
+      ".hg",
+      ".svn",
+      "node_modules",
+      ".venv",
+      "venv",
+      "__pycache__",
+      ".mypy_cache",
+      ".pytest_cache",
+      ".ruff_cache",
+      ".tox",
+      ".nox",
+      "site-packages",
+      "*.egg-info",
+      "dist",
+      "build",
+      ".DS_Store",
+      ".idea"
+    ],
+    "index_only": [
+      "arc",
+      ".arc",
+      "archive",
+      "archives"
+    ],
+    "max_file_bytes": 1048576,
+    "stale_days": 30,
+    "near_duplicate": 0.8
   }
 }

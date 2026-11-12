@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/document.schema.json",
+  "title": "Document",
+  "description": "One scanned file of a target: what kind it is, who reads it, what it references, and how it is dated (plan.101526.profiles.md).",
+  "@type": [
+    "schema:DigitalDocument",
+    "prov:Entity"
+  ],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400116,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "document",
+      "type": "schema",
+      "path": "L3.agency.core.document"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true
+    },
+    "tag": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Target slug the record belongs to (the project slug when bound to a nim.agency project); first path segment under profiles/"
+    },
+    "scan_id": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Relative to the target root"
+    },
+    "doc_kind_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "doc_kind",
+        "key": "slug"
+      }
+    },
+    "doc_form_slug": {
+      "x-nim-ref": {
+        "entity": "doc_form",
+        "key": "slug"
+      },
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_role_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "source_role",
+        "key": "slug"
+      }
+    },
+    "git_state": {
+      "type": "string",
+      "enum": [
+        "tracked",
+        "untracked",
+        "ignored",
+        "none"
+      ],
+      "description": "none: not inside a git work tree"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "lines": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "frontmatter": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "form": {
+            "type": "string",
+            "enum": [
+              "link",
+              "path"
+            ]
+          },
+          "resolved": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Resolved path relative to the target root; null = dead"
+          }
+        },
+        "required": [
+          "target",
+          "line",
+          "form",
+          "resolved"
+        ]
+      }
+    },
+    "dated": {
+      "type": "object",
+      "properties": {
+        "modified": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "git",
+            "mtime"
+          ]
+        }
+      },
+      "required": [
+        "modified",
+        "source"
+      ]
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": [
+    "id",
+    "tag",
+    "path",
+    "doc_kind_slug",
+    "source_role_slug",
+    "git_state",
+    "sha256",
+    "dated"
+  ]
+}

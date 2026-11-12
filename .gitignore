@@ -41,6 +41,12 @@ data/agency/data/groups/
 data/agency/data/missions/
 data/agency/data/transactions/
 
+# Instance root coupling (.nim/work/plan.101526.instance.md): data/local is a
+# link to this checkout's instance root (or, in project scope, the root itself);
+# data/local.json is the pointer used where symlinks are unavailable.
+data/local
+data/local.json
+
 # The depot vault holds live key material - never distributed, no exceptions.
 data/agency/hive/depot/.vault/
 

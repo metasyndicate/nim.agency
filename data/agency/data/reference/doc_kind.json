@@ -1,0 +1,445 @@
+{
+  "$schema": "../schema/reference/doc_kind.schema.json",
+  "$comment": "Document kinds, matched in sort_order (first wins)",
+  "data": [
+    {
+      "id": 1,
+      "slug": "agents_md",
+      "label": "AGENTS.md",
+      "description": "Agent instructions read by Codex (override, then AGENTS.md, root to cwd, 32 KiB combined), Copilot (nearest wins), and Gemini when configured.",
+      "patterns": [
+        "AGENTS.md",
+        "**/AGENTS.md",
+        "AGENTS.override.md",
+        "**/AGENTS.override.md"
+      ],
+      "harness_slugs": [
+        "codex_cli",
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": true,
+      "frontmatter": {},
+      "max_bytes": 32768,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://learn.chatgpt.com/docs/agent-configuration/agents-md",
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "claude_md",
+      "label": "CLAUDE.md",
+      "description": "Claude Code memory file; Copilot also reads a root CLAUDE.md.",
+      "patterns": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "CLAUDE.local.md",
+        ".claude/CLAUDE.md"
+      ],
+      "harness_slugs": [
+        "claude_code",
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": true,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ],
+        "note": "Copilot reading a root CLAUDE.md verified; Claude Code paths from prior knowledge"
+      },
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "gemini_md",
+      "label": "GEMINI.md",
+      "description": "Gemini CLI context file (hierarchical, concatenated).",
+      "patterns": [
+        "GEMINI.md",
+        "**/GEMINI.md"
+      ],
+      "harness_slugs": [
+        "gemini_cli",
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": true,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://geminicli.com/docs/cli/gemini-md",
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "copilot_instructions",
+      "label": "Copilot repository instructions",
+      "description": "Repository-wide Copilot instructions.",
+      "patterns": [
+        ".github/copilot-instructions.md"
+      ],
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": true,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "context"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "scoped_instructions",
+      "label": "Path-specific instructions",
+      "description": "NAME.instructions.md with an applyTo glob (Copilot); the EASME convention uses the same suffix.",
+      "patterns": [
+        ".github/instructions/**/*.instructions.md"
+      ],
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": false,
+      "frontmatter": {
+        "applyTo": {
+          "required": true
+        }
+      },
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions"
+        ]
+      },
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "claude_agent",
+      "label": "Claude Code subagent",
+      "description": "Project subagent: markdown with YAML frontmatter; the body is its system prompt.",
+      "patterns": [
+        ".claude/agents/**/*.md"
+      ],
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "hub": false,
+      "frontmatter": {
+        "name": {
+          "required": true,
+          "max_length": 256,
+          "pattern": "^[^:]+$"
+        },
+        "description": {
+          "required": true
+        }
+      },
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "access",
+        "persona"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://code.claude.com/docs/en/sub-agents"
+        ]
+      },
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "copilot_agent",
+      "label": "Copilot custom agent",
+      "description": "Custom agent profile in .github/agents (repository scope).",
+      "patterns": [
+        ".github/agents/**/*.md"
+      ],
+      "harness_slugs": [
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": false,
+      "frontmatter": {
+        "description": {
+          "required": true
+        }
+      },
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "access",
+        "persona"
+      ],
+      "record": false,
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli"
+        ],
+        "note": "location verified; frontmatter contract from prior knowledge"
+      },
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "skill",
+      "label": "Agent Skill",
+      "description": "SKILL.md package (Agent Skills format).",
+      "patterns": [
+        ".claude/skills/**/SKILL.md",
+        ".github/skills/**/SKILL.md"
+      ],
+      "harness_slugs": [
+        "claude_code",
+        "copilot_cli",
+        "copilot_editor"
+      ],
+      "hub": false,
+      "frontmatter": {
+        "name": {
+          "required": true,
+          "max_length": 64,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "description": {
+          "required": true,
+          "max_length": 1024
+        }
+      },
+      "max_bytes": null,
+      "substrate_kinds": [
+        "skill"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "prompt",
+      "label": "Prompt file",
+      "description": "Reusable prompt (*.prompt.md) in .github/prompts.",
+      "patterns": [
+        ".github/prompts/**/*.prompt.md"
+      ],
+      "harness_slugs": [
+        "copilot_editor"
+      ],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "prompt"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "claude_command",
+      "label": "Claude Code command",
+      "description": "Project slash command.",
+      "patterns": [
+        ".claude/commands/**/*.md"
+      ],
+      "harness_slugs": [
+        "claude_code"
+      ],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "prompt"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 10
+    },
+    {
+      "id": 11,
+      "slug": "stray",
+      "label": "Agent file outside harness locations",
+      "description": "Named like an instruction, agent, prompt, or skill file, but outside every folder a harness loads from: no harness reads it unless a loaded document points at it.",
+      "patterns": [
+        "**/*.instructions.md",
+        "**/*.agent.md",
+        "**/*.prompt.md",
+        "**/SKILL.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "instruction",
+        "directive",
+        "skill",
+        "prompt"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 11
+    },
+    {
+      "id": 12,
+      "slug": "plan",
+      "label": "Plan",
+      "description": "Plans and task lists (records, not reference).",
+      "patterns": [
+        "**/PLAN*.md",
+        "**/plan*.md",
+        "**/TASKS*.md",
+        "**/TODO*.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "context"
+      ],
+      "record": true,
+      "verified": null,
+      "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "status",
+      "label": "Status record",
+      "description": "Status and progress records.",
+      "patterns": [
+        "**/STATUS*.md",
+        "**/CHANGELOG*.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "context"
+      ],
+      "record": true,
+      "verified": null,
+      "sort_order": 13
+    },
+    {
+      "id": 14,
+      "slug": "readme",
+      "label": "README",
+      "description": "Orientation documents.",
+      "patterns": [
+        "README.md",
+        "**/README.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "context"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 14
+    },
+    {
+      "id": 15,
+      "slug": "spec",
+      "label": "Specification",
+      "description": "Specifications and conventions.",
+      "patterns": [
+        "**/*.spec.md",
+        "**/spec/**/*.md",
+        "**/STYLE*.md",
+        "**/*conventions*.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "context",
+        "directive"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 15
+    },
+    {
+      "id": 16,
+      "slug": "markdown",
+      "label": "Other markdown",
+      "description": "Any other markdown document.",
+      "patterns": [
+        "**/*.md"
+      ],
+      "harness_slugs": [],
+      "hub": false,
+      "frontmatter": {},
+      "max_bytes": null,
+      "substrate_kinds": [
+        "context"
+      ],
+      "record": false,
+      "verified": null,
+      "sort_order": 16
+    }
+  ]
+}

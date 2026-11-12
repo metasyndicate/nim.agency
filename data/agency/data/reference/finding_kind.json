@@ -1,0 +1,116 @@
+{
+  "$schema": "../schema/reference/finding_kind.schema.json",
+  "$comment": "Finding kinds",
+  "data": [
+    {
+      "id": 1,
+      "slug": "dead_ref",
+      "label": "Dead reference",
+      "description": "A reference to a path that does not exist.",
+      "detector": "mechanical",
+      "severity": "error",
+      "problem_type": "https://nim.agency/problems/profiles/dead-ref",
+      "remedy": "Point it at the current path, or remove it",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "ambiguous_ref",
+      "label": "Ambiguous reference",
+      "description": "One name cited at more than one path, or resolving to several files.",
+      "detector": "mechanical",
+      "severity": "warn",
+      "problem_type": "https://nim.agency/problems/profiles/ambiguous-ref",
+      "remedy": "Cite one canonical path",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "duplicate",
+      "label": "Duplicate",
+      "description": "Identical or near-identical content in more than one place.",
+      "detector": "mechanical",
+      "severity": "warn",
+      "problem_type": "https://nim.agency/problems/profiles/duplicate",
+      "remedy": "Keep one source; reference it from the others",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "conflict",
+      "label": "Conflict",
+      "description": "Two directives on one subject at opposing levels within overlapping facets.",
+      "detector": "semantic",
+      "severity": "error",
+      "problem_type": "https://nim.agency/problems/profiles/conflict",
+      "remedy": "Operator decides; the loser is superseded",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "stale",
+      "label": "Stale",
+      "description": "Older than the paths it describes.",
+      "detector": "mechanical",
+      "severity": "warn",
+      "problem_type": "https://nim.agency/problems/profiles/stale",
+      "remedy": "Review against the current code; refresh or retire",
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "orphan",
+      "label": "Orphan",
+      "description": "Not reachable from any hub and not matched by any scoped facet: no harness loads it.",
+      "detector": "mechanical",
+      "severity": "warn",
+      "problem_type": "https://nim.agency/problems/profiles/orphan",
+      "remedy": "Link it from a hub, scope it, or retire it",
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "noncompliant",
+      "label": "Noncompliant",
+      "description": "Breaks its kind's contract: missing or invalid frontmatter, over a harness size limit.",
+      "detector": "mechanical",
+      "severity": "error",
+      "problem_type": "https://nim.agency/problems/profiles/noncompliant",
+      "remedy": "Fix the frontmatter or split the document",
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "mixed_form",
+      "label": "Mixed form",
+      "description": "Combines Diátaxis forms (e.g. reference with status records).",
+      "detector": "semantic",
+      "severity": "info",
+      "problem_type": "https://nim.agency/problems/profiles/mixed-form",
+      "remedy": "Split by form",
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "untracked_substrate",
+      "label": "Untracked substrate",
+      "description": "An agent-facing document git does not track (ignored or untracked): it has no history, so drift leaves no trail.",
+      "detector": "mechanical",
+      "severity": "warn",
+      "problem_type": "https://nim.agency/problems/profiles/untracked-substrate",
+      "remedy": "Track it, or make it a rendered output of tracked substrates",
+      "sort_order": 9
+    },
+    {
+      "id": 10,
+      "slug": "unreadable",
+      "label": "Unreadable",
+      "description": "A document the scan could not parse (encoding, frontmatter syntax).",
+      "detector": "mechanical",
+      "severity": "error",
+      "problem_type": "https://nim.agency/problems/profiles/unreadable",
+      "remedy": "Fix the encoding or the frontmatter",
+      "sort_order": 10
+    }
+  ]
+}

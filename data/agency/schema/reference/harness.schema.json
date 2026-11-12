@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/harness.schema.json",
+  "title": "Harness",
+  "description": "Software that runs an agent's tool loop and reads rendered profiles: a vendor's harness (Claude Code, Codex CLI, Gemini CLI, Copilot) or the agency's own (nim). Render targets bind here (plan.101526.syndicate.md P-D3).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400057,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "harness",
+      "type": "schema",
+      "path": "L2.agency.reference.harness"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "vendor_slug": {
+      "x-nim-ref": {
+        "entity": "vendor",
+        "key": "slug"
+      },
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Owning vendor; null = the agency's own harness"
+    },
+    "binary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Executable looked up on PATH by syndicate detect; null when not a CLI (editor extension, in-process)"
+    },
+    "version_args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "--version"
+      ]
+    },
+    "transport_slug": {
+      "x-nim-ref": {
+        "entity": "transport",
+        "key": "slug"
+      },
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Transport the agency dispatches through this harness with; null = not yet dispatchable"
+    },
+    "auth_method_slugs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "auth_method",
+          "key": "slug"
+        }
+      }
+    },
+    "docs_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "verified": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date",
+            "sources"
+          ]
+        }
+      ],
+      "description": "When and against which published sources this row was last checked; null = not yet verified (from prior knowledge)"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "vendor_slug",
+    "binary",
+    "auth_method_slugs"
+  ]
+}

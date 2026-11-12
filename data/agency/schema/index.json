@@ -231,6 +231,84 @@
         "nim_id": 400033,
         "data_path": "../data/reference/task_preset.json"
       },
+      "syndicate_kind": {
+        "path": "reference/syndicate_kind.schema.json",
+        "description": "Syndicate kinds (merchant, rogue, gateway): harness and auth ownership, control plane",
+        "nim_id": 400054,
+        "data_path": "../data/reference/syndicate_kind.json"
+      },
+      "auth_method": {
+        "path": "reference/auth_method.schema.json",
+        "description": "Authentication methods and where their secrets live (never the datastore)",
+        "nim_id": 400055,
+        "data_path": "../data/reference/auth_method.json"
+      },
+      "vendor": {
+        "path": "reference/vendor.schema.json",
+        "description": "Inference vendors and rogue software: kind, auth methods, API base, key variable names",
+        "nim_id": 400056,
+        "data_path": "../data/reference/vendor.json"
+      },
+      "harness": {
+        "path": "reference/harness.schema.json",
+        "description": "Harnesses that run tool loops and read rendered profiles (render targets bind here)",
+        "nim_id": 400057,
+        "data_path": "../data/reference/harness.json"
+      },
+      "substrate_kind": {
+        "path": "reference/substrate_kind.schema.json",
+        "description": "Profiles: substrate kinds (directive, instruction, skill, persona, access, prompt, context, hook, mcp)",
+        "nim_id": 400045,
+        "data_path": "../data/reference/substrate_kind.json"
+      },
+      "stratum": {
+        "path": "reference/stratum.schema.json",
+        "description": "Profiles: precedence strata (distribution < org < project < role < agent < session)",
+        "nim_id": 400046,
+        "data_path": "../data/reference/stratum.json"
+      },
+      "source_role": {
+        "path": "reference/source_role.schema.json",
+        "description": "Profiles: source authority (authoritative, candidate, reference, intake)",
+        "nim_id": 400047,
+        "data_path": "../data/reference/source_role.json"
+      },
+      "doc_kind": {
+        "path": "reference/doc_kind.schema.json",
+        "description": "Profiles: document classifier - globs, reading harnesses, frontmatter contract, limits",
+        "nim_id": 400048,
+        "data_path": "../data/reference/doc_kind.json"
+      },
+      "doc_form": {
+        "path": "reference/doc_form.schema.json",
+        "description": "Profiles: Diataxis forms plus record and mixed",
+        "nim_id": 400049,
+        "data_path": "../data/reference/doc_form.json"
+      },
+      "requirement_level": {
+        "path": "reference/requirement_level.schema.json",
+        "description": "Profiles: BCP 14 requirement levels with opposition",
+        "nim_id": 400050,
+        "data_path": "../data/reference/requirement_level.json"
+      },
+      "finding_kind": {
+        "path": "reference/finding_kind.schema.json",
+        "description": "Profiles: sweep finding kinds (RFC 9457 problem types)",
+        "nim_id": 400051,
+        "data_path": "../data/reference/finding_kind.json"
+      },
+      "substrate_status": {
+        "path": "reference/substrate_status.schema.json",
+        "description": "Profiles: substrate lifecycle (proposed, active, superseded, retired)",
+        "nim_id": 400052,
+        "data_path": "../data/reference/substrate_status.json"
+      },
+      "render_target": {
+        "path": "reference/render_target.schema.json",
+        "description": "Profiles: harness file formats and locations a profile renders into",
+        "nim_id": 400053,
+        "data_path": "../data/reference/render_target.json"
+      },
       "instruction_block": {
         "path": "reference/instruction_block.schema.json",
         "description": "Modular instruction building blocks that compose agent behavior dynamically based on rank, focus, scope, and persona",
@@ -347,6 +425,24 @@
         "nim_id": 400112,
         "data_path": "~/.nim/agency/remote_operations.json",
         "local_storage": true
+      },
+      "document": {
+        "path": "core/document.schema.json",
+        "description": "Profiles: one scanned file of a target (kind, readers, refs, dating)",
+        "nim_id": 400116,
+        "data_path": "<instance>/data/profiles/"
+      },
+      "substrate": {
+        "path": "core/substrate.schema.json",
+        "description": "Profiles: a unit a profile is composed of (kind, stratum, facets, sources, lifecycle)",
+        "nim_id": 400117,
+        "data_path": "<instance>/data/profiles/"
+      },
+      "finding": {
+        "path": "core/finding.schema.json",
+        "description": "Profiles: an RFC 9457 problem a sweep found about documents or substrates",
+        "nim_id": 400118,
+        "data_path": "<instance>/data/profiles/"
       }
     }
   },

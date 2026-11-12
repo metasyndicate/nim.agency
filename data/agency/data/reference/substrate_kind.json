@@ -1,0 +1,87 @@
+{
+  "$schema": "../schema/reference/substrate_kind.schema.json",
+  "$comment": "Substrate kinds",
+  "data": [
+    {
+      "id": 1,
+      "slug": "directive",
+      "label": "Directive",
+      "description": "One normative statement: subject, BCP 14 level, text, rationale.",
+      "body": "directive",
+      "normative": true,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "instruction",
+      "label": "Instruction",
+      "description": "Typed instruction blocks (preamble, role, constraints, decision framework); today's instruction_block.",
+      "body": "text",
+      "normative": false,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "skill",
+      "label": "Skill",
+      "description": "An Agent Skills package (SKILL.md and bundled resources).",
+      "body": "skill",
+      "normative": false,
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "persona",
+      "label": "Persona",
+      "description": "Persona layer references (work styles, tone, grounding).",
+      "body": "text",
+      "normative": false,
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "access",
+      "label": "Access",
+      "description": "Capability, tool, and command grants (references, never copies).",
+      "body": "text",
+      "normative": false,
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "prompt",
+      "label": "Prompt",
+      "description": "A task template with parameters.",
+      "body": "text",
+      "normative": false,
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "context",
+      "label": "Context",
+      "description": "Reference knowledge an agent should load: spec, convention, map.",
+      "body": "text",
+      "normative": false,
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "hook",
+      "label": "Hook",
+      "description": "A harness hook configuration.",
+      "body": "text",
+      "normative": false,
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "mcp",
+      "label": "MCP server",
+      "description": "An MCP server configuration.",
+      "body": "text",
+      "normative": false,
+      "sort_order": 9
+    }
+  ]
+}

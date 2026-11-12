@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/substrate_status.schema.json",
+  "title": "Substrate Status",
+  "description": "Substrate lifecycle (ISO 15489 disposition): superseded and retired are kept, never deleted.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400052,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "substrate_status",
+      "type": "schema",
+      "path": "L2.agency.reference.substrate_status"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "is_terminal": {
+      "type": "boolean"
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Composed into profiles"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "is_terminal",
+    "is_active"
+  ]
+}

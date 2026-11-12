@@ -1,0 +1,42 @@
+{
+  "$schema": "../schema/reference/substrate_status.schema.json",
+  "$comment": "Substrate lifecycle",
+  "data": [
+    {
+      "id": 1,
+      "slug": "proposed",
+      "label": "Proposed",
+      "description": "Extracted or drafted; awaiting operator acceptance.",
+      "is_terminal": false,
+      "is_active": false,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "active",
+      "label": "Active",
+      "description": "Accepted; composed into profiles.",
+      "is_terminal": false,
+      "is_active": true,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "superseded",
+      "label": "Superseded",
+      "description": "Replaced by another substrate (superseded_by).",
+      "is_terminal": true,
+      "is_active": false,
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "retired",
+      "label": "Retired",
+      "description": "Withdrawn without replacement.",
+      "is_terminal": true,
+      "is_active": false,
+      "sort_order": 4
+    }
+  ]
+}

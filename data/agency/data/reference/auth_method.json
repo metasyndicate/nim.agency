@@ -1,0 +1,51 @@
+{
+  "$schema": "../schema/reference/auth_method.schema.json",
+  "$comment": "Authentication methods; secrets never enter the datastore",
+  "data": [
+    {
+      "id": 1,
+      "slug": "api_key",
+      "label": "API key",
+      "description": "A vendor key carried in an environment variable.",
+      "secret": "environment",
+      "detection": "the vendor's api_key_env names are present in the environment (values never read)",
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "subscription_login",
+      "label": "Subscription sign-in",
+      "description": "The harness signs in to a paid plan and keeps its own session.",
+      "secret": "harness_session",
+      "detection": "the harness binary is on PATH; its own status command reports the session",
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "oauth_login",
+      "label": "OAuth sign-in",
+      "description": "The harness completes an OAuth flow and keeps its own token.",
+      "secret": "harness_session",
+      "detection": "the harness binary is on PATH; its own status command reports the session",
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "vault_credential",
+      "label": "Vaulted credential",
+      "description": "A credential the agency holds in its vault (e.g. a bearer token for a rogue endpoint).",
+      "secret": "vault",
+      "detection": "a credential record exists for the syndicate",
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "none",
+      "label": "None",
+      "description": "No authentication (local listener).",
+      "secret": "none",
+      "detection": "the endpoint answers without credentials",
+      "sort_order": 5
+    }
+  ]
+}

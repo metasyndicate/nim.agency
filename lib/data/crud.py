@@ -8,6 +8,7 @@ for all entity types in the agency data model.
 import json
 import logging
 import os
+import re
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone
@@ -106,6 +107,19 @@ class DataStore:
         "project_status": {"type": "reference", "file": "project_status.json"},
         "role_title": {"type": "reference", "file": "role_title.json"},
         "task_preset": {"type": "reference", "file": "task_preset.json"},
+        "syndicate_kind": {"type": "reference", "file": "syndicate_kind.json"},
+        "auth_method": {"type": "reference", "file": "auth_method.json"},
+        "vendor": {"type": "reference", "file": "vendor.json"},
+        "harness": {"type": "reference", "file": "harness.json"},
+        "substrate_kind": {"type": "reference", "file": "substrate_kind.json"},
+        "stratum": {"type": "reference", "file": "stratum.json"},
+        "source_role": {"type": "reference", "file": "source_role.json"},
+        "doc_kind": {"type": "reference", "file": "doc_kind.json"},
+        "doc_form": {"type": "reference", "file": "doc_form.json"},
+        "requirement_level": {"type": "reference", "file": "requirement_level.json"},
+        "finding_kind": {"type": "reference", "file": "finding_kind.json"},
+        "substrate_status": {"type": "reference", "file": "substrate_status.json"},
+        "render_target": {"type": "reference", "file": "render_target.json"},
         "channel_capability": {"type": "reference", "file": "channel_capability.json"},
         "transport": {"type": "reference", "file": "transport.json"},
         "harness_function": {"type": "reference", "file": "harness_function.json"},
@@ -132,6 +146,14 @@ class DataStore:
         # place when the datastore writes them
         "instruction_block": {"type": "collection", "dir": "instruction",
                               "id_field": "id", "layout": "{category}/{slug}"},
+        # Profiles (plan.101526.profiles.md): instance-scoped, filed per target
+        # tag under <instance root>/data/profiles/<tag>/<entity>s/<id>.json
+        "document": {"type": "collection", "dir": "profiles", "id_field": "id",
+                     "layout": "{tag}/documents/{id}", "scope": "instance"},
+        "substrate": {"type": "collection", "dir": "profiles", "id_field": "id",
+                      "layout": "{tag}/substrates/{id}", "scope": "instance"},
+        "finding": {"type": "collection", "dir": "profiles", "id_field": "id",
+                    "layout": "{tag}/findings/{id}", "scope": "instance"},
         "transaction": {"type": "append", "file": "transactions/ledger.json"},
         "event": {"type": "append", "file": "events/log.json", "schema": "event_log"},
         "peer_review": {"type": "append", "file": "reviews/reviews.json"},
@@ -168,13 +190,16 @@ class DataStore:
     # Operator-local records (substations, credentials) live in the
     # instance home, resolved once for the whole agency (lib/install/paths.py)
 
-    def __init__(self, base_path: Optional[str] = None, schema_manager: Optional[SchemaManager] = None):
+    def __init__(self, base_path: Optional[str] = None, schema_manager: Optional[SchemaManager] = None,
+                 instance_path: Optional[str] = None):
         """
         Initialize datastore.
 
         Args:
             base_path: Root path to data directory
             schema_manager: Optional schema manager for validation
+            instance_path: data/ of the instance root (default: the root
+                coupled to this checkout, resolved on first use)
         """
         if base_path is None:
             lib_dir = Path(__file__).parent.parent.parent
@@ -183,14 +208,39 @@ class DataStore:
         self.base_path = Path(base_path)
         from ..install import home
         self.local_path = home()
+        self._instance_path = Path(instance_path) if instance_path else False
         self.schema_manager = schema_manager or get_schema_manager()
 
         # Cache for reference data
         self._reference_cache: dict[str, list[dict]] = {}
 
+    @property
+    def instance_path(self) -> Optional[Path]:
+        """data/ of the instance root coupled to this checkout, or None when
+        none is coupled (plan.101526.instance.md). Resolved once."""
+        if self._instance_path is False:
+            from ..install.root import coupled_root
+            root = coupled_root()
+            self._instance_path = root / "data" if root else None
+        return self._instance_path
+
+    @staticmethod
+    def _private(config: dict) -> bool:
+        """Operator-local and instance records are written 0700 / 0600."""
+        return os.name != "nt" and bool(config.get("local_storage")
+                                        or config.get("scope") == "instance")
+
     def _get_storage_path(self, entity_type: str) -> Path:
-        """Get the base storage path for an entity type."""
+        """Get the base storage path for an entity type. Instance-scoped
+        entities need a coupled root: without one, writes refuse (no write
+        ever picks a location by itself) and reads find no records."""
         config = self.ENTITY_CONFIG.get(entity_type)
+        if config and config.get("scope") == "instance":
+            if self.instance_path is None:
+                from ..install.root import RootError
+                raise RootError(f"{entity_type} lives in the instance root, and no root is "
+                                f"coupled to this checkout: nim.agency install couple")
+            return self.instance_path
         if config and config.get("local_storage"):
             return self.local_path
         return self.base_path
@@ -756,7 +806,7 @@ class DataStore:
         dir_path.mkdir(parents=True, exist_ok=True)
 
         # Set restrictive permissions for local storage
-        if config.get("local_storage") and os.name != 'nt':
+        if self._private(config):
             os.chmod(dir_path, 0o700)
 
         file_path = self._collection_file(entity_type, data)
@@ -766,7 +816,7 @@ class DataStore:
             json.dump(data, f, indent=2)
 
         # Set restrictive permissions for local storage files
-        if config.get("local_storage") and os.name != 'nt':
+        if self._private(config):
             os.chmod(file_path, 0o600)
 
     def _move_collection_item(self, entity_type: str, existing: dict,
@@ -796,6 +846,8 @@ class DataStore:
     def _load_collection(self, entity_type: str) -> list[dict]:
         """Load all items from a collection directory."""
         config = self.ENTITY_CONFIG[entity_type]
+        if config.get("scope") == "instance" and self.instance_path is None:
+            return []
         base = self._get_storage_path(entity_type)
         dir_path = base / config["dir"]
 
@@ -803,7 +855,9 @@ class DataStore:
             return []
 
         entities = []
-        pattern = "*/" * config.get("layout", "").count("/") + "*.json"
+        # Fields become wildcards and literal segments stay, so the layout
+        # "{tag}/documents/{id}" does not also match "{tag}/findings/{id}"
+        pattern = re.sub(r"\{[^}]+\}", "*", config.get("layout", "{id}")) + ".json"
         for file_path in sorted(dir_path.glob(pattern)):
             try:
                 with open(file_path, "r") as f:
@@ -821,7 +875,7 @@ class DataStore:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Set restrictive permissions for local storage directories
-        if config.get("local_storage") and os.name != 'nt':
+        if self._private(config):
             os.chmod(file_path.parent, 0o700)
 
         # Load existing or create new
@@ -845,7 +899,7 @@ class DataStore:
             json.dump(content, f, indent=2)
 
         # Set restrictive permissions for local storage files
-        if config.get("local_storage") and os.name != 'nt':
+        if self._private(config):
             os.chmod(file_path, 0o600)
 
     def _load_append_log(self, entity_type: str) -> list[dict]:

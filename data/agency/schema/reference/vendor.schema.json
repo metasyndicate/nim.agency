@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/vendor.schema.json",
+  "title": "Vendor",
+  "description": "Catalog of organizations and software that serve inference: merchant and gateway vendors, and the software rogue syndicates run. Shipped reference data; instance syndicates reference it.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400056,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "vendor",
+      "type": "schema",
+      "path": "L2.agency.reference.vendor"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "kind_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "syndicate_kind",
+        "key": "slug"
+      }
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri"
+    },
+    "docs_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "api_base": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri",
+      "description": "Default API base (rogue software: the conventional local listener); null when only a harness reaches it"
+    },
+    "auth_method_slugs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "auth_method",
+          "key": "slug"
+        }
+      }
+    },
+    "api_key_env": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]*$"
+      },
+      "description": "Environment variable NAMES that carry the vendor's key; values are never read or stored"
+    },
+    "verified": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date",
+            "sources"
+          ]
+        }
+      ],
+      "description": "When and against which published sources this row was last checked; null = not yet verified (from prior knowledge)"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "kind_slug",
+    "auth_method_slugs"
+  ]
+}

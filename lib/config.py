@@ -54,6 +54,13 @@ DEFAULTS = {
         "skill_points_per_rank": 10,
         "max_tool_proficiency": 3,
     },
+    "profiles": {
+        "exclude": [".git", ".vault", ".ssh", ".hg", ".svn", "node_modules", ".venv", "venv", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".nox", "site-packages", "*.egg-info", "dist", "build", ".DS_Store", ".idea"],
+        "index_only": ["arc", ".arc", "archive", "archives"],
+        "max_file_bytes": 1048576,
+        "stale_days": 30,
+        "near_duplicate": 0.8,
+    },
 }
 
 _config = None

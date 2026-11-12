@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/finding_kind.schema.json",
+  "title": "Finding Kind",
+  "description": "What a sweep can find, how it is detected, and its default severity. Findings follow RFC 9457 problem details: `problem_type` is the type URI.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400051,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "finding_kind",
+      "type": "schema",
+      "path": "L2.agency.reference.finding_kind"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "detector": {
+      "type": "string",
+      "enum": [
+        "mechanical",
+        "semantic"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "problem_type": {
+      "type": "string",
+      "format": "uri"
+    },
+    "remedy": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "detector",
+    "severity",
+    "problem_type",
+    "remedy"
+  ]
+}

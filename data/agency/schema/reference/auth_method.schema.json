@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/auth_method.schema.json",
+  "title": "Auth Method",
+  "description": "How a vendor or harness authenticates, and where its secret lives. Secrets never live in the datastore: detection reads environment variable names, never values.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400055,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "auth_method",
+      "type": "schema",
+      "path": "L2.agency.reference.auth_method"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "secret": {
+      "type": "string",
+      "enum": [
+        "none",
+        "environment",
+        "harness_session",
+        "vault"
+      ],
+      "description": "Where the secret lives: nowhere, an environment variable (named by the vendor row), the harness's own session store, or the agency vault"
+    },
+    "detection": {
+      "type": "string",
+      "description": "How syndicate detect recognizes this method without reading a secret"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "secret",
+    "detection"
+  ]
+}

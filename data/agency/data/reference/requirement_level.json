@@ -1,0 +1,89 @@
+{
+  "$schema": "../schema/reference/requirement_level.schema.json",
+  "$comment": "BCP 14 levels",
+  "data": [
+    {
+      "id": 1,
+      "slug": "must",
+      "label": "MUST",
+      "description": "Absolute requirement.",
+      "keywords": [
+        "MUST",
+        "REQUIRED",
+        "SHALL"
+      ],
+      "strength": 2,
+      "polarity": 1,
+      "opposes": [
+        "must_not",
+        "should_not"
+      ],
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "must_not",
+      "label": "MUST NOT",
+      "description": "Absolute prohibition.",
+      "keywords": [
+        "MUST NOT",
+        "SHALL NOT"
+      ],
+      "strength": 2,
+      "polarity": -1,
+      "opposes": [
+        "must",
+        "should"
+      ],
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "should",
+      "label": "SHOULD",
+      "description": "Recommended.",
+      "keywords": [
+        "SHOULD",
+        "RECOMMENDED"
+      ],
+      "strength": 1,
+      "polarity": 1,
+      "opposes": [
+        "must_not",
+        "should_not"
+      ],
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "should_not",
+      "label": "SHOULD NOT",
+      "description": "Not recommended.",
+      "keywords": [
+        "SHOULD NOT",
+        "NOT RECOMMENDED"
+      ],
+      "strength": 1,
+      "polarity": -1,
+      "opposes": [
+        "must",
+        "should"
+      ],
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "may",
+      "label": "MAY",
+      "description": "Optional.",
+      "keywords": [
+        "MAY",
+        "OPTIONAL"
+      ],
+      "strength": 0,
+      "polarity": 0,
+      "opposes": [],
+      "sort_order": 5
+    }
+  ]
+}

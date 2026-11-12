@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/substrate.schema.json",
+  "title": "Substrate",
+  "description": "An addressable unit a profile is composed of, with its stratum, facets, sources, and lifecycle (plan.101526.profiles.md).",
+  "@type": [
+    "prov:Entity"
+  ],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400117,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 3,
+      "label": "data",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "substrate",
+      "type": "schema",
+      "path": "L3.agency.core.substrate"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true
+    },
+    "tag": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "description": "Target slug the record belongs to (the project slug when bound to a nim.agency project); first path segment under profiles/"
+    },
+    "slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug"
+    },
+    "kind_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "substrate_kind",
+        "key": "slug"
+      }
+    },
+    "stratum_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "stratum",
+        "key": "slug"
+      }
+    },
+    "status_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "substrate_status",
+        "key": "slug"
+      }
+    },
+    "subject": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256,
+      "description": "What it governs (normalized); conflicts compare subjects"
+    },
+    "facets": {
+      "type": "object",
+      "properties": {
+        "applies_to": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "harness_slugs": {
+          "type": "array",
+          "items": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+            "x-nim-ref": {
+              "entity": "harness",
+              "key": "slug"
+            }
+          }
+        },
+        "archetype_slugs": {
+          "type": "array",
+          "items": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+            "x-nim-ref": {
+              "entity": "archetype",
+              "key": "slug"
+            }
+          }
+        },
+        "focus_slugs": {
+          "type": "array",
+          "items": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+            "x-nim-ref": {
+              "entity": "focus",
+              "key": "slug"
+            }
+          }
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "read_only",
+            "supervised",
+            "autonomous",
+            "lead"
+          ]
+        }
+      }
+    },
+    "body": {
+      "type": "object"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+            "x-nim-ref": {
+              "entity": "document",
+              "key": "id"
+            }
+          },
+          "line_start": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "line_end": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "document_id",
+          "line_start",
+          "line_end"
+        ]
+      },
+      "$comment": "rdf:property prov:wasDerivedFrom"
+    },
+    "superseded_by": {
+      "x-nim-ref": {
+        "entity": "substrate",
+        "key": "id"
+      },
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "owner": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reviewed_at": {
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "review_by": {
+      "oneOf": [
+        {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "required": [
+    "id",
+    "tag",
+    "kind_slug",
+    "stratum_slug",
+    "status_slug",
+    "body"
+  ],
+  "$defs": {
+    "directive": {
+      "type": "object",
+      "properties": {
+        "requirement_level_slug": {
+          "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+          "x-nim-ref": {
+            "entity": "requirement_level",
+            "key": "slug"
+          }
+        },
+        "text": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "requirement_level_slug",
+        "text"
+      ]
+    },
+    "skill": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description"
+      ]
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind_slug": {
+            "const": "directive"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/directive"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind_slug": {
+            "const": "skill"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "body": {
+            "$ref": "#/$defs/skill"
+          }
+        }
+      }
+    }
+  ]
+}

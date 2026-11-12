@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/stratum.schema.json",
+  "title": "Stratum",
+  "description": "Ordered precedence layers: a substrate in a higher stratum overrides a lower one on the same subject.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400046,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "stratum",
+      "type": "schema",
+      "path": "L2.agency.reference.stratum"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Higher overrides lower; unique"
+    },
+    "priority_band": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Corresponding instruction_block priority band, where one exists"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "rank"
+  ]
+}

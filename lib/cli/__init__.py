@@ -26,6 +26,7 @@ from . import mission as mission_cmd
 from . import project as project_cmd
 from . import install as install_cmd
 from . import lex as lex_cmd
+from . import profiles as profiles_cmd
 from . import substation as substation_cmd
 from . import syndicate as syndicate_cmd
 
@@ -119,6 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     agent_cmd.add_parser(sub)
     data_cmd.add_parser(sub)
     lex_cmd.add_parser(sub)
+    profiles_cmd.add_parser(sub)
 
     tui = sub.add_parser("tui", help="Launch the interactive TUI agent builder")
     tui.set_defaults(func=cmd_tui)

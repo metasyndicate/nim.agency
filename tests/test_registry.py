@@ -26,6 +26,8 @@ def schema_files():
 def storage_path(config: dict) -> str:
     """The catalog's data_path spelling of a datastore storage config."""
     root = "~/.nim/agency/" if config.get("local_storage") else "../data/"
+    if config.get("scope") == "instance":
+        root = "<instance>/data/"
     kind = config["type"]
     if kind == "reference":
         return f"../data/reference/{config['file']}"

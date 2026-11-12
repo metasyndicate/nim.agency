@@ -1,0 +1,176 @@
+{
+  "$schema": "../schema/reference/vendor.schema.json",
+  "$comment": "Inference vendors and rogue software (plan.101526.syndicate.md); rows with verified null are from prior knowledge and are checked at profiles C0",
+  "data": [
+    {
+      "id": 1,
+      "slug": "anthropic",
+      "label": "Anthropic",
+      "description": "Claude models; Claude Code harness.",
+      "kind_slug": "merchant",
+      "homepage": "https://www.anthropic.com",
+      "docs_url": "https://docs.claude.com",
+      "api_base": "https://api.anthropic.com",
+      "auth_method_slugs": [
+        "api_key",
+        "subscription_login"
+      ],
+      "api_key_env": [
+        "ANTHROPIC_API_KEY"
+      ],
+      "verified": null,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "openai",
+      "label": "OpenAI",
+      "description": "GPT models; Codex CLI harness.",
+      "kind_slug": "merchant",
+      "homepage": "https://openai.com",
+      "docs_url": "https://developers.openai.com/codex",
+      "api_base": "https://api.openai.com/v1",
+      "auth_method_slugs": [
+        "api_key",
+        "subscription_login"
+      ],
+      "api_key_env": [
+        "OPENAI_API_KEY"
+      ],
+      "verified": null,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "google",
+      "label": "Google",
+      "description": "Gemini models; Gemini CLI harness.",
+      "kind_slug": "merchant",
+      "homepage": "https://ai.google.dev",
+      "docs_url": "https://geminicli.com/docs",
+      "api_base": "https://generativelanguage.googleapis.com",
+      "auth_method_slugs": [
+        "api_key",
+        "oauth_login"
+      ],
+      "api_key_env": [
+        "GEMINI_API_KEY"
+      ],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://geminicli.com/docs/cli/gemini-md"
+        ],
+        "note": "harness context file verified; api_key_env from prior knowledge"
+      },
+      "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "github",
+      "label": "GitHub",
+      "description": "Copilot (multi-vendor models); Copilot CLI and editor harnesses.",
+      "kind_slug": "merchant",
+      "homepage": "https://github.com/features/copilot",
+      "docs_url": "https://docs.github.com/en/copilot",
+      "api_base": null,
+      "auth_method_slugs": [
+        "oauth_login"
+      ],
+      "api_key_env": [],
+      "verified": {
+        "date": "2026-10-15",
+        "sources": [
+          "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli"
+        ],
+        "note": "sign-in via /login verified; token environment variables not documented there, so none listed"
+      },
+      "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "openrouter",
+      "label": "OpenRouter",
+      "description": "Gateway to many vendors' models behind one OpenAI-compatible API.",
+      "kind_slug": "gateway",
+      "homepage": "https://openrouter.ai",
+      "docs_url": "https://openrouter.ai/docs",
+      "api_base": "https://openrouter.ai/api/v1",
+      "auth_method_slugs": [
+        "api_key"
+      ],
+      "api_key_env": [
+        "OPENROUTER_API_KEY"
+      ],
+      "verified": null,
+      "sort_order": 5
+    },
+    {
+      "id": 6,
+      "slug": "ollama",
+      "label": "Ollama",
+      "description": "Local model server.",
+      "kind_slug": "rogue",
+      "homepage": "https://ollama.com",
+      "docs_url": "https://github.com/ollama/ollama/tree/main/docs",
+      "api_base": "http://localhost:11434",
+      "auth_method_slugs": [
+        "none",
+        "vault_credential"
+      ],
+      "api_key_env": [],
+      "verified": null,
+      "sort_order": 6
+    },
+    {
+      "id": 7,
+      "slug": "vllm",
+      "label": "vLLM",
+      "description": "High-throughput OpenAI-compatible model server.",
+      "kind_slug": "rogue",
+      "homepage": "https://vllm.ai",
+      "docs_url": "https://docs.vllm.ai",
+      "api_base": "http://localhost:8000/v1",
+      "auth_method_slugs": [
+        "none",
+        "vault_credential"
+      ],
+      "api_key_env": [],
+      "verified": null,
+      "sort_order": 7
+    },
+    {
+      "id": 8,
+      "slug": "llamacpp",
+      "label": "llama.cpp",
+      "description": "llama.cpp server (OpenAI-compatible).",
+      "kind_slug": "rogue",
+      "homepage": "https://github.com/ggml-org/llama.cpp",
+      "docs_url": "https://github.com/ggml-org/llama.cpp/tree/master/tools/server",
+      "api_base": "http://localhost:8080/v1",
+      "auth_method_slugs": [
+        "none",
+        "vault_credential"
+      ],
+      "api_key_env": [],
+      "verified": null,
+      "sort_order": 8
+    },
+    {
+      "id": 9,
+      "slug": "lmstudio",
+      "label": "LM Studio",
+      "description": "Desktop model runner with an OpenAI-compatible server.",
+      "kind_slug": "rogue",
+      "homepage": "https://lmstudio.ai",
+      "docs_url": "https://lmstudio.ai/docs",
+      "api_base": "http://localhost:1234/v1",
+      "auth_method_slugs": [
+        "none"
+      ],
+      "api_key_env": [],
+      "verified": null,
+      "sort_order": 9
+    }
+  ]
+}

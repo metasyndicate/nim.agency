@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/render_target.schema.json",
+  "title": "Render Target",
+  "description": "Where and in what format a profile renders for the harnesses that read it (rendered at profiles C5).",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400053,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "render_target",
+      "type": "schema",
+      "path": "L2.agency.reference.render_target"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "harness_slugs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "harness",
+          "key": "slug"
+        }
+      },
+      "minItems": 1
+    },
+    "doc_kind_slug": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+      "x-nim-ref": {
+        "entity": "doc_kind",
+        "key": "slug"
+      }
+    },
+    "path": {
+      "type": "string",
+      "description": "Path relative to the target root; {slug} = the substrate or profile slug"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "markdown",
+        "markdown_frontmatter",
+        "json"
+      ]
+    },
+    "merge": {
+      "type": "string",
+      "enum": [
+        "single",
+        "per_substrate",
+        "scoped"
+      ],
+      "description": "One file; one file per substrate; one file per facet scope"
+    },
+    "substrate_kinds": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "substrate_kind",
+          "key": "slug"
+        }
+      }
+    },
+    "verified": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date",
+            "sources"
+          ]
+        }
+      ],
+      "description": "When and against which published sources this row was last checked; null = prior knowledge"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "harness_slugs",
+    "doc_kind_slug",
+    "path",
+    "format",
+    "merge"
+  ]
+}

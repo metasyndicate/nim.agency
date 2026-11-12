@@ -1,0 +1,42 @@
+{
+  "$schema": "../schema/reference/syndicate_kind.schema.json",
+  "$comment": "Syndicate kinds (plan.101526.syndicate.md)",
+  "data": [
+    {
+      "id": 1,
+      "slug": "merchant",
+      "label": "Merchant",
+      "description": "Vendor-hosted inference served through the vendor's own harness, behind the vendor's sign-in; the agency steers it but does not run its loop.",
+      "display": "merchant syndicate",
+      "harness_owner": "vendor",
+      "auth_owner": "vendor",
+      "control_plane": "limited",
+      "vendor_required": true,
+      "sort_order": 1
+    },
+    {
+      "id": 2,
+      "slug": "rogue",
+      "label": "Rogue",
+      "description": "Self-hosted endpoint; the agency supplies the harness, shell access, and process control.",
+      "display": "rogue syndicate",
+      "harness_owner": "agency",
+      "auth_owner": "agency",
+      "control_plane": "full",
+      "vendor_required": false,
+      "sort_order": 2
+    },
+    {
+      "id": 3,
+      "slug": "gateway",
+      "label": "Gateway",
+      "description": "One API brokering many vendors' models; vendor authentication, the agency's harness.",
+      "display": "gateway syndicate",
+      "harness_owner": "agency",
+      "auth_owner": "vendor",
+      "control_plane": "limited",
+      "vendor_required": true,
+      "sort_order": 3
+    }
+  ]
+}

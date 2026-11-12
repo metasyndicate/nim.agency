@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/doc_kind.schema.json",
+  "title": "Document Kind",
+  "description": "Classifier for scanned files: path globs (first match by sort_order wins), the harnesses that read the file, its frontmatter contract and limits.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400048,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "doc_kind",
+      "type": "schema",
+      "path": "L2.agency.reference.doc_kind"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Globs relative to the target root (** = any depth)"
+    },
+    "harness_slugs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "harness",
+          "key": "slug"
+        }
+      }
+    },
+    "hub": {
+      "type": "boolean",
+      "description": "An entry point a harness loads directly (reachability starts here)"
+    },
+    "frontmatter": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean"
+          },
+          "max_length": {
+            "type": "integer"
+          },
+          "pattern": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Frontmatter contract: field -> {required, max_length, pattern}"
+    },
+    "max_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Size a harness reads before truncating, where documented"
+    },
+    "substrate_kinds": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "substrate_kind",
+          "key": "slug"
+        }
+      }
+    },
+    "record": {
+      "type": "boolean",
+      "default": false,
+      "description": "A dated record (plan, status, log): true as of its date, so its dead references and staleness are reported as info, not drift"
+    },
+    "verified": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date",
+            "sources"
+          ]
+        }
+      ],
+      "description": "When and against which published sources this row was last checked; null = prior knowledge"
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "patterns",
+    "hub"
+  ]
+}

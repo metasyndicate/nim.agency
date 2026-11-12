@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/reference/requirement_level.schema.json",
+  "title": "Requirement Level",
+  "description": "BCP 14 (RFC 2119, RFC 8174) requirement levels, normalized. Two directives on one subject at opposing levels conflict.",
+  "@type": "skos:Concept",
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400050,
+    "created": "2026-10-15T00:00:00Z",
+    "modified": "2026-10-15T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 2,
+      "label": "structure",
+      "component": "agency",
+      "subcomponent": "reference",
+      "object": "requirement_level",
+      "type": "schema",
+      "path": "L2.agency.reference.requirement_level"
+    }
+  },
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/concept"
+    }
+  ],
+  "properties": {
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "BCP 14 keywords (uppercase) mapping to this level"
+    },
+    "strength": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2,
+      "description": "2 absolute, 1 recommended, 0 optional"
+    },
+    "polarity": {
+      "type": "integer",
+      "enum": [
+        -1,
+        0,
+        1
+      ]
+    },
+    "opposes": {
+      "type": "array",
+      "items": {
+        "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/slug",
+        "x-nim-ref": {
+          "entity": "requirement_level",
+          "key": "slug"
+        }
+      }
+    }
+  },
+  "required": [
+    "id",
+    "slug",
+    "label",
+    "keywords",
+    "strength",
+    "polarity",
+    "opposes"
+  ]
+}
