@@ -8,6 +8,7 @@ Components mirror the library nomenclature:
     mission     briefing, inspection, and reports (lib.dispatch.mission)
     project     stateful scoped work units (lib.data.project)
     syndicate   model provider inventory (lib.dispatch.syndicate)
+    platform    inference software on a host: capture, apply, verify (lib.platform)
     agent       roster operations (lib.data.generator)
     data        datastore init and schema inspection (lib.data)
     lex         flavor vocabulary: names, phrases, checks (lib.data.lex)
@@ -31,10 +32,11 @@ from . import ext as ext_cmd
 from . import lex as lex_cmd
 from . import profiles as profiles_cmd
 from . import substation as substation_cmd
+from . import platform as platform_cmd
 from . import syndicate as syndicate_cmd
 
 # Core components; an extension may not take one of these names.
-CORE = ("dispatch", "mission", "project", "syndicate", "substation", "install",
+CORE = ("dispatch", "mission", "project", "syndicate", "platform", "substation", "install",
         "agent", "data", "lex", "profiles", "ext", "tui")
 
 
@@ -122,6 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     mission_cmd.add_parser(sub, mission_flags, verbosity)
     project_cmd.add_parser(sub)
     syndicate_cmd.add_parser(sub)
+    platform_cmd.add_parser(sub)
     substation_cmd.add_parser(sub)
     install_cmd.add_parser(sub)
     agent_cmd.add_parser(sub)

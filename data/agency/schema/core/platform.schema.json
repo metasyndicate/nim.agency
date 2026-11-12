@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/platform.schema.json",
+  "title": "Platform",
+  "description": "One installation of inference software on one host - Ollama, a Stable Diffusion server, vLLM - with everything needed to redeploy, reconfigure and operate it: host, software, service definition, environment, network exposure, and the artifacts (models, checkpoints, adapters) it serves. Captured from the live host (`nim.agency platform capture`), edited as data, rendered and applied back (`platform render|apply`), and checked for drift (`platform verify`). Syndicate records are the endpoints (ports) a platform serves; they point here through endpoint.platform_id. Tracked: holds no secrets - environment capture is allowlisted per vendor.",
+  "@type": ["prov:Entity"],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400120,
+    "created": "2026-11-11T00:00:00Z",
+    "modified": "2026-11-11T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 1,
+      "label": "system",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "platform",
+      "type": "schema",
+      "path": "L1.agency.core.platform"
+    }
+  },
+  "type": "object",
+  "required": ["id", "slug", "vendor_slug", "host", "software", "service", "exposure", "audit"],
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Stable handle, conventionally <host>_<vendor> (bonsai_ollama)"
+    },
+    "label": {"type": "string"},
+    "vendor_slug": {
+      "type": "string",
+      "description": "Software vendor (reference/vendor.json, e.g. ollama); selects the capturer and renderer",
+      "x-nim-ref": {"entity": "vendor", "key": "slug"}
+    },
+    "host": {
+      "type": "object",
+      "description": "The host (substation) the platform runs on, as captured",
+      "required": ["name", "hostname"],
+      "properties": {
+        "name": {"type": "string", "description": "Agency name for the host (nim-substation-bonsai)"},
+        "hostname": {"type": "string", "description": "socket.gethostname() on the host - how the runtime recognises it is local"},
+        "tailnet_name": {"type": ["string", "null"], "description": "MagicDNS name, when on a tailnet"},
+        "os": {"type": "string"},
+        "os_version": {"type": "string"},
+        "arch": {"type": "string"},
+        "cpu": {"type": "string"},
+        "memory_bytes": {"type": "integer", "minimum": 0},
+        "substation_id": {"type": ["string", "null"], "description": "Operator-local substation record, when one exists"}
+      },
+      "additionalProperties": false
+    },
+    "software": {
+      "type": "object",
+      "required": ["version", "install"],
+      "properties": {
+        "version": {"type": "string"},
+        "install": {
+          "type": "object",
+          "required": ["method"],
+          "properties": {
+            "method": {"type": "string", "enum": ["homebrew", "apt", "pip", "uv", "binary", "container", "source", "other"]},
+            "package": {"type": "string"},
+            "binary": {"type": "string", "description": "Absolute path of the executable the service runs"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "description": "How the host keeps the platform running. The record is the source of truth: `platform apply` renders the unit from it",
+      "required": ["manager", "label", "program"],
+      "properties": {
+        "manager": {"type": "string", "enum": ["launchd", "systemd", "manual"]},
+        "label": {"type": "string", "description": "Unit label/name owned by the agency (org.metasyndicate.nim.<slug>), never a package manager's generated unit"},
+        "scope": {"type": "string", "enum": ["user", "system"], "default": "user"},
+        "program": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "working_directory": {"type": "string"},
+        "environment": {
+          "type": "object",
+          "description": "Platform settings as environment variables. Only the vendor's allowlisted keys are captured",
+          "additionalProperties": {"type": "string"}
+        },
+        "keep_alive": {"type": "boolean", "default": true},
+        "run_at_load": {"type": "boolean", "default": true},
+        "stdout_path": {"type": "string"},
+        "stderr_path": {"type": "string"},
+        "replaces": {"type": "array", "items": {"type": "string"}, "description": "Units this one supersedes (stopped on apply), e.g. homebrew.mxcl.ollama"}
+      },
+      "additionalProperties": false
+    },
+    "exposure": {
+      "type": "object",
+      "description": "Where the platform listens and what fronts it",
+      "required": ["bind"],
+      "properties": {
+        "bind": {"type": "string", "description": "host:port the server binds; loopback unless something must reach it directly"},
+        "guards": {
+          "type": "array",
+          "description": "Host firewall rules that narrow who can reach the bind (root-owned: captured and verified, applied by the operator)",
+          "items": {
+            "type": "object",
+            "required": ["kind", "target"],
+            "properties": {
+              "kind": {"type": "string", "enum": ["alf_block_incoming"], "description": "alf_block_incoming: macOS Application Firewall refuses non-loopback connections to the binary"},
+              "target": {"type": "string", "description": "What the rule applies to (resolved binary path for alf)"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "proxies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "url", "target"],
+            "properties": {
+              "kind": {"type": "string", "enum": ["tailscale_serve", "tailscale_funnel", "reverse_proxy"]},
+              "name": {"type": "string"},
+              "url": {"type": "string"},
+              "target": {"type": "string"},
+              "scope": {"type": "string", "enum": ["tailnet", "lan", "public"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "array",
+      "description": "What the platform serves: models (LLM), checkpoints/adapters (diffusion). Digest pins the exact weights",
+      "items": {
+        "type": "object",
+        "required": ["kind", "name"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["model", "checkpoint", "adapter", "embedding", "vae"]},
+          "name": {"type": "string"},
+          "digest": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "family": {"type": "string"},
+          "parameter_size": {"type": "string"},
+          "quantization": {"type": "string"},
+          "context_length": {"type": "integer", "minimum": 0, "description": "The weights' trained maximum, not what the host serves"},
+          "capabilities": {"type": "array", "items": {"type": "string"}},
+          "parameters": {"type": "object", "description": "Default sampling/runtime parameters baked into the artifact (Modelfile PARAMETER lines)"},
+          "source": {"type": "string", "description": "Where to fetch it again (registry name, URL)"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "served": {
+      "type": "object",
+      "description": "Observed serving facts that depend on host + settings, e.g. the context window the server actually allocates",
+      "additionalProperties": true
+    },
+    "syndicates": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Slugs of the syndicate records (ports) that reach this platform"
+    },
+    "captured": {
+      "type": "object",
+      "properties": {
+        "at": {"$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/timestamp"},
+        "by": {"type": "string"},
+        "from": {"type": "string", "description": "Hostname the capture ran on"}
+      },
+      "additionalProperties": false
+    },
+    "notes": {"type": "string"},
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "additionalProperties": false
+}

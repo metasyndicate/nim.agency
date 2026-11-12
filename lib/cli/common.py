@@ -258,13 +258,16 @@ def mission_json_path(mission_id: str) -> Path:
     return report_dir() / f"mission-{mission_id}-report.json"
 
 
-def confirm_dispatch(assume_yes: bool) -> bool:
-    """Interactive dispatch gate. --yes bypasses. When stdin carries piped
-    data, the prompt falls back to the controlling terminal (/dev/tty);
-    with no terminal at all, refuse - the gate never self-confirms."""
+def confirm_dispatch(assume_yes: bool,
+                     question: str = "Dispatch this mission?",
+                     verb: str = "dispatch") -> bool:
+    """Interactive confirmation gate (dispatch, and any other command that
+    changes the world). --yes bypasses. When stdin carries piped data, the
+    prompt falls back to the controlling terminal (/dev/tty); with no
+    terminal at all, refuse - the gate never self-confirms."""
     if assume_yes:
         return True
-    prompt = "Dispatch this mission? [y/N]: "
+    prompt = f"{question} [y/N]: "
     try:
         if sys.stdin.isatty():
             reply = input(prompt)
@@ -272,7 +275,7 @@ def confirm_dispatch(assume_yes: bool) -> bool:
             try:
                 tty = open("/dev/tty", "r+")
             except OSError:
-                print("Refusing to dispatch: stdin is not a TTY, no "
+                print(f"Refusing to {verb}: stdin is not a TTY, no "
                       "controlling terminal, and --yes was not given.",
                       file=sys.stderr)
                 return False
@@ -281,10 +284,10 @@ def confirm_dispatch(assume_yes: bool) -> bool:
                 tty.flush()
                 reply = tty.readline()
             if not reply:
-                print("\nDispatch aborted.", file=sys.stderr)
+                print(f"\n{verb.capitalize()} aborted.", file=sys.stderr)
                 return False
     except (EOFError, KeyboardInterrupt):
-        print("\nDispatch aborted.")
+        print(f"\n{verb.capitalize()} aborted.")
         return False
     return reply.strip().lower() in ("y", "yes")
 

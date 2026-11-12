@@ -174,6 +174,7 @@ One canonical entry point with a consistent grammar:
 | `agent train <codename> --skill S --points N` | dojo: spend unassigned skill points |
 | `agent equip <codename> --tool T` | depot: buy/upgrade a tool with gold |
 | `agent enroll <codename> \| --backfill` | issue badge + primary keypair into the vault |
+| `platform capture <vendor> --slug S [--write]` / `render` / `apply` / `verify` | inference platform on this host as data: capture, render the service unit, apply it, check drift |
 | `data verify` | verify reference data |
 | `data seed --agents N` | generate sample agents |
 | `data seed --fixtures` | install tracked seed roster (`data/agency/seed/`) and enroll it |

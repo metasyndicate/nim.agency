@@ -140,6 +140,10 @@ class DataStore:
         "mission": {"type": "collection", "dir": "missions", "id_field": "id"},
         "group": {"type": "collection", "dir": "groups", "id_field": "id"},
         "project": {"type": "collection", "dir": "projects", "id_field": "id"},
+        # Inference software on a host: deploy/configure/operate source of
+        # truth, tracked (lib/platform/)
+        "platform": {"type": "collection", "dir": "platforms", "id_field": "id",
+                     "lookup": ["slug"]},
         "syndicate": {"type": "collection", "dir": "syndicates", "id_field": "id"},
         # Composable instruction overlays, filed by category: layout names
         # the file under dir (fields of the record), so files keep their

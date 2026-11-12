@@ -1,0 +1,116 @@
+{
+  "slug": "bonsai_ollama",
+  "label": "Ollama on nim-substation-bonsai",
+  "host": {
+    "name": "nim-substation-bonsai",
+    "hostname": "ES-AU04959",
+    "tailnet_name": "nim-substation-bonsai.tailef068f.ts.net",
+    "os": "darwin",
+    "os_version": "27.2",
+    "arch": "arm64",
+    "cpu": "Apple M2 Max",
+    "memory_bytes": 34359738368
+  },
+  "software": {
+    "version": "0.33.2",
+    "install": {
+      "method": "homebrew",
+      "binary": "/opt/homebrew/opt/ollama/bin/ollama",
+      "package": "ollama"
+    }
+  },
+  "service": {
+    "manager": "launchd",
+    "label": "org.metasyndicate.nim.bonsai_ollama",
+    "scope": "user",
+    "program": [
+      "/opt/homebrew/opt/ollama/bin/ollama",
+      "serve"
+    ],
+    "environment": {
+      "OLLAMA_FLASH_ATTENTION": "1",
+      "OLLAMA_HOST": "0.0.0.0:11434",
+      "OLLAMA_KEEP_ALIVE": "-1",
+      "OLLAMA_KV_CACHE_TYPE": "q8_0"
+    },
+    "keep_alive": true,
+    "run_at_load": true,
+    "working_directory": "/opt/homebrew/var",
+    "stdout_path": "/opt/homebrew/var/log/ollama.log",
+    "stderr_path": "/opt/homebrew/var/log/ollama.log",
+    "replaces": [
+      "homebrew.mxcl.ollama"
+    ]
+  },
+  "exposure": {
+    "bind": "0.0.0.0:11434",
+    "proxies": [
+      {
+        "kind": "tailscale_serve",
+        "url": "https://mux-nova.tailef068f.ts.net",
+        "target": "http://127.0.0.1:11434",
+        "scope": "tailnet",
+        "name": "svc:mux-nova"
+      }
+    ],
+    "guards": [
+      {
+        "kind": "alf_block_incoming",
+        "target": "/opt/homebrew/Cellar/ollama/0.33.2/libexec/ollama"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "kind": "model",
+      "name": "qwen3-coder:30b",
+      "digest": "06c1097efce0431c2045fe7b2e5108366e43bee1b4603a7aded8f21689e90bca",
+      "size_bytes": 18556700761,
+      "source": "ollama.com/library/qwen3-coder:30b",
+      "family": "qwen3moe",
+      "parameter_size": "30.5B",
+      "quantization": "Q4_K_M",
+      "context_length": 262144,
+      "capabilities": [
+        "completion",
+        "tools"
+      ],
+      "parameters": {
+        "repeat_penalty": 1.05,
+        "stop": [
+          "<|im_start|>",
+          "<|im_end|>",
+          "<|endoftext|>"
+        ],
+        "temperature": 0.7,
+        "top_k": 20,
+        "top_p": 0.8
+      }
+    }
+  ],
+  "served": {
+    "loaded": {
+      "qwen3-coder:30b": {
+        "context_length": 32768,
+        "size_vram": 20228058643
+      }
+    }
+  },
+  "vendor_slug": "ollama",
+  "captured": {
+    "at": "2026-11-12T03:24:05Z",
+    "by": "morgaia",
+    "from": "ES-AU04959"
+  },
+  "id": "3f2d8404-7fcb-4334-a6a6-d673378c1ee3",
+  "audit": {
+    "created_at": "2026-11-12T03:24:05.635677+00:00",
+    "updated_at": "2026-11-12T03:24:05.635677+00:00",
+    "retired_at": null
+  },
+  "syndicates": [
+    "mux_nova",
+    "bonsai_ollama"
+  ],
+  "notes": "Bound 0.0.0.0 behind the macOS Application Firewall (stealth mode): the guard refuses every non-loopback connection to the ollama binary, so the only way in is tailscale serve (svc:mux-nova, HTTPS, tailnet ACLs) proxying to 127.0.0.1. The guard predates this record (found 2026-11-11). Loopback bind does not work behind serve: Ollama's DNS-rebinding guard 403s the forwarded Host mux-nova.tailef068f.ts.net. A tailnet-address bind also failed (serve and local clients got no answer from 100.109.239.88) - most likely this same firewall guard, since that address is not loopback. The guard path is version-specific: after an ollama upgrade, `platform verify` reports it and prints the root commands. Served context 32768 is the VRAM-based default (25 GiB VRAM); 18 GB weights + q8_0 KV cache put ~131072 at the hardware ceiling."
+}
