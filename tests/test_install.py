@@ -49,6 +49,34 @@ class TestPlatformDirs(unittest.TestCase):
         self.assertEqual(win["cache"], Path("/win/local/nim/Cache"))
 
 
+@unittest.skipUnless(shutil.which("git"), "git not installed")
+class TestHomeOutsideWorkTrees(HomeCase):
+    """A home inside another repo's work tree (metashell exports its own
+    NIM_HOME = its checkout) would put keys and records one `git add`
+    away from a commit: skipped unless the tree ignores it."""
+
+    def setUp(self):
+        super().setUp()
+        import subprocess
+        self.repo = self.tmp / "repo"
+        self.repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+        (self.repo / ".gitignore").write_text("state/\n")
+
+    def test_tracked_location_is_skipped(self):
+        os.environ["NIM_HOME"] = str(self.repo)
+        resolved = paths.resolve_home()
+        self.assertNotEqual(resolved.path, self.repo)
+        env = next(c for c in resolved.candidates if c.source == "env NIM_HOME")
+        self.assertIn("git work tree", env.verdict)
+
+    def test_ignored_location_is_chosen(self):
+        os.environ["NIM_HOME"] = str(self.repo / "state")
+        resolved = paths.resolve_home()
+        self.assertEqual(resolved.path, self.repo / "state")
+        self.assertEqual(resolved.source, "env NIM_HOME")
+
+
 class TestResolution(HomeCase):
 
     def test_env_wins_and_is_reported(self):

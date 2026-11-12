@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Optional
 
 from .paths import (APP, COMPONENT, DEFAULT_INSTANCE, REPO_ROOT, _env_dir,
-                    nearest_existing, platform_dirs, probe)
+                    committable, nearest_existing, platform_dirs, probe)
 
 SCOPES = ("system", "user", "project")
 LAYOUT_VERSION = "1"
@@ -269,21 +269,12 @@ class Root:
 
         @staticmethod
         def shippable(path: Path) -> Check:
-            git = shutil.which("git")
-            if not git:
+            if not shutil.which("git"):
                 return Check("shippable", "skip", "git not found; not checked")
-            parent = nearest_existing(path)
-            top = subprocess.run([git, "-C", str(parent), "rev-parse", "--show-toplevel"],
-                                 capture_output=True, text=True)
-            if top.returncode != 0:
-                return Check("shippable", "ok", "not in a git work tree")
-            tree = top.stdout.strip()
-            ignored = subprocess.run([git, "-C", tree, "check-ignore", "-q", str(path)],
-                                     capture_output=True, text=True)
-            if ignored.returncode == 0:
-                return Check("shippable", "ok", f"ignored by git ({tree})")
-            return Check("shippable", "fail", f"inside git work tree {tree} and not ignored: "
-                                              "instance data could be committed")
+            problem = committable(path)
+            if problem:
+                return Check("shippable", "fail", problem)
+            return Check("shippable", "ok", "not committable (outside a work tree, or ignored)")
 
         def claimed(self, path: Path, adopt: bool = False) -> Check:
             record = Root.Identity.read(path)

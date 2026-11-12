@@ -22,6 +22,8 @@ side effects.
 """
 
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
@@ -95,6 +97,31 @@ def probe(path: Path) -> Optional[str]:
     return None
 
 
+def committable(path: Path) -> Optional[str]:
+    """Why instance data at `path` could end up in a commit (inside a git
+    work tree and not ignored), or None when it cannot / git is absent.
+    Instance state holds keys and operator records; another repo's tree -
+    e.g. nim.metashell, whose own NIM_HOME points at its checkout - is never
+    a home."""
+    git = shutil.which("git")
+    if not git:
+        return None
+    top = subprocess.run([git, "-C", str(nearest_existing(path)), "rev-parse",
+                          "--show-toplevel"], capture_output=True, text=True)
+    if top.returncode != 0:
+        return None
+    tree = top.stdout.strip()
+    # Trailing slash: a home is a directory, and dir-only patterns
+    # (`state/`) cannot match a path that does not exist yet without it
+    ignored = subprocess.run([git, "-C", tree, "check-ignore", "-q",
+                              str(path).rstrip("/") + "/"],
+                             capture_output=True, text=True)
+    if ignored.returncode == 0:
+        return None
+    return (f"inside git work tree {tree} and not ignored: instance data "
+            "could be committed")
+
+
 # -- resolution ---------------------------------------------------------------
 
 @dataclass
@@ -118,12 +145,15 @@ class Resolved:
                                 "verdict": c.verdict} for c in self.candidates]}
 
 
-def _first_usable(what: str, candidates: list[Candidate]) -> Resolved:
+def _first_usable(what: str, candidates: list[Candidate],
+                  guard_commits: bool = False) -> Resolved:
     chosen = None
     for candidate in candidates:
         if chosen is not None:
             continue
         problem = probe(candidate.path)
+        if not problem and guard_commits:
+            problem = committable(candidate.path)
         if problem:
             candidate.verdict = f"skipped: {problem}"
         else:
@@ -158,7 +188,7 @@ def resolve_home(cli: Optional[str] = None) -> Resolved:
         candidates.append(Candidate(LEGACY_HOME, "legacy ~/.nim/agency (exists)"))
     candidates.append(Candidate(platform_dirs()["data"] / COMPONENT,
                                 f"platform default ({sys.platform})"))
-    return _first_usable("home", candidates)
+    return _first_usable("home", candidates, guard_commits=True)
 
 
 def resolve_venv(home: Path, name: str = DEFAULT_INSTANCE,
