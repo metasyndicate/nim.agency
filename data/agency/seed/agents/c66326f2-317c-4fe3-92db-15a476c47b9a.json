@@ -1,0 +1,230 @@
+{
+  "id": "c66326f2-317c-4fe3-92db-15a476c47b9a",
+  "identity": {
+    "name": "Adj. Edgar Holmes",
+    "codename": "scholarly.modeller",
+    "tag": 4,
+    "title": "Adj.",
+    "dogtag": "adj.edgar.holmes",
+    "role_title": "Sublime Datacenter Berserker",
+    "specialty": null,
+    "aliases": []
+  },
+  "classification": {
+    "status_id": 3,
+    "rank_id": 8,
+    "class_id": 2,
+    "ops_domain_id": 6,
+    "focus_id": 1,
+    "qualifier_id": 6,
+    "specialty_id": null,
+    "archetype_id": 7
+  },
+  "economy": {
+    "health": {
+      "current": 100,
+      "max": 100
+    },
+    "xp": 12112,
+    "gold": 1204,
+    "skill_points": {
+      "total": 100,
+      "assigned": 60
+    }
+  },
+  "skills": [
+    {
+      "domain_id": 1,
+      "points": 6
+    },
+    {
+      "domain_id": 2,
+      "points": 7
+    },
+    {
+      "domain_id": 3,
+      "points": 6
+    },
+    {
+      "domain_id": 4,
+      "points": 1
+    },
+    {
+      "domain_id": 5,
+      "points": 8
+    },
+    {
+      "domain_id": 6,
+      "points": 6
+    },
+    {
+      "domain_id": 7,
+      "points": 1
+    },
+    {
+      "domain_id": 8,
+      "points": 6
+    },
+    {
+      "domain_id": 9,
+      "points": 5
+    },
+    {
+      "domain_id": 10,
+      "points": 14
+    }
+  ],
+  "capabilities": [
+    {
+      "capability_id": 5,
+      "proficiency": 5
+    },
+    {
+      "capability_id": 9,
+      "proficiency": 1
+    },
+    {
+      "capability_id": 11,
+      "proficiency": 3
+    },
+    {
+      "capability_id": 1,
+      "proficiency": 4
+    },
+    {
+      "capability_id": 4,
+      "proficiency": 3
+    }
+  ],
+  "tools": [
+    {
+      "tool_id": 1,
+      "assigned_at": "2026-10-14T05:01:44.719192+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 6,
+      "assigned_at": "2026-10-14T05:01:44.719198+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 15,
+      "assigned_at": "2026-10-14T05:01:44.719202+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 20,
+      "assigned_at": "2026-10-14T05:01:44.719206+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 21,
+      "assigned_at": "2026-10-14T05:01:44.719209+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 22,
+      "assigned_at": "2026-10-14T05:01:44.719213+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 23,
+      "assigned_at": "2026-10-14T05:01:44.719216+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 24,
+      "assigned_at": "2026-10-14T05:01:44.719219+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 25,
+      "assigned_at": "2026-10-14T05:01:44.719222+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 27,
+      "assigned_at": "2026-10-14T05:01:44.719226+00:00",
+      "assigned_by": "generator",
+      "proficiency": 3
+    },
+    {
+      "tool_id": 7,
+      "assigned_at": "2026-10-14T05:01:44.719245+00:00",
+      "assigned_by": "generator",
+      "proficiency": 2
+    },
+    {
+      "tool_id": 17,
+      "assigned_at": "2026-10-14T05:01:44.719250+00:00",
+      "assigned_by": "generator",
+      "proficiency": 2
+    }
+  ],
+  "achievements": [],
+  "ratings": {
+    "operator": {
+      "sum": 0,
+      "count": 0
+    },
+    "peer": {
+      "sum": 0,
+      "count": 0
+    },
+    "missions_completed": 0
+  },
+  "origin": {
+    "operator": "morgaia",
+    "host": "localhost",
+    "client": "generator",
+    "discovery": "created",
+    "timestamp": "2026-10-14T05:01:44.718501+00:00",
+    "provider": null,
+    "model": null
+  },
+  "groups": [],
+  "audit": {
+    "created_at": "2026-10-14T05:01:44.742687+00:00",
+    "updated_at": "2026-10-14T05:01:44.810333+00:00",
+    "retired_at": null
+  },
+  "profile": {
+    "bio": "Originally trained in Open Source Collective protocols",
+    "avatar": null,
+    "motto": "The elegant solution reveals itself.",
+    "personality": {
+      "work_styles": [
+        {
+          "style": "attention_to_detail",
+          "level": 2
+        }
+      ],
+      "tone": [],
+      "descriptors": [
+        "Efficient",
+        "Iterative",
+        "Strategic",
+        "Synthetic",
+        "Systematic",
+        "Inquisitive"
+      ]
+    },
+    "interests": [
+      "History",
+      "Engineering",
+      "Archaeogenetics",
+      "Cryonics"
+    ],
+    "zodiac": "Antlia",
+    "quotes": []
+  }
+}

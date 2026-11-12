@@ -63,6 +63,32 @@ def seed_sample_agents(ds: DataStore, count: int = 5) -> list[dict]:
     return agents
 
 
+SEED_AGENTS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "agency" / "seed" / "agents"
+
+
+def seed_fixture_agents(ds: DataStore, seed_dir: Path = SEED_AGENTS_DIR
+                        ) -> tuple[list[dict], list[dict]]:
+    """Copy tracked fixture agents into the roster.
+
+    Idempotent: ids already on the roster are skipped, never overwritten -
+    the roster copy carries accrued state the fixture does not.
+    Returns (seeded, skipped).
+    """
+    seeded, skipped = [], []
+    for path in sorted(Path(seed_dir).glob("*.json")):
+        with open(path) as f:
+            record = json.load(f)
+        if "crypto" in record:
+            raise ValueError(f"seed fixture {path.name} carries a crypto "
+                             "block - key material is issued at enrollment, "
+                             "never shipped")
+        if ds.exists("agent", record["id"]):
+            skipped.append(record)
+            continue
+        seeded.append(ds.create("agent", record))
+    return seeded, skipped
+
+
 def print_summary(title: str, data: dict | list) -> None:
     """Print a formatted summary."""
     print(f"\n{'='*60}")
