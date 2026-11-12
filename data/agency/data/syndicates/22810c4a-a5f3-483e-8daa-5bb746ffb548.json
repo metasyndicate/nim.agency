@@ -3,7 +3,7 @@
   "slug": "mux_nova",
   "identity": {
     "label": "MUX-NOVA (Bonsai Dojo)",
-    "description": "Auxiliary Ollama host on the nim-substation-bonsai workstation, reachable over Tailscale. Owned hardware sitting idle most of the day - the low-cost dispatch target. A rogue syndicate: the model emits tool calls and the agency harness executes them (read-only filesystem functions, confined to the mission working directory). No shell, no writes.",
+    "description": "Tailnet port of the Ollama platform on nim-substation-bonsai (platform bonsai_ollama), served over HTTPS by tailscale serve (svc:mux-nova). Owned hardware sitting idle most of the day - the low-cost dispatch target. Rogue syndicate: the agency supplies the tool loop (harness profile on the channel). Harness (profile agency_introspect_compact): read-only filesystem functions confined to the mission directory, plus allowlisted agency CLI inspection and --dry-run composition. No shell, no writes.",
     "vendor": "self",
     "tags": [
       "auxiliary",
@@ -18,6 +18,7 @@
     "base_uri": "https://mux-nova.tailef068f.ts.net",
     "credential_id": null,
     "substation_id": "b6f45dad-a8d5-421c-a7ab-98d3e33b63b2",
+    "platform_id": "3f2d8404-7fcb-4334-a6a6-d673378c1ee3",
     "egress": "private",
     "verify_tls": true
   },
@@ -32,7 +33,8 @@
         "system_prompt",
         "structured_output",
         "tool_use",
-        "filesystem_read"
+        "filesystem_read",
+        "agency_cli"
       ],
       "limits": {
         "context_window": 32768,
@@ -47,7 +49,7 @@
         "currency": "USD"
       },
       "notes": "30.5B MoE, Q4_K_M. Measured ~64 tok/s eval warm; first call after idle pays a model-load penalty of roughly 10s. max_concurrent is 1 deliberately - one workstation GPU is not a fleet, and parallel requests queue behind each other anyway. Context: 32768 tokens served (context_length from /api/ps, verified 2026-10-14). The model advertises 262144, but 18 GB of weights plus a 256k q8_0 KV cache exceeds 32 GB of unified memory; ~131072 is the hardware ceiling.",
-      "harness_profile": "readonly_fs_compact"
+      "harness_profile": "agency_introspect_compact"
     }
   ],
   "enabled": true,

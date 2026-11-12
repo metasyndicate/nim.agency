@@ -368,6 +368,49 @@ class Executor:
                     f"Glob or LS."), header
         return "\n".join([header, *hits]), header
 
+    def _fn_agency(self, args: dict, deadline: float) -> tuple[str, str]:
+        """One allowlisted nim.agency command, never through a shell. The
+        allowlist lives on the harness_function row (`allow`), so what a
+        model may run is data the operator reviews, not code."""
+        import shlex
+        try:
+            argv = shlex.split(args["command"])
+        except ValueError as exc:
+            raise CallRefused(f"cannot parse command: {exc}")
+        if argv[:1] == ["nim.agency"]:
+            argv = argv[1:]
+        allow = self.policy.offered["Agency"].get("allow") or {}
+        verb = " ".join(argv[:2])
+        read, dry = allow.get("read") or [], allow.get("dry_run") or []
+        if verb not in read and verb not in dry:
+            raise CallRefused(f"'{verb or args['command']}' is not an allowed "
+                              f"agency command (inspection: {', '.join(read)}; "
+                              f"with --dry-run: {', '.join(dry)})")
+        if verb in dry and "--dry-run" not in argv:
+            raise CallRefused(f"'{verb}' writes unless --dry-run is given; "
+                              f"add --dry-run (an operator commits the result)")
+        flags = {a.split("=", 1)[0] for a in argv if a.startswith("-")}
+        refused = sorted(flags & set(allow.get("refused_flags") or []))
+        if refused:
+            raise CallRefused(f"flag(s) not allowed here: {', '.join(refused)}")
+        if argv[0] == "data" and len(argv) > 2 and argv[2] in (
+                allow.get("refused_entities") or []):
+            raise CallRefused(f"'{argv[2]}' records are operator-local and "
+                              f"not open to the harness")
+        from ...config import PROJECT_ROOT
+        remaining = max(1.0, deadline - time.monotonic())
+        env = {**os.environ, "NIM_NO_VENV": "1", "NO_COLOR": "1"}
+        try:
+            done = subprocess.run(
+                [sys.executable, str(PROJECT_ROOT / "bin" / "nim.agency"), *argv],
+                capture_output=True, text=True, timeout=remaining,
+                cwd=str(self.root), env=env)
+        except subprocess.TimeoutExpired:
+            raise CallFailed(f"'{verb}' did not finish before the call deadline")
+        text = re.sub(r"\x1b\[[0-9;]*m", "", (done.stdout or "") + (done.stderr or ""))
+        summary = f"nim.agency {verb} -> exit {done.returncode}"
+        return f"{summary}\n{text.strip()}", summary
+
 
 def glob_regex(pattern: str) -> "re.Pattern":
     """Compile a pathlib-style glob (see glob_regex_source). In-process -

@@ -228,7 +228,8 @@ class TestCapabilityGate(SyndicateCase):
             constraints(allowed_tools=["Read", "Bash"]),
             syndicate, channel, self.ds)
         self.assertIn("shell_exec", refusal)
-        self.assertIn("--tools Glob,Grep,LS,Read", refusal)
+        self.assertIn("--tools Read ", refusal)          # asked-for subset
+        self.assertIn("--toolset agency_introspect_compact", refusal)
         self.assertNotIn("runs no tools", refusal)
         self.assertIn("filesystem_write", capability_violation(
             constraints(allowed_tools=["Edit"], read_only=False),

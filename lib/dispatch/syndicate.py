@@ -333,16 +333,23 @@ def capability_violation(constraints: MissionConstraints, syndicate: dict,
             for slug in missing)
         if "tool_use" in granted:
             # What the agency harness actually serves within the grant
-            harnessed = ",".join(sorted(
+            provided = sorted(
                 row["function_name"]
                 for row in ds.load_reference("harness_function")
-                if capability_of_tool(row["function_name"], ds) in granted))
+                if capability_of_tool(row["function_name"], ds) in granted)
+            harnessed = ",".join(provided)
+            # Suggest what the mission asked for that the harness serves,
+            # not everything the channel offers
+            servable = ",".join(t for t in sorted(constraints.allowed_tools or [])
+                                if t in provided) or harnessed
+            profile = channel.get("harness_profile")
+            toolset = f" or --toolset {profile}" if profile else ""
             return (f"channel '{address_of(syndicate, channel)}' cannot serve "
                     f"this mission: missing {labels}. Its harness provides "
                     f"only {harnessed or 'no functions'}. Narrow the "
-                    f"mission's allowed_tools (--tools {harnessed or '...'}), "
-                    f"or dispatch to a syndicate whose harness covers the "
-                    f"rest (--provider claude_cli)")
+                    f"mission's allowed_tools (--tools {servable or '...'}"
+                    f"{toolset}), or dispatch to a syndicate whose harness "
+                    f"covers the rest (--provider claude_cli)")
         return (f"channel '{address_of(syndicate, channel)}' cannot serve "
                 f"this mission: missing {labels}. This channel generates "
                 f"text but runs no tools, so the work would be answered "

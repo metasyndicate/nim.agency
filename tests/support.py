@@ -31,6 +31,10 @@ class DatastoreCase(unittest.TestCase):
         syndicates = REPO / "data/agency/data/syndicates"
         if syndicates.exists():
             shutil.copytree(syndicates, cls.tmp / "syndicates")
+        # ...and so do the platforms its ports point at (endpoint.platform_id)
+        platforms = REPO / "data/agency/data/platforms"
+        if platforms.exists():
+            shutil.copytree(platforms, cls.tmp / "platforms")
         # Instance-scoped records (profiles) live in a temp instance root
         cls.ds = DataStore(base_path=str(cls.tmp), instance_path=str(cls.tmp / "instance"))
 

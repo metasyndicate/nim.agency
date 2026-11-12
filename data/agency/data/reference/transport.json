@@ -55,14 +55,14 @@
       "id": 4,
       "slug": "ollama_chat",
       "label": "Ollama Chat",
-      "description": "Ollama's own /api/chat: message history plus function declarations. The model emits structured tool calls and the agency harness (lib/dispatch/harness) executes them under mission policy. The ceiling extends exactly as far as the executor implements: filesystem_read, not write or shell. Tasks offered no function take a single text turn.",
+      "description": "Ollama's own /api/chat: message history plus function declarations. The model emits structured tool calls and the agency harness (lib/dispatch/harness) executes them under mission policy. The ceiling extends exactly as far as the executor implements: filesystem_read and the allowlisted agency CLI (agency_cli), not write or shell. Tasks offered no function take a single text turn.",
       "kind": "http",
       "handler": "OllamaChatProvider",
       "default_path": "/api/chat",
       "auth_mode": "none",
       "capability_ceiling": [
         "text_generation", "system_prompt", "tool_use", "filesystem_read",
-        "structured_output", "streaming", "vision"
+        "agency_cli", "structured_output", "streaming", "vision"
       ],
       "icon": "🦙",
       "sort_order": 4

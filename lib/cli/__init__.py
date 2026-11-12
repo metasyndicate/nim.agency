@@ -98,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
                                     "mission may use, narrowing the default "
                                     "Read,Glob,Grep,Bash (e.g. Read,Glob,Grep,LS "
                                     "for a read-only harness without a shell)")
+    mission_flags.add_argument("--toolset", type=str, metavar="PROFILE|FILE",
+                               help="Like --tools, from the catalog: a "
+                                    "harness_profile slug or id (e.g. "
+                                    "readonly_fs), or a JSON file with "
+                                    "{\"functions\": [...]}")
     mission_flags.add_argument("--expect", type=str,
                                help="Known-answer check: each task's output "
                                     "must contain this text, or the task fails "

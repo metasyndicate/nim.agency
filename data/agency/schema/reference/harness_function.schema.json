@@ -40,6 +40,17 @@
       },
       "required": ["type", "properties"]
     },
+    "allow": {
+      "type": "object",
+      "description": "Command allowlist for functions that run a program (the Agency function): what a model may invoke is data the operator reviews, not code. Verbs are the first two words after the program name.",
+      "properties": {
+        "read": {"type": "array", "items": {"type": "string"}, "description": "Inspection verbs, run as given"},
+        "dry_run": {"type": "array", "items": {"type": "string"}, "description": "Verbs that write unless --dry-run is present; refused without it"},
+        "refused_flags": {"type": "array", "items": {"type": "string"}, "description": "Flags refused anywhere in the command"},
+        "refused_entities": {"type": "array", "items": {"type": "string"}, "description": "Entities `data` verbs may not touch (operator-local records)"}
+      },
+      "additionalProperties": false
+    },
     "depot_tool": {
       "x-nim-ref": {"entity": "tool", "key": "slug"},
       "oneOf": [

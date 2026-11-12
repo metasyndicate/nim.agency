@@ -42,6 +42,21 @@
       "functions": ["Read", "LS", "Glob", "Grep"],
       "commands": ["ls", "cat", "head", "tail", "wc", "stat", "du", "file", "find", "grep", "rg", "tree", "sort", "uniq", "cut", "diff", "jq", "git"],
       "sort_order": 3
+    },
+    {
+      "id": 4,
+      "slug": "agency_introspect_compact",
+      "label": "Read-only filesystem + agency CLI, compact context",
+      "description": "readonly_fs_compact plus the Agency function: a 32k-window channel can inspect the agency and compose records by dry run (agent generate, data new --dry-run). Missions still name the functions they use (--tools / --toolset); a channel on this profile serves read-only missions exactly as before.",
+      "functions": ["Read", "LS", "Glob", "Grep", "Agency"],
+      "limits": {
+        "max_iterations": 16,
+        "max_calls_per_turn": 4,
+        "call_timeout_seconds": 60,
+        "max_result_chars": 12000,
+        "token_budget": 160000
+      },
+      "sort_order": 4
     }
   ]
 }

@@ -88,6 +88,9 @@ class ProviderConfig:
     max_concurrent: int = 1
     timeout: int = 300
     working_dir: Optional[str] = None
+    # Hostname a loopback endpoint belongs to (its platform's host); None
+    # when the endpoint is reachable from anywhere it is configured
+    bound_host: Optional[str] = None
 
     @property
     def url(self) -> str:
@@ -394,7 +397,14 @@ class HttpProvider(Provider):
         every briefing, and a cold workstation waking from sleep should not
         turn into a silent refusal.
         """
-        return bool(self.config.base_uri)
+        return bool(self.config.base_uri) and not self._elsewhere()
+
+    def _elsewhere(self) -> bool:
+        """A loopback endpoint bound to another host's platform: this host's
+        loopback is a different server (or none)."""
+        import socket
+        return bool(self.config.bound_host
+                     and self.config.bound_host != socket.gethostname())
 
     @property
     def descriptor(self) -> str:
@@ -403,6 +413,12 @@ class HttpProvider(Provider):
 
     @property
     def unavailable_reason(self) -> str:
+        if self._elsewhere():
+            import socket
+            return (f"syndicate '{self.config.name}' is a loopback port of a "
+                    f"platform on {self.config.bound_host}; this host is "
+                    f"{socket.gethostname()} - dispatch to a tailnet port of "
+                    f"that platform instead (nim.agency platform list)")
         return (f"syndicate '{self.config.name}' has no base_uri - set "
                 f"endpoint.base_uri on its record")
 
@@ -845,6 +861,22 @@ def provider_config(syndicate: dict, channel: dict,
     )
 
 
+LOOPBACK_HOSTS = ("localhost", "127.0.0.1", "::1", "[::1]")
+
+
+def bound_host(syndicate: dict, ds=None) -> Optional[str]:
+    """The hostname a loopback endpoint is local to: its platform's host.
+    None for non-loopback endpoints or ones not linked to a platform."""
+    from urllib.parse import urlparse
+    endpoint = syndicate.get("endpoint") or {}
+    host = urlparse(endpoint.get("base_uri") or "").hostname or ""
+    if host not in LOOPBACK_HOSTS or not endpoint.get("platform_id"):
+        return None
+    from ..data import get_datastore
+    platform = (ds or get_datastore()).read("platform", endpoint["platform_id"])
+    return ((platform or {}).get("host") or {}).get("hostname")
+
+
 def get_provider(address: Optional[str] = None, ds=None) -> Provider:
     """Resolve a dispatch address through the syndicate inventory and
     return its provider.
@@ -865,7 +897,9 @@ def get_provider(address: Optional[str] = None, ds=None) -> Provider:
             f"'{transport.get('handler')}' which is not implemented in "
             f"lib/dispatch/provider.py (have: {', '.join(sorted(HANDLERS))})")
 
-    provider = handler(provider_config(syndicate, channel, transport))
+    config = provider_config(syndicate, channel, transport)
+    config.bound_host = bound_host(syndicate, ds)
+    provider = handler(config)
     # Carry the inventory records the provider was built from: the briefing
     # discloses them and the dispatcher gates against them. Providers built
     # by hand (test stubs) simply have neither, and the gate stands down.

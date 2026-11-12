@@ -1,0 +1,60 @@
+{
+  "id": "3a6ac706-3caa-4bd5-a6e8-8b11c80212e6",
+  "slug": "bonsai_ollama",
+  "identity": {
+    "label": "Bonsai Ollama (loopback)",
+    "description": "Loopback port of the Ollama platform on nim-substation-bonsai (platform bonsai_ollama): http://127.0.0.1:11434, no network hop and no TLS. Only usable on that host - elsewhere the provider reports itself unavailable; use mux_nova from other hosts. Harness (profile agency_introspect_compact): read-only filesystem functions confined to the mission directory, plus allowlisted agency CLI inspection and --dry-run composition. No shell, no writes.",
+    "vendor": "self",
+    "tags": [
+      "auxiliary",
+      "amortized",
+      "loopback",
+      "dojo"
+    ]
+  },
+  "transport_slug": "ollama_chat",
+  "endpoint": {
+    "base_uri": "http://127.0.0.1:11434",
+    "credential_id": null,
+    "substation_id": null,
+    "platform_id": "3f2d8404-7fcb-4334-a6a6-d673378c1ee3",
+    "egress": "local",
+    "verify_tls": true
+  },
+  "channels": [
+    {
+      "slug": "qwen3_coder",
+      "label": "Qwen3 Coder 30B",
+      "model": "qwen3-coder:30b",
+      "default": true,
+      "capabilities": [
+        "text_generation",
+        "system_prompt",
+        "structured_output",
+        "tool_use",
+        "filesystem_read",
+        "agency_cli"
+      ],
+      "limits": {
+        "context_window": 32768,
+        "max_concurrent": 1,
+        "timeout_seconds": 600
+      },
+      "parameters": {
+        "temperature": 0.2
+      },
+      "cost": {
+        "class": "amortized",
+        "currency": "USD"
+      },
+      "notes": "30.5B MoE, Q4_K_M. Measured ~64 tok/s eval warm; first call after idle pays a model-load penalty of roughly 10s. max_concurrent is 1 deliberately - one workstation GPU is not a fleet, and parallel requests queue behind each other anyway. Context: 32768 tokens served (context_length from /api/ps, verified 2026-10-14). The model advertises 262144, but 18 GB of weights plus a 256k q8_0 KV cache exceeds 32 GB of unified memory; ~131072 is the hardware ceiling.",
+      "harness_profile": "agency_introspect_compact"
+    }
+  ],
+  "enabled": true,
+  "audit": {
+    "created_at": "2026-11-11T00:00:00+00:00",
+    "updated_at": "2026-11-11T00:00:00+00:00",
+    "retired_at": null
+  }
+}

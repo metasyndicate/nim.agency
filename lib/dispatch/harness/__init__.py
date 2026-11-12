@@ -15,7 +15,7 @@ from .executor import (
 )
 from .loop import (
     ChatTurn, ProfileMissing, ToolCall, channel_profile, harness_config,
-    offered_functions, parse_arguments, run, tool_schema,
+    offered_functions, parse_arguments, resolve_toolset, run, tool_schema,
 )
 
 __all__ = [
@@ -31,6 +31,7 @@ __all__ = [
     "harness_config",
     "offered_functions",
     "parse_arguments",
+    "resolve_toolset",
     "run",
     "tool_schema",
 ]

@@ -79,6 +79,30 @@
       "handler": "grep",
       "icon": "🧵",
       "sort_order": 4
+    },
+    {
+      "id": 5,
+      "slug": "agency",
+      "label": "Agency CLI",
+      "description": "Run one nim.agency command and return its output, e.g. 'agent show scholarly.modeller', 'data form agent', 'data options agent /profile/personality/work_styles/0/style', 'agent generate --dry-run --format json', \"data new agent --dry-run --set /identity/codename=x.y\". Inspection verbs and --dry-run composition only; nothing is saved.",
+      "function_name": "Agency",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {"type": "string", "description": "The command line after 'nim.agency' (shell-style quoting for values with spaces)"}
+        },
+        "required": ["command"]
+      },
+      "allow": {
+        "read": ["agent list", "agent show", "syndicate list", "syndicate show", "platform list", "platform show", "data schemas", "data describe", "data form", "data options", "data list", "data show", "lex groups", "lex show", "lex random", "lex salad", "lex name", "ext list"],
+        "dry_run": ["agent generate", "data new", "data edit"],
+        "refused_flags": ["--from", "--write", "-y", "--yes"],
+        "refused_entities": ["credential", "substation", "install", "remote_operation", "syndicate_status"]
+      },
+      "depot_tool": null,
+      "handler": "agency",
+      "icon": "🏛",
+      "sort_order": 5
     }
   ]
 }

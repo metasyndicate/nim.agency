@@ -102,6 +102,14 @@
           ],
           "description": "The substation hosting this syndicate, when the host is also under agency inventory"
         },
+        "platform_id": {
+          "x-nim-ref": {"entity": "platform", "key": "id"},
+          "oneOf": [
+            { "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid" },
+            { "type": "null" }
+          ],
+          "description": "The platform (inference software on a host) this endpoint reaches - a syndicate record is one port of it. A loopback base_uri is only meaningful on that platform's host: elsewhere the provider reports itself unavailable instead of reaching whatever listens on that host's loopback"
+        },
         "egress": {
           "type": "string",
           "enum": ["local", "private", "public"],

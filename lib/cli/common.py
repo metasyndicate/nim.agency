@@ -204,6 +204,7 @@ def apply_mission_scope(args, mission: Mission,
 
     --text-only   no tools at all: the crew answers from the prompt alone
     --tools       narrow allowed_tools to named harness functions
+    --toolset     the same, from a harness profile (slug/id) or a JSON file
     --expect      every task must answer with output containing this text
     --expect-json every task must answer with a JSON object containing these
                   keys and values
@@ -220,8 +221,20 @@ def apply_mission_scope(args, mission: Mission,
         # let text-only syndicates serve the mission.
         mission.constraints.allowed_tools = []
         mission.constraints.blocked_commands = []
-    elif getattr(args, "tools", None):
-        names = [n.strip() for n in args.tools.split(",") if n.strip()]
+    elif getattr(args, "tools", None) or getattr(args, "toolset", None):
+        if getattr(args, "tools", None) and getattr(args, "toolset", None):
+            print("\033[91mERROR: --tools and --toolset both name the mission's "
+                  "functions; give one\033[0m", file=sys.stderr)
+            raise SystemExit(1)
+        if args.tools:
+            names = [n.strip() for n in args.tools.split(",") if n.strip()]
+        else:
+            from ..dispatch.harness import resolve_toolset
+            try:
+                names = resolve_toolset(args.toolset, ds)
+            except ValueError as exc:
+                print(f"\033[91mERROR: --toolset: {exc}\033[0m", file=sys.stderr)
+                raise SystemExit(1)
         known = harness_tool_names(ds)
         unknown = [n for n in names if n not in known]
         if unknown:

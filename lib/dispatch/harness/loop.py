@@ -88,6 +88,35 @@ def channel_profile(channel: Optional[dict],
     return profile
 
 
+def resolve_toolset(ref: str, ds: Optional[DataStore] = None) -> list[str]:
+    """Harness function names for a toolset reference: a harness_profile
+    from the catalog (slug or id), or a JSON file holding a profile-shaped
+    object ({"functions": [...]}) or a bare list. Raises ValueError naming
+    what was tried."""
+    import json
+    from pathlib import Path
+    ds = ds or get_datastore()
+    profile = ds.get_reference_by_slug("harness_profile", ref)
+    if profile is None and str(ref).isdigit():
+        profile = ds.get_reference_by_id("harness_profile", int(ref))
+    if profile is not None:
+        return list(profile.get("functions") or [])
+    path = Path(ref).expanduser()
+    if path.is_file():
+        try:
+            doc = json.loads(path.read_text())
+        except ValueError as exc:
+            raise ValueError(f"toolset file {path}: {exc}") from exc
+        functions = doc.get("functions") if isinstance(doc, dict) else doc
+        if not isinstance(functions, list) or not all(isinstance(f, str) for f in functions):
+            raise ValueError(f"toolset file {path}: expected {{\"functions\": [...]}} "
+                             f"or a list of function names")
+        return functions
+    known = ", ".join(sorted(r["slug"] for r in ds.load_reference("harness_profile")))
+    raise ValueError(f"toolset '{ref}' is neither a harness profile ({known}) "
+                     f"nor a readable JSON file")
+
+
 def harness_config(channel: Optional[dict] = None,
                    ds: Optional[DataStore] = None) -> dict:
     """Loop limits: built-in defaults, then etc/agency.json's harness

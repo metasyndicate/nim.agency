@@ -138,6 +138,18 @@
       "hazard": "escalation",
       "icon": "🐝",
       "sort_order": 12
+    },
+    {
+      "id": 13,
+      "slug": "agency_cli",
+      "label": "Agency CLI",
+      "description": "The runtime can run allowlisted nim.agency commands against the agency's own datastore: read-only inspection (agent, syndicate, platform, schema, lexicon) and composition dry runs (agent generate, data new/edit with --dry-run). Nothing is written; what the model composes, an operator commits.",
+      "category": "harness",
+      "requires": ["tool_use"],
+      "harness_tools": ["Agency"],
+      "hazard": "disclosure",
+      "icon": "🏛",
+      "sort_order": 13
     }
   ]
 }
