@@ -55,6 +55,11 @@ data/agency/hive/depot/.vault/
 !data/agency/data/instruction/
 !data/agency/data/instruction/**
 
+# Tracked seed fixtures (no key material - tests/test_seed.py enforces it).
+# `agents` matches **/*AGENT* under case-insensitive git, so re-include.
+!data/agency/seed/
+!data/agency/seed/agents/
+!data/agency/seed/agents/*.json
 
 # Persona source pipeline (tools/persona/README.md): publisher downloads and
 # intermediate normalized JSON are rebuilt locally, never committed

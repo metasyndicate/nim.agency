@@ -176,6 +176,7 @@ One canonical entry point with a consistent grammar:
 | `agent enroll <codename> \| --backfill` | issue badge + primary keypair into the vault |
 | `data verify` | verify reference data |
 | `data seed --agents N` | generate sample agents |
+| `data seed --fixtures` | install tracked seed roster (`data/agency/seed/`) and enroll it |
 | `data schemas` / `data describe <schema>` | schema inspection |
 | `data check [ENTITY...]` | stored data against schemas and declared references |
 | `data form\|options\|list\|show\|new\|edit\|delete <entity>` | compose any record from its schema |

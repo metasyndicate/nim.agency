@@ -3,7 +3,7 @@
 
     data verify     verify reference data loads correctly
     data check      stored data vs schemas and declared references
-    data seed       generate sample agents
+    data seed       generate sample agents, or install tracked fixtures
     data schemas    list available schemas
     data describe   describe a specific schema
     data form|options|list|show|new|edit|delete ENTITY ...
@@ -11,7 +11,8 @@
 """
 
 from ..data import SchemaManager, DataStore
-from ..data.seed import verify_reference_data, seed_sample_agents, print_summary
+from ..data.seed import (verify_reference_data, seed_sample_agents,
+                         seed_fixture_agents, print_summary)
 from . import compose
 
 
@@ -84,9 +85,35 @@ def cmd_check(args) -> int:
 
 def cmd_seed(args) -> int:
     _, ds = _datastore()
+    if args.fixtures:
+        return _seed_fixtures(ds)
     agents = seed_sample_agents(ds, args.agents)
     print_summary(f"Seeded {len(agents)} Agents", agents)
     return 0
+
+
+def _seed_fixtures(ds: DataStore) -> int:
+    """Install the tracked fixture roster, then badge only what was seeded
+    (a fixture install must not enroll unrelated agents on the roster)."""
+    from ..data.identity import try_enroll
+
+    seeded, skipped = seed_fixture_agents(ds)
+    print("SEED FIXTURES  data/agency/seed/agents/")
+    for agent in skipped:
+        print(f"  = {agent['identity']['codename']:<24} already on roster")
+    deferred = 0
+    for agent in seeded:
+        print(f"  + {agent['identity']['codename']:<24} seeded")
+        enrollment = try_enroll(ds, agent)
+        if enrollment is None:
+            deferred += 1
+        else:
+            print("    " + enrollment.render().replace("\n", "\n    "))
+    print(f"Fixture sweep: {len(seeded)} seeded, {len(skipped)} already "
+          f"present, {deferred} enrollment(s) deferred.")
+    if deferred:
+        print("  retry with: nim.agency agent enroll --backfill")
+    return 1 if deferred else 0
 
 
 def cmd_schemas(args) -> int:
@@ -132,9 +159,14 @@ def add_parser(subparsers):
                        metavar="N", help="Lines per entity with -v (default 8)")
     check.set_defaults(func=cmd_check)
 
-    seed = actions.add_parser("seed", help="Generate sample agents")
-    seed.add_argument("--agents", type=int, required=True, metavar="N",
-                      help="Number of sample agents to generate")
+    seed = actions.add_parser(
+        "seed", help="Generate sample agents, or install tracked fixtures")
+    source = seed.add_mutually_exclusive_group(required=True)
+    source.add_argument("--agents", type=int, metavar="N",
+                        help="Number of sample agents to generate")
+    source.add_argument("--fixtures", action="store_true",
+                        help="Install data/agency/seed/agents/ into the "
+                             "roster and enroll them (idempotent)")
     seed.set_defaults(func=cmd_seed)
 
     schemas = actions.add_parser("schemas", help="List available schemas")
