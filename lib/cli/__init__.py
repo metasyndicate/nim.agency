@@ -12,6 +12,8 @@ Components mirror the library nomenclature:
     data        datastore init and schema inspection (lib.data)
     lex         flavor vocabulary: names, phrases, checks (lib.data.lex)
     tui         interactive agent builder (tui.builder)
+    ext         optional extensions under ext/ (lib.extensions); each one
+                also mounts as its own component, e.g. `nim.agency library`
 """
 
 import argparse
@@ -25,10 +27,15 @@ from . import dispatch as dispatch_cmd
 from . import mission as mission_cmd
 from . import project as project_cmd
 from . import install as install_cmd
+from . import ext as ext_cmd
 from . import lex as lex_cmd
 from . import profiles as profiles_cmd
 from . import substation as substation_cmd
 from . import syndicate as syndicate_cmd
+
+# Core components; an extension may not take one of these names.
+CORE = ("dispatch", "mission", "project", "syndicate", "substation", "install",
+        "agent", "data", "lex", "ext", "tui")
 
 
 def cmd_tui(args) -> int:
@@ -125,10 +132,15 @@ def build_parser() -> argparse.ArgumentParser:
     tui = sub.add_parser("tui", help="Launch the interactive TUI agent builder")
     tui.set_defaults(func=cmd_tui)
 
+    ext_cmd.add_parser(sub, set(CORE))
     return parser
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    rc = ext_cmd.forward(argv, set(CORE))
+    if rc is not None:
+        return rc
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)

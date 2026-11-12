@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nim:library:1",
+  "title": "nim.library",
+  "description": "Profile library for generative character work. Terms follow schema.org (MusicGroup, OrganizationRole, Person, ImageObject, CreativeWork) and W3C PROV-O for lineage; see etc/terms.json for IRIs.",
+  "$defs": {
+    "slug": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "tag": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"},
+    "timestamp": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "profileType": {
+      "description": "Kind of subject. character = schema:Person; group = schema:MusicGroup.",
+      "enum": ["character", "group"]
+    },
+    "sourceKind": {"enum": ["text", "images"]},
+
+    "role": {
+      "description": "schema:OrganizationRole: a member's part in the group. roleName is the label used in prompts ('Lead Guitar').",
+      "type": "object",
+      "required": ["roleName"],
+      "additionalProperties": false,
+      "properties": {
+        "@type": {"const": "OrganizationRole"},
+        "roleName": {"type": "string"},
+        "instrument": {"type": "string", "description": "schema:instrument, when the role is played on one"},
+        "startDate": {"type": "string"},
+        "endDate": {"type": "string"}
+      }
+    },
+
+    "source": {
+      "description": "A raw data location linked (never copied) into the profile. prov:Entity used by later stages.",
+      "type": "object",
+      "required": ["kind", "path", "link", "added"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"$ref": "#/$defs/sourceKind"},
+        "path": {"type": "string", "description": "absolute path of the raw file or directory"},
+        "link": {"type": "string", "description": "symlink path relative to the profile dir, e.g. sources/images/archive"},
+        "added": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+
+    "profile": {
+      "description": "profiles/<slug>/profile.json. One subject: a band member (character) or the band itself (group).",
+      "type": "object",
+      "required": ["$schema", "@type", "id", "type", "tag", "slug", "name", "trigger", "class", "roles", "attributes", "sources", "created", "modified"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/profile"},
+        "@context": {"const": "https://schema.org"},
+        "@type": {"enum": ["Person", "MusicGroup"]},
+        "id": {"type": "string", "pattern": "^[a-z0-9_-]+/[a-z0-9-]+$", "description": "<tag>/<slug>, lowercase"},
+        "type": {"$ref": "#/$defs/profileType"},
+        "tag": {"$ref": "#/$defs/tag"},
+        "slug": {"$ref": "#/$defs/slug"},
+        "name": {"type": "string"},
+        "alternateName": {"type": "array", "items": {"type": "string"}},
+        "trigger": {"type": "string", "pattern": "^[a-z0-9]+$", "description": "made-up token the image model learns for this subject"},
+        "class": {"type": "string", "description": "kohya class word (person, man, woman, band)"},
+        "roles": {"type": "array", "items": {"$ref": "#/$defs/role"}},
+        "voiceType": {"type": "string"},
+        "attributes": {"type": "object", "description": "keys without a typed field yet; promote to a property once stable"},
+        "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "created": {"$ref": "#/$defs/timestamp"},
+        "modified": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+
+    "member": {
+      "type": "object",
+      "required": ["slug", "name", "roles"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": {"$ref": "#/$defs/slug"},
+        "name": {"type": "string"},
+        "roles": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "group": {
+      "description": "<tag>/group.json. schema:MusicGroup: the collection's roster, kept in sync by `new`.",
+      "type": "object",
+      "required": ["$schema", "@type", "tag", "name", "members", "modified"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/group"},
+        "@context": {"const": "https://schema.org"},
+        "@type": {"const": "MusicGroup"},
+        "tag": {"$ref": "#/$defs/tag"},
+        "name": {"type": "string"},
+        "profile": {"$ref": "#/$defs/slug", "description": "slug of the group's own profile, if any"},
+        "members": {"type": "array", "items": {"$ref": "#/$defs/member"}},
+        "modified": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+
+    "item": {
+      "description": "One raw file found under a source. id is the first 12 hex digits of its sha256.",
+      "type": "object",
+      "required": ["id", "kind", "source", "path", "bytes", "sha256", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+        "kind": {"$ref": "#/$defs/sourceKind"},
+        "source": {"type": "string", "description": "the source link this file was found under"},
+        "path": {"type": "string", "description": "path relative to the source link"},
+        "bytes": {"type": "integer"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "format": {"type": "string", "description": "lowercase file extension"},
+        "duplicate_of": {"type": "string", "pattern": "^[0-9a-f]{12}$"}
+      }
+    },
+
+    "index": {
+      "description": "profiles/<slug>/index.json, written by `index`: every raw file, hashed and de-duplicated.",
+      "type": "object",
+      "required": ["$schema", "profile", "generated", "counts", "items", "skipped"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/index"},
+        "profile": {"type": "string"},
+        "generated": {"$ref": "#/$defs/timestamp"},
+        "counts": {
+          "type": "object",
+          "required": ["text", "images", "duplicates", "skipped"],
+          "properties": {
+            "text": {"type": "integer"}, "images": {"type": "integer"},
+            "duplicates": {"type": "integer"}, "skipped": {"type": "integer"}
+          }
+        },
+        "items": {"type": "array", "items": {"$ref": "#/$defs/item"}},
+        "skipped": {"type": "array", "items": {"type": "string"}, "description": "files with unsupported formats"}
+      }
+    },
+
+    "box": {
+      "description": "[x, y, width, height] in pixels of the staged (resized) image",
+      "type": "array", "items": {"type": "integer"}, "minItems": 4
+    },
+
+    "output": {
+      "description": "One staged file derived from a raw image: the whole frame or a face crop.",
+      "type": "object",
+      "required": ["file", "variant", "width", "height", "caption"],
+      "additionalProperties": false,
+      "properties": {
+        "file": {"type": "string", "description": "path relative to stage/images/"},
+        "variant": {"enum": ["full", "face"]},
+        "width": {"type": "integer"},
+        "height": {"type": "integer"},
+        "caption": {"type": "string", "description": "the caption in the .txt next to the file"},
+        "caption_source": {"enum": ["template", "user"], "description": "user = the .txt was edited by hand and is kept on re-run"}
+      }
+    },
+
+    "initImage": {
+      "description": "init's verdict on one raw image. status is the automatic decision; override (hand-set) wins.",
+      "type": "object",
+      "required": ["id", "source", "status", "reasons"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+        "source": {"type": "string", "description": "source link + path, as in index.json"},
+        "original": {"type": "array", "items": {"type": "integer"}, "description": "[width, height] before resizing"},
+        "faces": {"type": "array", "items": {"$ref": "#/$defs/box"}},
+        "outputs": {"type": "array", "items": {"$ref": "#/$defs/output"}},
+        "status": {"enum": ["ok", "review", "error"]},
+        "reasons": {"type": "array", "items": {"type": "string"}},
+        "override": {"enum": ["ok", "exclude"], "description": "set by hand; kept across re-runs; `stage` uses it before status"}
+      }
+    },
+
+    "passage": {
+      "description": "A paragraph of memoir text that mentions the subject (schema:CreativeWork mentions).",
+      "type": "object",
+      "required": ["item", "n", "text", "mentions"],
+      "additionalProperties": false,
+      "properties": {
+        "item": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+        "n": {"type": "integer", "description": "paragraph number within the source file"},
+        "text": {"type": "string"},
+        "mentions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "init": {
+      "description": "profiles/<slug>/stage/init.json, written by `init`: staged images with verdicts, plus text extraction results. Passages are in stage/text/passages.jsonl.",
+      "type": "object",
+      "required": ["$schema", "profile", "generated", "settings", "counts", "images", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/init"},
+        "profile": {"type": "string"},
+        "generated": {"$ref": "#/$defs/timestamp"},
+        "settings": {"type": "object"},
+        "counts": {"type": "object"},
+        "images": {"type": "array", "items": {"$ref": "#/$defs/initImage"}},
+        "text": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "source", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+              "source": {"type": "string"},
+              "status": {"enum": ["ok", "error"]},
+              "paragraphs": {"type": "integer"},
+              "passages": {"type": "integer"},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+
+    "stage": {
+      "description": "profiles/<slug>/stage/stage.json, written by `stage`: the kohya dataset built from accepted images.",
+      "type": "object",
+      "required": ["$schema", "profile", "generated", "dataset", "folder", "repeats", "counts", "items", "warnings"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/stage"},
+        "profile": {"type": "string"},
+        "generated": {"$ref": "#/$defs/timestamp"},
+        "dataset": {"type": "string", "description": "absolute path of stage/dataset (kohya --train_data_dir is its img/)"},
+        "folder": {"type": "string", "pattern": "^[0-9]+_[a-z0-9]+ .+$", "description": "kohya folder name: <repeats>_<trigger> <class>"},
+        "repeats": {"type": "integer", "minimum": 1},
+        "link": {"type": "string", "description": "training datasets entry linked to the dataset, e.g. .../datasets/lk5-jody"},
+        "counts": {
+          "type": "object",
+          "required": ["images", "full", "face", "epochs", "steps"],
+          "properties": {
+            "images": {"type": "integer"}, "full": {"type": "integer"}, "face": {"type": "integer"},
+            "epochs": {"type": "integer"},
+            "steps": {"type": "integer", "description": "images x repeats x epochs at batch size 1"}
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "file", "variant", "caption"],
+            "additionalProperties": false,
+            "properties": {
+              "item": {"type": "string", "pattern": "^[0-9a-f]{12}$"},
+              "file": {"type": "string"},
+              "variant": {"enum": ["full", "face"]},
+              "caption": {"type": "string"}
+            }
+          }
+        },
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "train": {
+      "description": "profiles/<slug>/train/<run>.json, written by `train`: one train_lora.sh run.",
+      "type": "object",
+      "required": ["$schema", "profile", "run", "started", "finished", "status", "returncode", "command", "dataset", "name", "epochs", "steps", "seconds", "log"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/train"},
+        "profile": {"type": "string"},
+        "run": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z$"},
+        "started": {"$ref": "#/$defs/timestamp"},
+        "finished": {"$ref": "#/$defs/timestamp"},
+        "status": {"enum": ["ok", "failed"]},
+        "returncode": {"type": "integer"},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "dataset": {"type": "string", "description": "training/datasets entry (the stage link)"},
+        "name": {"type": "string", "description": "LoRA output name"},
+        "epochs": {"type": "integer"},
+        "steps": {"type": "integer"},
+        "seconds": {"type": "integer"},
+        "sec_per_step": {"type": "number"},
+        "output": {"type": "string", "description": "the .safetensors written"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "log": {"type": "string", "description": "full training output, relative to the profile dir"}
+      }
+    },
+
+    "prompt": {
+      "description": "profiles/<slug>/prompt/<run>/prompt.json, written by `prompt`: comparison images with and without a LoRA.",
+      "type": "object",
+      "required": ["$schema", "profile", "run", "started", "finished", "lora", "lora_sha256", "settings", "sheet", "images"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/prompt"},
+        "profile": {"type": "string"},
+        "run": {"type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z$"},
+        "started": {"$ref": "#/$defs/timestamp"},
+        "finished": {"$ref": "#/$defs/timestamp"},
+        "lora": {"type": "string"},
+        "lora_sha256": {"$ref": "#/$defs/sha256"},
+        "train_run": {"type": "string", "description": "the train/<run>.json that produced the LoRA, if known"},
+        "settings": {"type": "object", "description": "ckpt, dtype, steps, guidance, size"},
+        "sheet": {"type": "string", "description": "contact sheet: one row per prompt, one column per weight"},
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "prompt", "negative", "weight", "seed", "seconds", "blank"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {"type": "string"}, "prompt": {"type": "string"}, "negative": {"type": "string"},
+              "weight": {"type": "number", "description": "LoRA multiplier; 0 = base model"},
+              "seed": {"type": "integer"}, "seconds": {"type": "number"},
+              "blank": {"type": "boolean", "description": "all-black or all-white output (a precision failure)"}
+            }
+          }
+        }
+      }
+    },
+
+    "activity": {
+      "description": "prov:Activity: one stage run against a profile.",
+      "type": "object",
+      "required": ["activity", "at", "agent", "used", "generated"],
+      "additionalProperties": false,
+      "properties": {
+        "activity": {"enum": ["new", "index", "init", "stage", "train", "prompt"]},
+        "at": {"$ref": "#/$defs/timestamp"},
+        "agent": {"type": "string", "description": "prov:SoftwareAgent, e.g. nim.library/0.1.0"},
+        "used": {"type": "array", "items": {"type": "string"}},
+        "generated": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "additionalProperties": false,
+            "properties": {"path": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha256"}}
+          }
+        },
+        "note": {"type": "string"}
+      }
+    },
+
+    "manifest": {
+      "description": "profiles/<slug>/manifest.json: the profile's PROV lineage, one activity per stage run, appended.",
+      "type": "object",
+      "required": ["$schema", "profile", "activities"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {"const": "urn:nim:library:1#/$defs/manifest"},
+        "profile": {"type": "string"},
+        "activities": {"type": "array", "items": {"$ref": "#/$defs/activity"}}
+      }
+    }
+  }
+}

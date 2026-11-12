@@ -1,0 +1,7 @@
+{
+  "name": "library",
+  "version": "0.1.0",
+  "summary": "Character-profile library: sources, review, kohya dataset, LoRA train, prompt renders",
+  "command": "bin/nim.library",
+  "tests": "tests"
+}

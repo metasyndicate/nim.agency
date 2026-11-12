@@ -1,0 +1,75 @@
+{
+  "root": "/Volumes/mf-arc/ai/library",
+  "formats": {
+    "images": ["jpg", "jpeg", "png", "tif", "tiff", "heic", "webp", "bmp", "gif"],
+    "text": ["txt", "md", "rtf", "docx", "odt", "pdf", "html"]
+  },
+  "ignore": [".DS_Store", "Thumbs.db", "desktop.ini"],
+  "class": {"character": "person", "group": "band"},
+  "init": {
+    "_doc": "image settings for `init`. The image worker runs under `python` (needs Pillow + OpenCV); sd-scripts' venv has both.",
+    "python": "/Volumes/mf-arc/ai/tools/sd-scripts/venv/bin/python",
+    "max_side": 1024,
+    "min_side": 384,
+    "face_crop": true,
+    "face_crop_scale": 3.0,
+    "face_crop_min": 512,
+    "caption": "{trigger} {class}",
+    "caption_face": "{trigger} {class}, close-up portrait"
+  },
+  "stage": {
+    "_doc": "kohya dataset settings for `stage`. repeats = ceil(steps_per_epoch / images), capped at max_repeats; `--repeats` overrides. epochs mirrors train_lora.sh --max_train_epochs, for the step estimate only.",
+    "datasets": "/Volumes/mf-arc/ai/training/datasets",
+    "steps_per_epoch": 100,
+    "max_repeats": 40,
+    "epochs": 10,
+    "min_images": 15
+  },
+  "train": {
+    "_doc": "settings for `train`, which runs `script` (train_lora.sh). lora_dir must match the script's OUT (Forge's LoRA folder). sec_per_step is the estimate until a run on the profile measures one.",
+    "script": "/Volumes/mf-arc/ai/training/train_lora.sh",
+    "lora_dir": "/Volumes/mf-arc/ai/models/sd/lora",
+    "epochs": 10,
+    "sec_per_step": 180
+  },
+  "prompt": {
+    "_doc": "settings for `prompt`. Each template renders at every weight (0 = base model, 1 = full LoRA) with the same seed. Placeholders: {trigger} {class} {name} {role}. ckpt should match train_lora.sh BASE. The VAE always runs in float32. dtype: float16 | bfloat16 | float32 (float32 exceeds 8 GB).",
+    "python": "/Volumes/mf-arc/ai/tools/sd-scripts/venv/bin/python",
+    "sd_scripts": "/Volumes/mf-arc/ai/tools/sd-scripts",
+    "ckpt": "/Volumes/mf-arc/ai/models/sd/checkpoints/Realistic_Vision_V5.1_Hyper_pruned.safetensors",
+    "prompts": [
+      "photo of {trigger} {class}, portrait, natural light",
+      "{trigger} {class} playing {role} on stage, 1990s concert photo"
+    ],
+    "negative": "blurry, deformed, lowres, bad anatomy, watermark, text",
+    "weights": [0, 1],
+    "seed": 1234,
+    "steps": 20,
+    "guidance": 7.0,
+    "size": 512,
+    "dtype": "float16"
+  },
+  "keys": {
+    "_doc": "--keys mapping. A key listed here fills a typed profile field; any other key goes to profile.attributes unchanged. Keys match case-insensitively.",
+    "instrument": {"field": "roles", "as": "roleName"},
+    "role": {"field": "roles", "as": "roleName"},
+    "voice": {"field": "voiceType"},
+    "class": {"field": "class"},
+    "alias": {"field": "alternateName"},
+    "aka": {"field": "alternateName"}
+  },
+  "terms": {
+    "profile.character": "https://schema.org/Person",
+    "profile.group": "https://schema.org/MusicGroup",
+    "role": "https://schema.org/OrganizationRole",
+    "role.roleName": "https://schema.org/roleName",
+    "role.instrument": "https://schema.org/instrument",
+    "group.members": "https://schema.org/member",
+    "voiceType": "no benchmark; assumption: free-text voice classification (Tenor, Baritone, ...)",
+    "item.image": "https://schema.org/ImageObject",
+    "item.text": "https://schema.org/CreativeWork",
+    "source": "http://www.w3.org/ns/prov#Entity",
+    "activity": "http://www.w3.org/ns/prov#Activity",
+    "trigger": "no benchmark; assumption: kohya/DreamBooth instance token"
+  }
+}
