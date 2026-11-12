@@ -173,6 +173,13 @@ class DataStore:
             "local_storage": True,
             "encrypted": True  # Note: actual encryption handled by vault module
         },
+        # Probe/conform observations: per host, never on the shared record
+        "syndicate_status": {
+            "type": "collection",
+            "dir": "status/syndicates",
+            "id_field": "id",
+            "local_storage": True
+        },
         "install": {
             "type": "collection",
             "dir": "installs",

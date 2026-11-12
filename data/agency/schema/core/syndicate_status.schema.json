@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nim.agency/schema/core/syndicate_status.schema.json",
+  "title": "Syndicate Status",
+  "description": "This host's observations of one syndicate: reachability from `nim.agency syndicate probe` and known-answer conformance from `syndicate conform`. Operator-local, never committed: every host probes the same shared inventory record, so observations kept on it would conflict on every sync and report another host's view. Keyed by the syndicate's id.",
+  "@type": [
+    "prov:Entity"
+  ],
+  "$ref": "https://nim.agency/schema/meta/agency.metaschema.json",
+  "$nim.meta": {
+    "nim.id": 400119,
+    "created": "2026-11-11T00:00:00Z",
+    "modified": "2026-11-11T00:00:00Z",
+    "version": "1.0.0",
+    "layer": {
+      "id": 1,
+      "label": "system",
+      "component": "agency",
+      "subcomponent": "core",
+      "object": "syndicate_status",
+      "type": "schema",
+      "path": "L1.agency.core.syndicate_status"
+    }
+  },
+  "type": "object",
+  "required": [
+    "id",
+    "slug",
+    "status",
+    "audit"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/uuid",
+      "readOnly": true,
+      "description": "The observed syndicate's id"
+    },
+    "slug": {
+      "type": "string",
+      "description": "The observed syndicate's slug (for humans reading the file)"
+    },
+    "status": {
+      "$ref": "https://nim.agency/schema/core/syndicate.schema.json#/properties/status"
+    },
+    "audit": {
+      "$ref": "https://nim.agency/schema/meta/agency.metaschema.json#/$defs/audit_timestamps"
+    }
+  },
+  "additionalProperties": false
+}

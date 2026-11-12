@@ -214,7 +214,7 @@
     "status": {
       "type": "object",
       "readOnly": true,
-      "description": "Reachability state, refreshed by `nim.agency syndicate probe` (and conformance, by `syndicate conform`) - observed, not composed",
+      "description": "Reachability and conformance as observed by `nim.agency syndicate probe` / `syndicate conform` - observed, not composed. Observations are stored per host in syndicate_status (operator-local), not here; a status on the shared record is only a fallback for hosts that have not probed",
       "properties": {
         "state": {
           "type": "string",

@@ -46,6 +46,37 @@ def load_syndicates(ds: Optional[DataStore] = None) -> list[dict]:
     return ds.query("syndicate").data
 
 
+def observed_status(syndicate: dict, ds: Optional[DataStore] = None) -> dict:
+    """This host's latest probe/conform observations of a syndicate.
+
+    Observations live operator-local (syndicate_status), not on the shared
+    record: every host probes the same inventory, and a committed status
+    both conflicts on sync and reports another host's view. A status left
+    on the shared record is the fallback for a host that has not probed.
+    """
+    ds = ds or get_datastore()
+    local = ds.read("syndicate_status", syndicate["id"])
+    if local is not None:
+        return dict(local.get("status") or {})
+    return dict(syndicate.get("status") or {})
+
+
+def with_observations(syndicate: dict, ds: Optional[DataStore] = None) -> dict:
+    """The syndicate as this host sees it: shared record + local status."""
+    return {**syndicate, "status": observed_status(syndicate, ds)}
+
+
+def record_observation(syndicate: dict, status: dict,
+                       ds: Optional[DataStore] = None) -> dict:
+    """Replace this host's observations of a syndicate (never the record)."""
+    ds = ds or get_datastore()
+    record = {"id": syndicate["id"], "slug": syndicate.get("slug", ""),
+              "status": status}
+    if ds.exists("syndicate_status", syndicate["id"]):
+        return ds.replace("syndicate_status", syndicate["id"], record)
+    return ds.create("syndicate_status", record)
+
+
 def find_syndicate(slug: str, ds: Optional[DataStore] = None) -> Optional[dict]:
     """Look up one syndicate by slug."""
     for syndicate in load_syndicates(ds):

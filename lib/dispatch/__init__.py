@@ -43,10 +43,13 @@ from .syndicate import (
     channel_capabilities,
     endpoint_descriptor,
     load_syndicates,
+    observed_status,
+    record_observation,
     required_capabilities,
     resolve,
     transport_of,
     validate_channel,
+    with_observations,
 )
 
 from .builder import (
@@ -102,6 +105,9 @@ __all__ = [
     "channel_capabilities",
     "endpoint_descriptor",
     "load_syndicates",
+    "observed_status",
+    "record_observation",
+    "with_observations",
     "required_capabilities",
     "resolve",
     "transport_of",

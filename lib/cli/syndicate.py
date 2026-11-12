@@ -21,8 +21,9 @@ from datetime import datetime, timezone
 from ..config import egress_policy, get_config
 from ..data import get_datastore
 from ..dispatch import (
-    SyndicateError, capability_index, load_syndicates, resolve, transport_of,
-    validate_channel,
+    SyndicateError, capability_index, load_syndicates, observed_status,
+    record_observation, resolve, transport_of, validate_channel,
+    with_observations,
 )
 
 # Endpoints that advertise their served models, by transport. Probing is
@@ -66,6 +67,7 @@ def cmd_list(args) -> int:
     print("-" * 78)
 
     for syndicate in sorted(syndicates, key=lambda s: s.get("slug", "")):
+        syndicate = with_observations(syndicate, ds)
         endpoint = syndicate.get("endpoint") or {}
         identity = syndicate.get("identity") or {}
         state = (syndicate.get("status") or {}).get("state", "unknown")
@@ -120,6 +122,7 @@ def cmd_show(args) -> int:
     except SyndicateError as exc:
         print(f"\033[91mERROR: {exc}\033[0m", file=sys.stderr)
         return 1
+    syndicate = with_observations(syndicate, ds)
 
     identity = syndicate.get("identity") or {}
     endpoint = syndicate.get("endpoint") or {}
@@ -278,7 +281,8 @@ def cmd_probe(args) -> int:
 
 def _record_status(ds, syndicate: dict, state: str, latency: float = 0,
                    models: list = None, error: str = "") -> None:
-    """Persist probe results onto the syndicate record."""
+    """Persist probe results as this host's observation (never onto the
+    shared syndicate record - see observed_status)."""
     status = {
         "state": state,
         "last_check": datetime.now(timezone.utc).isoformat(),
@@ -291,12 +295,10 @@ def _record_status(ds, syndicate: dict, state: str, latency: float = 0,
     # Each probe replaces the last observation (a merge would let a failed
     # probe inherit the previous latency and model list); conformance is a
     # separate observation, made by conform, and is kept
-    record = ds.read("syndicate", syndicate["id"]) or dict(syndicate)
-    previous = record.get("status") or {}
+    previous = observed_status(syndicate, ds)
     if "conformance" in previous:
         status["conformance"] = previous["conformance"]
-    record["status"] = status
-    ds.replace("syndicate", syndicate["id"], record)
+    record_observation(syndicate, status, ds)
 
 
 def cmd_conform(args) -> int:
@@ -343,8 +345,11 @@ def cmd_conform(args) -> int:
     if not args.no_record:
         summary = {k: card[k] for k in
                    ("suite", "mode", "runs", "passed", "total", "rate", "at")}
-        ds.update("syndicate", syndicate["id"], {"status": {
-            "conformance": {channel["slug"]: summary}}})
+        status = observed_status(syndicate, ds)
+        status.setdefault("state", "unknown")
+        status["conformance"] = {**(status.get("conformance") or {}),
+                                 channel["slug"]: summary}
+        record_observation(syndicate, status, ds)
     return 0 if card["passed"] == card["total"] else 1
 
 

@@ -381,6 +381,13 @@
         "nim_id": 400113,
         "data_path": "../data/syndicates/"
       },
+      "syndicate_status": {
+        "path": "core/syndicate_status.schema.json",
+        "description": "This host's probe and conformance observations of a syndicate (operator-local)",
+        "nim_id": 400119,
+        "data_path": "~/.nim/agency/status/syndicates/",
+        "local_storage": true
+      },
       "mission": {
         "path": "core/mission.schema.json",
         "description": "Dispatchable unit of work (prov:Activity)",

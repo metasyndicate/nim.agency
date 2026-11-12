@@ -113,15 +113,17 @@ class TestProbeStatus(DatastoreCase):
 
     def test_failed_probe_does_not_inherit_the_last_one(self):    # finding 8
         from lib.cli.syndicate import _record_status
+        from lib.dispatch import observed_status, record_observation
         record = self.ds.query("syndicate",
                                lambda s: s["slug"] == "mux_nova").first()
         _record_status(self.ds, record, "online", latency=12.3, models=["m"])
-        record = self.ds.read("syndicate", record["id"])
-        record["status"]["conformance"] = {"x": {"suite": "kat-1", "passed": 1,
-                                                 "total": 1, "at": "2026-10-14T00:00:00Z"}}
-        self.ds.replace("syndicate", record["id"], record)
+        status = observed_status(record, self.ds)
+        status["conformance"] = {"x": {"suite": "kat-1", "mode": "harness",
+                                       "runs": 1, "passed": 1, "total": 1,
+                                       "rate": 1.0, "at": "2026-10-14T00:00:00Z"}}
+        record_observation(record, status, self.ds)
         _record_status(self.ds, record, "unreachable", error="refused")
-        status = self.ds.read("syndicate", record["id"])["status"]
+        status = observed_status(record, self.ds)
         self.assertEqual(status["state"], "unreachable")
         self.assertNotIn("latency_ms", status)
         self.assertNotIn("models_reported", status)
