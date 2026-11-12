@@ -2,15 +2,17 @@
 `nim.agency agent` - agent roster operations.
 
     agent list      tabular roster of agents
-    agent show      agent details by codename
-    agent generate  procedurally generate and save agents
+    agent show      agent details by codename, or from a JSON file (--from)
+    agent generate  procedurally generate agents; --dry-run prints without saving
     agent credit    paymaster adjustment: award/deduct XP and gold
     agent train     dojo: allocate unassigned skill points to a domain
     agent equip     depot: buy or upgrade a tool with gold
     agent enroll    issue badge + primary keypair (--backfill for the roster)
 """
 
+import json
 import sys
+from pathlib import Path
 
 from ..data import AgentGenerator, get_datastore
 from ..data.economy import apply_award, equip, train
@@ -53,9 +55,46 @@ def cmd_list(args) -> int:
     return 0
 
 
+def _load_agent_file(source: str) -> list[dict]:
+    """Agents from a JSON file or stdin ('-'): an object or a list."""
+    try:
+        text = sys.stdin.read() if source == "-" else Path(source).read_text()
+        doc = json.loads(text)
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"Cannot read agent JSON from {source}: {e}", file=sys.stderr)
+        raise SystemExit(1)
+    agents = doc if isinstance(doc, list) else [doc]
+    if not all(isinstance(a, dict) and "identity" in a for a in agents):
+        print(f"Not an agent document: {source}", file=sys.stderr)
+        raise SystemExit(1)
+    return agents
+
+
+def _emit_json(agents: list[dict]) -> None:
+    out = agents[0] if len(agents) == 1 else agents
+    print(json.dumps(out, indent=2, ensure_ascii=False, default=str))
+
+
 def cmd_show(args) -> int:
     ds = get_datastore()
-    agent = _find_agent(ds, args.codename)
+    if bool(args.codename) == bool(args.from_file):
+        print("Name an agent codename or pass --from FILE (not both)",
+              file=sys.stderr)
+        return 1
+    agents = (_load_agent_file(args.from_file) if args.from_file
+              else [_find_agent(ds, args.codename)])
+    if args.format == "json":
+        _emit_json(agents)
+        return 0
+    for i, agent in enumerate(agents):
+        if i:
+            print()
+        render(ds, agent)
+    return 0
+
+
+def render(ds, agent: dict) -> None:
+    """Human-readable profile. Works for saved and unsaved agents."""
     ident = agent["identity"]
     cls = agent.get("classification", {})
     economy = agent.get("economy", {})
@@ -114,16 +153,42 @@ def cmd_show(args) -> int:
             print(f"          last: {conduct['last_violation_at']}")
 
     profile = agent.get("profile", {})
+    if profile.get("personality"):
+        from ..data.persona import Persona
+        desc = Persona(ds).describe(profile["personality"])
+        if desc["work_styles"]:
+            print(f"STYLE:    {', '.join(desc['work_styles'])}")
+        if desc["tone"]:
+            print(f"TONE:     {', '.join(desc['tone'])}")
+        if desc["temperament"]:
+            print(f"TEMPER:   {desc['temperament']}")
+        if desc["descriptors"]:
+            print(f"TRAITS:   {', '.join(desc['descriptors'])}")
+    if profile.get("motto"):
+        print(f"MOTTO:    {profile['motto']}")
     if profile.get("bio"):
         print(f"BIO: {profile['bio']}")
-    return 0
 
 
 def cmd_generate(args) -> int:
     ds = get_datastore()
-    gen = AgentGenerator(ds)
-    for _ in range(args.n):
-        agent = gen.create_and_save()
+    gen = AgentGenerator(ds, seed=args.seed)
+    if args.dry_run:
+        agents = gen.generate_batch(args.n)
+        if args.format == "json":
+            _emit_json(agents)
+        else:
+            for i, agent in enumerate(agents):
+                if i:
+                    print()
+                render(ds, agent)
+            print(f"\n(dry run: {args.n} agent(s) not saved)", file=sys.stderr)
+        return 0
+    agents = [gen.create_and_save() for _ in range(args.n)]
+    if args.format == "json":
+        _emit_json(agents)
+        return 0
+    for agent in agents:
         ident = agent["identity"]
         print(f"  + {ident['name']} ({ident['codename']})")
     print(f"\nGenerated {args.n} agent(s).")
@@ -212,12 +277,23 @@ def add_parser(subparsers):
                      help="Sort by XP descending (the veterans float up)")
     lst.set_defaults(func=cmd_list)
 
+    fmt = dict(choices=("text", "json"), default="text",
+               help="Output format (default: text)")
+
     show = actions.add_parser("show", help="Show agent details")
-    show.add_argument("codename", help="Agent codename")
+    show.add_argument("codename", nargs="?", help="Agent codename")
+    show.add_argument("--from", dest="from_file", metavar="FILE",
+                      help="Render agent JSON from FILE ('-' for stdin) "
+                           "instead of the roster")
+    show.add_argument("--format", **fmt)
     show.set_defaults(func=cmd_show)
 
-    gen = actions.add_parser("generate", help="Generate and save agents")
+    gen = actions.add_parser("generate", help="Generate agents (saved unless --dry-run)")
     gen.add_argument("-n", type=int, default=1, help="Number of agents (default: 1)")
+    gen.add_argument("--dry-run", action="store_true",
+                     help="Generate and print; save nothing, issue no badge")
+    gen.add_argument("--seed", type=int, help="Random seed (reproducible draws)")
+    gen.add_argument("--format", **fmt)
     gen.set_defaults(func=cmd_generate)
 
     credit = actions.add_parser(
