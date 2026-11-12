@@ -86,7 +86,8 @@ class TestDependencyGroups(unittest.TestCase):
         groups = instance.dependency_groups()
         self.assertIn("jsonschema>=4", groups["validation"])
         self.assertEqual(set(groups["all"]),
-                         set(groups["validation"]) | set(groups["remote"]))
+                         set(groups["validation"]) | set(groups["remote"])
+                         | set(groups["profiles"]))
 
     def test_requirement_names(self):
         self.assertEqual(instance.requirement_name("jsonschema>=4"), "jsonschema")

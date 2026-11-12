@@ -61,6 +61,24 @@ against this document; new work is expected to conform from the start.
 - New guardrails ship with their truth table; new formats with content
   assertions.
 
+## VERSION CONTROL
+
+Several hosts (and their agents) share one remote. Branches:
+`main` is the release line; `bonsai` is the integration branch every
+clone works on.
+
+- Sync before work and before every push: `git fetch origin` then
+  `git merge --ff-only origin/bonsai`; on failure, merge or rebase
+  unpushed commits, run both test postures, then push.
+- Never force-push `bonsai` or `main`. Never commit on `main`; it moves
+  only by fast-forward from a green `bonsai`.
+- Agents do not merge other branches into a shared branch, push to
+  `bonsai`/`main`, or delete remote refs without explicit operator
+  instruction for that action. Report divergence; do not resolve it
+  unasked.
+- Runtime state (probe/conformance results, accrued XP) is not committed;
+  revert it from tracked records before staging.
+
 ## PROHIBITED
 
 - Heredocs or in-code literals for static data that belongs in `data/`
