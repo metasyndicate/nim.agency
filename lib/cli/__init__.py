@@ -35,7 +35,7 @@ from . import syndicate as syndicate_cmd
 
 # Core components; an extension may not take one of these names.
 CORE = ("dispatch", "mission", "project", "syndicate", "substation", "install",
-        "agent", "data", "lex", "ext", "tui")
+        "agent", "data", "lex", "profiles", "ext", "tui")
 
 
 def cmd_tui(args) -> int:
